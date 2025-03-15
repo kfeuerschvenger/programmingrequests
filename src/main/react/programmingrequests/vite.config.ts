@@ -6,14 +6,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react()
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src')
-    }
-  }
-})
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
+  server: {
+    host: true,
+    strictPort: true,
+    port: 3000,
+  },
+});
