@@ -1,0 +1,52 @@
+html, body { height: 100%; }
+
+.maincontainer {
+  position: relative; 
+  /* updated to support footer push */
+  min-height: 100%;
+  padding-bottom: 60px; /* must be the same as footer height */
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+}
+
+.dark {
+  @mixin dark {
+    display: none;
+  }
+
+  @mixin light {
+    display: block;
+  }
+}
+
+.light {
+  @mixin light {
+    display: none;
+  }
+
+  @mixin dark {
+    display: block;
+  }
+}
+
+.title {
+  font-family:
+    Greycliff CF,
+    var(--mantine-font-family);
+  font-size: 62px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0;
+  padding: 0;
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    font-size: 42px;
+    line-height: 1.2;
+  }
+}
