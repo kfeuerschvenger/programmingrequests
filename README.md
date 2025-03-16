@@ -79,7 +79,7 @@ To run the project locally using Docker Compose:
 2. **Build and start the services**:
 
    ```bash
-   docker-compose up --build
+   docker compose up -d --build
    ```
 
    This command will:
@@ -90,5 +90,5 @@ To run the project locally using Docker Compose:
 
 3. **Access the applications**:
 
-   - **Frontend**: Navigate to `http://localhost:3000` to view the React application.
+   - **Frontend**: Navigate to `http://localhost` to view the React application.
    - **Backend**: The Spring Boot API is accessible at `http://localhost:8080`.

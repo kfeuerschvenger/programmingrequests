@@ -2,7 +2,7 @@ import { Request, NewRequest, UseApiCall } from '@/models';
 import { loadAbort } from '@/utils';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/requests';
+const BASE_URL = '/requests';
 
 export const getIdeasList = (): UseApiCall<Request[]> => {
   const controller = loadAbort();
@@ -17,7 +17,7 @@ export const newIdea = (newRequest: NewRequest): UseApiCall<null> => {
   const controller = loadAbort();
 
   return {
-    call: axios.post<null>(`${BASE_URL}`, newRequest, { signal: controller.signal }),
+    call: axios.post<null>(BASE_URL, newRequest, { signal: controller.signal }),
     controller,
   };
 };
