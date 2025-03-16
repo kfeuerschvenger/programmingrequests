@@ -1,51 +1,53 @@
-version: "3.8"
-
 services:
-  mysql:
+  db:
     image: mysql:8.0
     container_name: mysql_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: programmingrequests
-      MYSQL_USER: root
-      MYSQL_PASSWORD: 123456
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - mynetwork
+      - prnetwork
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
 
   backend:
     build: .
     container_name: springboot_server
     restart: always
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/programmingrequests
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/programmingrequests
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
     ports:
       - "8080:8080"
     depends_on:
-      - mysql
+      db:
+        condition: service_healthy
     networks:
-      - mynetwork
+      - prnetwork
 
   frontend:
     build: ./src/main/react/programmingrequests
     container_name: react_vite
     restart: always
     ports:
-      - "3000:3000"
+      - "80:80"
     depends_on:
       - backend
     networks:
-      - mynetwork
+      - prnetwork
 
 volumes:
   mysql_data:
 
 networks:
-  mynetwork:
+  prnetwork:
+    name: prnetwork
     driver: bridge

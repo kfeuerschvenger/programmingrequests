@@ -33,29 +33,30 @@ const IdeasList = () => {
     return <div>UPS! There was an error: {error.message}</div>;
   }
 
-  const ideas = data
-    ? data.map(idea => (
-        <Paper withBorder radius="md" className={classes.comment} key={idea.id}>
-          <Group>
-            <Avatar key={idea.author} name={idea.author} color="initials" />
-            <div>
-              <Text fz="sm">{idea.author}</Text>
-              <Text fz="xs" c="dimmed">
-                {dayjs(idea.date).fromNow()}
-              </Text>
-            </div>
-          </Group>
-          <TypographyStylesProvider className={classes.body}>
-            <div
-              className={classes.content}
-              dangerouslySetInnerHTML={{
-                __html: idea.description,
-              }}
-            />
-          </TypographyStylesProvider>
-        </Paper>
-      ))
-    : 'No previous ideas where found';
+  const ideas =
+    data && data.length
+      ? data.map(idea => (
+          <Paper withBorder radius="md" className={classes.comment} key={idea.id}>
+            <Group>
+              <Avatar key={idea.author} name={idea.author} color="initials" />
+              <div>
+                <Text fz="sm">{idea.author}</Text>
+                <Text fz="xs" c="dimmed">
+                  {dayjs(idea.date).fromNow()}
+                </Text>
+              </div>
+            </Group>
+            <TypographyStylesProvider className={classes.body}>
+              <div
+                className={classes.content}
+                dangerouslySetInnerHTML={{
+                  __html: idea.description,
+                }}
+              />
+            </TypographyStylesProvider>
+          </Paper>
+        ))
+      : 'No previous ideas where found';
 
   return (
     <>

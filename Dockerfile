@@ -8,6 +8,6 @@ RUN ./gradlew clean build
 
 ARG JAR_FILE=build/libs/*SNAPSHOT.jar
 
-ENTRYPOINT [ "java", "-jar", "/build/libs/programmingrequests-0.0.1-SNAPSHOT.jar" ]
+ENV JAR_FILE=${JAR_FILE}
 
-
+ENTRYPOINT ["sh", "-c", "java -jar /back/${JAR_FILE}"]
