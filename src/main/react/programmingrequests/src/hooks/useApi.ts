@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { UseApiCall } from '@/models';
 
@@ -14,7 +14,7 @@ interface UseApiResult<T, P> {
   loading: boolean;
   data: Data<T>;
   error: CustomError;
-  fetch: (param: P) => void;
+  fetch: (param: P) => Promise<void>;
 }
 
 export const useApi = <T, P>(apiCall: (param: P) => UseApiCall<T>, options?: UseApiOptions<P>): UseApiResult<T, P> => {
@@ -22,32 +22,26 @@ export const useApi = <T, P>(apiCall: (param: P) => UseApiCall<T>, options?: Use
   const [data, setData] = useState<Data<T>>(null);
   const [error, setError] = useState<CustomError>(null);
 
-  const fetch = useCallback(
-    (param: P) => {
-      const { call, controller } = apiCall(param);
-      setLoading(true);
+  const fetch = async (param: P): Promise<void> => {
+    const { call } = apiCall(param);
+    setLoading(true);
 
-      call
-        .then(response => {
-          setData(response.data);
-          setError(null);
-        })
-        .catch(err => {
-          setError(err);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-      return () => controller.abort();
-    },
-    [apiCall],
-  );
+    try {
+      const response = await call;
+      setData(response.data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (options?.autoFetch) {
-      return fetch(options.params);
+      fetch(options.params);
     }
-  }, [fetch, options?.autoFetch, options?.params]);
+  }, [options?.autoFetch, options?.params]);
 
   return { loading, data, error, fetch };
 };
