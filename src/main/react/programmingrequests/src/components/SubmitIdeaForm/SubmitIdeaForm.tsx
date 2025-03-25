@@ -18,8 +18,8 @@ export function SubmitIdeaForm() {
 
   const { fetch } = useApi<null, NewRequest>(newIdea);
 
-  const onSubmit: SubmitHandler<FormValues> = d => {
-    fetch(d);
+  const onSubmit: SubmitHandler<FormValues> = async d => {
+    await fetch(d);
     setValue(1);
   };
 

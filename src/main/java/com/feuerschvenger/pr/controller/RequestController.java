@@ -3,6 +3,7 @@ package com.feuerschvenger.pr.controller;
 import com.feuerschvenger.pr.model.Request;
 import com.feuerschvenger.pr.model.helper.RequestJson;
 import com.feuerschvenger.pr.service.RequestService;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ public class RequestController {
     }
 
     @PostMapping
+    @Transactional
     @ResponseStatus(HttpStatus.CREATED)
     public Request create(@RequestBody RequestJson requestJson) {
         return service.create(requestJson);
