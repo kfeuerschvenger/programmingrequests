@@ -1,5 +1,5 @@
-import { type UseControllerProps, useController, type FieldValues } from 'react-hook-form';
 import { TextInput as $TextInput, type TextInputProps as $TextInputProps } from '@mantine/core';
+import { useController, type FieldValues, type UseControllerProps } from 'react-hook-form';
 
 export type TextInputProps<T extends FieldValues> = UseControllerProps<T> &
   Omit<$TextInputProps, 'value' | 'defaultValue'>;

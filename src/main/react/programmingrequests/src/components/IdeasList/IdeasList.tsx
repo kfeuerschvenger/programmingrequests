@@ -1,29 +1,31 @@
-import classes from './IdeasList.module.css';
-
 import { useGlobalContext } from '@/context';
-import { getIdeasList } from '@/services';
-import { Request } from '@/models';
 import { useApi } from '@/hooks';
+import { IP, Request } from '@/models';
+import { getPublicIp, getIdeasList } from '@/services';
+
+import IdeaItem from './components/IdeaItem';
 
 import { useEffect } from 'react';
 
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { Avatar, Grid, Group, Paper, Space, Text, Title, TypographyStylesProvider } from '@mantine/core';
+import { Grid, Space, Title } from '@mantine/core';
 
 dayjs.extend(relativeTime);
 
 const IdeasList = () => {
-  const { value, setValue } = useGlobalContext();
-  const { loading, error, data, fetch } = useApi<Request[], null>(getIdeasList, { autoFetch: true, params: null });
+  const { ideasFlag, setIdeasFlag } = useGlobalContext();
+  const options = { autoFetch: true, retry: 4, retryDelayMs: 1500 };
+  const { loading, error, data = [], fetch } = useApi<Request[], void>(getIdeasList, options);
+  const { data: ipData } = useApi<IP, void>(getPublicIp, options);
 
   useEffect(() => {
-    if (value === 1) {
-      fetch(null);
-      setValue(0);
+    if (ideasFlag === 1) {
+      fetch();
+      setIdeasFlag(0);
     }
-  }, [value, fetch, setValue]);
+  }, [ideasFlag]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -33,30 +35,14 @@ const IdeasList = () => {
     return <div>UPS! There was an error: {error.message}</div>;
   }
 
+  const userIpAddress = ipData?.ip || '0.0.0.0';
+
   const ideas =
-    data && data.length
-      ? data.map(idea => (
-          <Paper withBorder radius="md" className={classes.comment} key={idea.id}>
-            <Group>
-              <Avatar key={idea.author} name={idea.author} color="initials" />
-              <div>
-                <Text fz="sm">{idea.author}</Text>
-                <Text fz="xs" c="dimmed">
-                  {dayjs(idea.date).fromNow()}
-                </Text>
-              </div>
-            </Group>
-            <TypographyStylesProvider className={classes.body}>
-              <div
-                className={classes.content}
-                dangerouslySetInnerHTML={{
-                  __html: idea.description,
-                }}
-              />
-            </TypographyStylesProvider>
-          </Paper>
-        ))
-      : 'No previous ideas where found';
+    Array.isArray(data) && data.length > 0 ? (
+      data.map(idea => <IdeaItem key={idea.id} idea={idea} ipAddress={userIpAddress} />)
+    ) : (
+      <div>No previous ideas where found</div>
+    );
 
   return (
     <>

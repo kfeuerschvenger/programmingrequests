@@ -5,37 +5,67 @@ import { lazy, Suspense } from 'react';
 
 import {
   ActionIcon,
+  Button,
   Container,
   Divider,
   Flex,
   Space,
   Text,
+  Tooltip,
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core';
-import { IconMoon, IconSun } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
+
+import { IconHelp, IconMoon, IconSun } from '@tabler/icons-react';
 
 import { Footer, SubmitIdeaForm } from '@/components';
+
 const IdeasList = lazy(() => import('./components/IdeasList/IdeasList'));
-import { GlobalProvider } from '@/context';
 
 function App() {
-  const { setColorScheme } = useMantineColorScheme();
+  const { toggleColorScheme } = useMantineColorScheme();
   const computedColorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
 
+  const showInfo = () =>
+    modals.open({
+      title: 'Voting System',
+      overlayProps: {
+        backgroundOpacity: 0.3,
+        blur: 3,
+      },
+      children: (
+        <>
+          <Text size="sm">
+            In this realm of choices, you wield the power of a single vote, for or against. Should doubt cloud your
+            mind, fear not: by striking with the opposite vote, you erase your past decision and regain the right to
+            cast your will once more!
+          </Text>
+          <Space h="md" />
+          <Flex justify="flex-end">
+            <Button onClick={() => modals.closeAll()} mt="md">
+              I accept my destiny
+            </Button>
+          </Flex>
+        </>
+      ),
+    });
+
   return (
-    <GlobalProvider>
+    <>
       <Space h="md" />
       <Flex mih={50} gap="md" justify="flex-end" align="flex-start" direction="row" wrap="wrap">
-        <ActionIcon
-          onClick={() => setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light')}
-          variant="default"
-          size="xl"
-          aria-label="Toggle color scheme"
-        >
-          <IconSun display={computedColorScheme === 'light' ? 'none' : 'block'} className="icon" stroke={1.5} />
-          <IconMoon display={computedColorScheme === 'dark' ? 'none' : 'block'} className="icon" stroke={1.5} />
-        </ActionIcon>
+        <Tooltip label="Shows info about how the voting system works">
+          <ActionIcon onClick={showInfo} variant="default" size="xl" aria-label="Voting system info">
+            <IconHelp className="icon" stroke={1.5} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Toggle theme">
+          <ActionIcon onClick={toggleColorScheme} variant="default" size="xl" aria-label="Toggle color scheme">
+            <IconSun display={computedColorScheme === 'light' ? 'none' : 'block'} className="icon" stroke={1.5} />
+            <IconMoon display={computedColorScheme === 'dark' ? 'none' : 'block'} className="icon" stroke={1.5} />
+          </ActionIcon>
+        </Tooltip>
         <Space w="xs" />
       </Flex>
       <Container className="maincontainer" my="md">
@@ -66,7 +96,7 @@ function App() {
         </Suspense>
       </Container>
       <Footer />
-    </GlobalProvider>
+    </>
   );
 }
 

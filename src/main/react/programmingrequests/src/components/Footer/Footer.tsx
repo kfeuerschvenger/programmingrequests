@@ -1,9 +1,7 @@
-import { ActionIcon, Container, Space, Tooltip } from '@mantine/core';
-import { IconBrandGmail, IconBrandLinkedin } from '@tabler/icons-react';
-
-import { Group, Text } from '@mantine/core';
-import classes from './Footer.module.css';
+import { ActionIcon, Container, Group, Space, Text, Tooltip } from '@mantine/core';
+import { IconBrandGithub, IconBrandGmail, IconBrandLinkedin } from '@tabler/icons-react';
 import { Logo } from '@/components';
+import classes from './Footer.module.css';
 
 export function Footer() {
   return (
@@ -41,6 +39,19 @@ export function Footer() {
               variant="subtle"
             >
               <IconBrandGmail size={38} stroke={1.5} />
+            </ActionIcon>
+          </Tooltip>
+          <Space w="sm" />
+          <Tooltip label="This proyect is on my GitHub account">
+            <ActionIcon
+              component="a"
+              href="https://github.com/kfeuerschvenger"
+              target="_blank"
+              size="lg"
+              color="gray"
+              variant="subtle"
+            >
+              <IconBrandGithub size={38} stroke={1.5} />
             </ActionIcon>
           </Tooltip>
         </Group>

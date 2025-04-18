@@ -1,5 +1,5 @@
-import { type UseControllerProps, useController, type FieldValues } from 'react-hook-form';
 import { Textarea as $Textarea, type TextareaProps as $TextareaProps } from '@mantine/core';
+import { useController, type FieldValues, type UseControllerProps } from 'react-hook-form';
 
 export type TextareaProps<T extends FieldValues> = UseControllerProps<T> &
   Omit<$TextareaProps, 'value' | 'defaultValue'>;
