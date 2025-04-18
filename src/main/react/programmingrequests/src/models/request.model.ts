@@ -1,9 +1,9 @@
 export interface Request {
-  id?: number;
+  id: number;
   author: string;
   description: string;
   date: string;
-  up_votes: number;
+  upVotes: number;
 }
 
 export interface NewRequest {

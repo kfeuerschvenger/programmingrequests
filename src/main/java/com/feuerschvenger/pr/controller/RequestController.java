@@ -2,6 +2,8 @@ package com.feuerschvenger.pr.controller;
 
 import com.feuerschvenger.pr.model.Request;
 import com.feuerschvenger.pr.model.helper.RequestJson;
+import com.feuerschvenger.pr.model.helper.StatusResponseJson;
+import com.feuerschvenger.pr.model.helper.VoteJson;
 import com.feuerschvenger.pr.service.RequestService;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
@@ -35,8 +37,14 @@ public class RequestController {
     @PostMapping
     @Transactional
     @ResponseStatus(HttpStatus.CREATED)
-    public Request create(@RequestBody RequestJson requestJson) {
+    public StatusResponseJson create(@RequestBody RequestJson requestJson) {
         return service.create(requestJson);
+    }
+
+    @PostMapping("/vote")
+    @ResponseStatus(HttpStatus.OK)
+    public StatusResponseJson vote(@RequestBody VoteJson voteJson) {
+        return service.vote(voteJson);
     }
 
 }

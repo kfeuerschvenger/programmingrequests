@@ -1,0 +1,16 @@
+FROM gradle:jdk23-alpine 
+
+WORKDIR /back
+
+COPY gradle gradle
+COPY gradlew .
+COPY build.gradle .
+COPY settings.gradle .
+
+RUN ./gradlew dependencies --no-daemon
+
+VOLUME /back/src
+
+EXPOSE 8080
+
+ENTRYPOINT ["sh", "-c", "./gradlew bootRun --no-daemon --watch-fs"]

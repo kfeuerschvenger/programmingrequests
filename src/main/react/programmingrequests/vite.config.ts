@@ -11,11 +11,21 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
     },
+  },
+  build: {
+    ssr: false,
+  },
+  optimizeDeps: {
+    include: ['@mantine/core', '@mantine/hooks', '@tabler/icons-react', 'dayjs'],
   },
   server: {
     host: true,
     strictPort: true,
     port: 3000,
+    watch: {
+      usePolling: true,
+    },
   },
 });

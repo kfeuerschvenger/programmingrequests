@@ -7,25 +7,35 @@ import CustomTextInput from './components/CustomForm/components/CustomTextInput'
 import { FormValues, schema } from './components/CustomForm/models/form.model';
 
 import { Button, Group, Space, Title } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 
 import { useGlobalContext } from '@/context';
-import { NewRequest } from '@/models';
-import { newIdea } from '@/services';
 import { useApi } from '@/hooks';
+import { NewRequest, UseApiStatusResponse } from '@/models';
+import { newIdea } from '@/services';
 
 export function SubmitIdeaForm() {
-  const { setValue } = useGlobalContext();
+  const { setIdeasFlag } = useGlobalContext();
 
-  const { fetch } = useApi<null, NewRequest>(newIdea);
+  const { fetch, loading } = useApi<UseApiStatusResponse, NewRequest>(newIdea);
 
   const onSubmit: SubmitHandler<FormValues> = async d => {
-    await fetch(d);
-    setValue(1);
+    const { data } = await fetch(d);
+    if (data?.status === 'OK') {
+      reset();
+      setIdeasFlag(1);
+      notifications.show({
+        title: 'Idea submitted!',
+        message: 'Thank you for sharing your idea!',
+        color: 'teal',
+      });
+    }
   };
 
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -45,11 +55,14 @@ export function SubmitIdeaForm() {
         control={control}
         label="Author"
         type="text"
+        disabled={loading}
         error={errors.author?.message}
         inputContainer={children => (
           <Group align="flex-start">
             {children}
-            <Button type="submit">Submit</Button>
+            <Button type="submit" loading={loading}>
+              Submit
+            </Button>
           </Group>
         )}
       />
@@ -59,6 +72,7 @@ export function SubmitIdeaForm() {
         placeholder="Write your idea here"
         control={control}
         label="Description"
+        disabled={loading}
         error={errors.description?.message}
         autosize
         minRows={3}

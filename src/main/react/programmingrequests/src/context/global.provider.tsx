@@ -1,14 +1,14 @@
 import { ReactNode, useState } from 'react';
 import { GlobalContext } from './global.context';
 
-const EmptyGlobalState: number = 0;
+const EmptyIdeasFlag: number = 0;
 
 interface GlobalProps {
   children: ReactNode;
 }
 
 export const GlobalProvider = ({ children }: GlobalProps) => {
-  const [value, setValue] = useState<number>(EmptyGlobalState);
+  const [ideasFlag, setIdeasFlag] = useState<number>(EmptyIdeasFlag);
 
-  return <GlobalContext.Provider value={{ value, setValue }}>{children}</GlobalContext.Provider>;
+  return <GlobalContext.Provider value={{ ideasFlag, setIdeasFlag }}>{children}</GlobalContext.Provider>;
 };
