@@ -49,6 +49,7 @@ export function SubmitIdeaForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Title order={3}>Submit your idea</Title>
+      <Space h="xl" />
       <CustomTextInput
         name="author"
         placeholder="Author"

@@ -47,7 +47,7 @@ const IdeasList = () => {
   return (
     <>
       <Title order={3}>Pool of ideas</Title>
-      <Space h="lg" />
+      <Space h="xl" />
       <Grid>
         <Grid.Col span="auto"></Grid.Col>
         <Grid.Col span={8}>{ideas}</Grid.Col>

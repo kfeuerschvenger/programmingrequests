@@ -8,7 +8,7 @@ export function Footer() {
     <footer className={classes.footer}>
       <Container className={classes.inner}>
         <div className={classes.logo}>
-          <Logo />
+          <Logo variant="footer" />
         </div>
       </Container>
       <Container className={classes.afterFooter}>
