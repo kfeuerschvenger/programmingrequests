@@ -2,6 +2,7 @@ import '@mantine/notifications/styles.css';
 
 import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
@@ -19,7 +20,9 @@ const app = (
     <MantineProvider defaultColorScheme="light">
       <Notifications position="top-right" limit={5} />
       <ModalsProvider>
-        <App />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </ModalsProvider>
     </MantineProvider>
   </GlobalProvider>

@@ -1,0 +1,28 @@
+.wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: opacity 0.3s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.blur {
+  filter: blur(2px);
+  transform: scale(1.02);
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.visible {
+  opacity: 1;
+  position: relative;
+}
