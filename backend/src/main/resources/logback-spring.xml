@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--
+        Console only. requestId is put in the MDC by MDCFilter on every HTTP request.
+        %nopex suppresses stack traces on every appender: the message has to carry the
+        exception class explicitly (see SecureLogger.errorWithCause).
+    -->
+    <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
+
+    <springProfile name="dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <charset>UTF-8</charset>
+                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%X{requestId:--}]){cyan} %clr(%-5level){highlight} %clr(%logger{36}){magenta} - %msg%nopex%n</pattern>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <springProfile name="!dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <charset>UTF-8</charset>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId:--}] %-5level %logger{36} - %msg%nopex%n</pattern>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <logger name="org.apache.coyote.http11.Http11Processor" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
