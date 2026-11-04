@@ -44,11 +44,16 @@ class CodeQuestsApplicationTests extends MySqlIntegrationSupport {
     }
 
     @Test
-    @DisplayName("trusts the private proxy ranges by default")
+    @DisplayName("trusts only loopback as a proxy by default")
     void defaultTrustedProxies(@Autowired Environment environment) {
         var pattern = Pattern.compile(environment.getProperty("server.tomcat.remoteip.internal-proxies"));
 
-        assertThat(pattern.matcher("172.18.0.3").matches()).isTrue();
+        assertThat(pattern.matcher("127.0.0.1").matches()).isTrue();
+        assertThat(pattern.matcher("::1").matches()).isTrue();
+        assertThat(pattern.matcher("0:0:0:0:0:0:0:1").matches()).isTrue();
+        assertThat(pattern.matcher("172.18.0.3").matches()).isFalse();
+        assertThat(pattern.matcher("10.0.0.5").matches()).isFalse();
+        assertThat(pattern.matcher("192.168.1.10").matches()).isFalse();
         assertThat(pattern.matcher("203.0.113.9").matches()).isFalse();
     }
 

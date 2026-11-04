@@ -34,6 +34,18 @@ export default defineConfig({
       '/api': {
         target: apiProxyTarget,
         changeOrigin: false,
+        xfwd: true,
+        // The API trusts X-Forwarded-For from this dev server, so the header must carry only the address of the browser connection. An inbound value is dropped, never extended, which keeps a client from choosing its own identity.
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            const address = req.socket.remoteAddress;
+            if (address) {
+              proxyReq.setHeader('X-Forwarded-For', address);
+            } else {
+              proxyReq.removeHeader('X-Forwarded-For');
+            }
+          });
+        },
       },
     },
   },

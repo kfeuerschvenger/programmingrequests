@@ -12,7 +12,7 @@ services:
     volumes:
       - code_quests_db:/var/lib/mysql
     networks:
-      - prnetwork
+      - db_net
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
@@ -33,20 +33,23 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       # Required: the API refuses to start without a secret of at least 32 bytes.
       VOTER_HASH_SECRET: ${VOTER_HASH_SECRET}
+      # Tomcat trusts X-Forwarded-For only from this regular expression: the app_net subnet minus its gateway, so only the web container qualifies. Override it with a regex that still matches nothing but the proxy in front of the API.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172\.29\.240\.(?!1\z)\d+}
       # Optional: a key without a value is passed through only when it is set in the environment or the env file.
-      TRUSTED_PROXIES:
       RATE_LIMIT_CREATE_CAPACITY:
       RATE_LIMIT_CREATE_WINDOW:
       RATE_LIMIT_VOTE_CAPACITY:
       RATE_LIMIT_VOTE_WINDOW:
       CORS_ALLOWED_ORIGINS:
     ports:
-      - "8080:8080"
+      # Loopback only. Requests that arrive through this mapping come from the app_net gateway, which is not a trusted proxy, so their X-Forwarded-For is ignored.
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - prnetwork
+      - app_net
+      - db_net
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/manage/health || exit 1"]
       interval: 15s
@@ -71,12 +74,19 @@ services:
     depends_on:
       - api
     networks:
-      - prnetwork
+      - app_net
 
 volumes:
   code_quests_db:
 
 networks:
-  prnetwork:
-    name: prnetwork
+  # Carries the traffic between web and api. The subnet is fixed so TRUSTED_PROXIES can name it, and it sits high in 172.16.0.0/12, which Docker's default allocator reaches only after many networks and which common LAN ranges rarely use. Compose fails with an overlap error if the host already uses it. Change it here and in the TRUSTED_PROXIES default together. The gateway address is the host side of published ports, so it is not trusted.
+  app_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.240.0/24
+          gateway: 172.29.240.1
+  # Only db and api attach to this network.
+  db_net:
     driver: bridge
