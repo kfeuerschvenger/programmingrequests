@@ -29,13 +29,23 @@ public class MDCFilter extends OncePerRequestFilter {
     /** MDC key referenced by the log pattern as {@code %X{requestId}}. */
     public static final String REQUEST_ID_MDC_KEY = "requestId";
 
-    private static final Pattern CONTROL_CHARS = Pattern.compile("\\p{Cntrl}");
+    private static final String REQUEST_ID_ATTRIBUTE = MDCFilter.class.getName() + ".REQUEST_ID";
+    private static final Pattern CONTROL_CHARS = Pattern.compile("[\\p{Cntrl}\\u0085\\u2028\\u2029]");
     private static final Pattern ACCEPTED_ID = Pattern.compile("^[A-Za-z0-9._-]{1,64}$");
+
+    /** The error dispatch runs this filter again, so the id is carried in a request attribute instead of being minted twice. */
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        var requestId = resolveRequestId(request.getHeader(REQUEST_ID_HEADER));
+        var requestId = request.getAttribute(REQUEST_ID_ATTRIBUTE) instanceof String existing
+                ? existing
+                : resolveRequestId(request.getHeader(REQUEST_ID_HEADER));
+        request.setAttribute(REQUEST_ID_ATTRIBUTE, requestId);
         MDC.put(REQUEST_ID_MDC_KEY, requestId);
         response.setHeader(REQUEST_ID_HEADER, requestId);
         try {

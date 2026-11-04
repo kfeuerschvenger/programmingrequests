@@ -76,6 +76,22 @@ class MDCFilterTest {
         assertThat(MDC.get(MDCFilter.REQUEST_ID_MDC_KEY)).isNull();
     }
 
+    @Test
+    @DisplayName("keeps the same id on the error dispatch of the same request")
+    void reusesIdOnErrorDispatch() throws ServletException, IOException {
+        var request = new MockHttpServletRequest("GET", "/requests");
+        var seen = new AtomicReference<String>();
+        filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> seen.set(MDC.get(MDCFilter.REQUEST_ID_MDC_KEY)));
+        var firstId = seen.get();
+
+        request.setAttribute(jakarta.servlet.RequestDispatcher.ERROR_REQUEST_URI, "/requests");
+        var errorResponse = new MockHttpServletResponse();
+        filter.doFilter(request, errorResponse, (req, res) -> seen.set(MDC.get(MDCFilter.REQUEST_ID_MDC_KEY)));
+
+        assertThat(seen.get()).isEqualTo(firstId);
+        assertThat(errorResponse.getHeader(MDCFilter.REQUEST_ID_HEADER)).isEqualTo(firstId);
+    }
+
     private MockHttpServletResponse run(String inboundId, AtomicReference<String> seenInChain)
             throws ServletException, IOException {
         var request = new MockHttpServletRequest("GET", "/requests");
