@@ -79,10 +79,32 @@ tasks.named('test') {
 	finalizedBy tasks.named('jacocoTestReport')
 }
 
+// The application entry point only starts Spring, so it is left out of the coverage figure.
+def coverageExclusions = ['**/CodeQuestsApplication.class']
+
 jacocoTestReport {
 	dependsOn tasks.named('test')
 	reports {
 		xml.required = true
 		html.required = true
 	}
+	classDirectories.setFrom(files(classDirectories.files.collect { fileTree(dir: it, exclude: coverageExclusions) }))
+}
+
+jacocoTestCoverageVerification {
+	dependsOn tasks.named('test')
+	classDirectories.setFrom(files(classDirectories.files.collect { fileTree(dir: it, exclude: coverageExclusions) }))
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.85
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('jacocoTestCoverageVerification')
 }
