@@ -24,11 +24,12 @@ repositories {
 	mavenCentral()
 }
 
-// Boot 4.1.2 pins Jackson 3.1.7 and 2.21.7 (the 2.x line arrives through springdoc), hit by CVE-2026-110879, fixed in 3.1.8 and 2.21.8.
+// Boot 4.1.2 pins Jackson 3.1.7 and 2.21.7 (the 2.x line arrives through springdoc). CVE-2026-110879 (jackson-databind RCE, fixed in 2.21.8 and 3.1.8) was verified against these versions.
 // Drop these overrides when Boot manages a newer version.
 ext['jackson-bom.version'] = '3.1.8'
 ext['jackson-2-bom.version'] = '2.21.8'
-// Boot 4.1.2 pins logback 1.5.38, hit by CVE-2026-19880. Drop this override when Boot manages a newer version.
+// Boot 4.1.2 pins logback 1.5.38. CVE-2026-19880 (path traversal through MDCBasedDiscriminator/SiftingAppender, fixed in 1.6.3, no 1.5.x fix) was verified.
+// This app does not use SiftingAppender, but the pin keeps dependency scanners clean. Drop it when Boot manages 1.6.3 or newer.
 ext['logback.version'] = '1.6.6'
 
 dependencies {
@@ -53,6 +54,11 @@ dependencies {
 	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
 	testImplementation 'org.testcontainers:testcontainers-mysql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Exposes META-INF/build-info.properties so the OpenAPI document reports the project version.
+springBoot {
+	buildInfo()
 }
 
 // One executable archive with a fixed name, so the Dockerfile does not depend on the version.
