@@ -11,23 +11,29 @@ import { notifications } from '@mantine/notifications';
 
 import { useGlobalContext } from '@/context';
 import { useApi } from '@/hooks';
-import { NewRequest, UseApiStatusResponse } from '@/models';
+import { Idea, NewIdea } from '@/models';
 import { newIdea } from '@/services';
 
 export function SubmitIdeaForm() {
   const { setIdeasFlag } = useGlobalContext();
 
-  const { fetch, loading } = useApi<UseApiStatusResponse, NewRequest>(newIdea);
+  const { fetch, loading } = useApi<Idea, NewIdea>(newIdea);
 
   const onSubmit: SubmitHandler<FormValues> = async d => {
-    const { data } = await fetch(d);
-    if (data?.status === 'OK') {
+    const { data, error } = await fetch({ author: d.author || undefined, description: d.description });
+    if (data) {
       reset();
       setIdeasFlag(1);
       notifications.show({
         title: 'Idea submitted!',
         message: 'Thank you for sharing your idea!',
         color: 'teal',
+      });
+    } else if (error) {
+      notifications.show({
+        title: 'Idea not submitted',
+        message: error.message,
+        color: 'red',
       });
     }
   };
@@ -52,7 +58,7 @@ export function SubmitIdeaForm() {
       <Space h="xl" />
       <CustomTextInput
         name="author"
-        placeholder="Author"
+        placeholder="Author (optional)"
         control={control}
         label="Author"
         type="text"

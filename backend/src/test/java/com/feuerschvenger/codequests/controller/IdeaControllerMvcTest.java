@@ -359,7 +359,7 @@ class IdeaControllerMvcTest {
             when(handler.vote(42, 1, CLIENT)).thenReturn(idea(42, 1, 1));
 
             mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"value\":1,\"ipAddress\":\"203.0.113.77\"}"))
+                            .content("{\"value\":1,\"address\":\"203.0.113.77\"}"))
                     .andExpect(status().isOk());
 
             verify(handler).vote(42, 1, CLIENT);

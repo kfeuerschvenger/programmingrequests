@@ -111,7 +111,7 @@ class IdeasApiIntegrationTest extends MySqlIntegrationSupport {
     void storesOnlyTheHash() {
         var id = createIdea("203.0.113.4");
 
-        api.put("/api/ideas/" + id + "/vote", "{\"value\":1,\"ipAddress\":\"203.0.113.77\"}", ALICE);
+        api.put("/api/ideas/" + id + "/vote", "{\"value\":1,\"address\":\"203.0.113.77\"}", ALICE);
 
         var stored = jdbc.queryForObject("SELECT voter_hash FROM votes WHERE idea_id = ?", byte[].class, id);
         assertThat(stored).isEqualTo(hasher.hash(ALICE)).isNotEqualTo(hasher.hash("203.0.113.77"));

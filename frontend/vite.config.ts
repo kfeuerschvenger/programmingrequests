@@ -6,6 +6,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// The backend the dev server forwards /api to. Inside the dev compose network it is http://api:8080.
+const apiProxyTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:8080';
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -26,6 +29,12 @@ export default defineConfig({
     port: 3000,
     watch: {
       usePolling: true,
+    },
+    proxy: {
+      '/api': {
+        target: apiProxyTarget,
+        changeOrigin: false,
+      },
     },
   },
 });

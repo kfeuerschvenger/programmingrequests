@@ -1,7 +1,7 @@
 import { useGlobalContext } from '@/context';
 import { useApi } from '@/hooks';
-import { IP, Request } from '@/models';
-import { getPublicIp, getIdeasList } from '@/services';
+import { IdeaPage } from '@/models';
+import { getIdeasList } from '@/services';
 
 import IdeaItem from './components/IdeaItem';
 
@@ -17,8 +17,7 @@ dayjs.extend(relativeTime);
 const IdeasList = () => {
   const { ideasFlag, setIdeasFlag } = useGlobalContext();
   const options = { autoFetch: true, retry: 4, retryDelayMs: 1500 };
-  const { loading, error, data = [], fetch } = useApi<Request[], void>(getIdeasList, options);
-  const { data: ipData } = useApi<IP, void>(getPublicIp, options);
+  const { loading, error, data, fetch } = useApi<IdeaPage, void>(getIdeasList, options);
 
   useEffect(() => {
     if (ideasFlag === 1) {
@@ -35,14 +34,10 @@ const IdeasList = () => {
     return <div>UPS! There was an error: {error.message}</div>;
   }
 
-  const userIpAddress = ipData?.ip || '0.0.0.0';
+  const items = data?.items ?? [];
 
   const ideas =
-    Array.isArray(data) && data.length > 0 ? (
-      data.map(idea => <IdeaItem key={idea.id} idea={idea} ipAddress={userIpAddress} />)
-    ) : (
-      <div>No previous ideas where found</div>
-    );
+    items.length > 0 ? items.map(idea => <IdeaItem key={idea.id} idea={idea} />) : <div>No previous ideas where found</div>;
 
   return (
     <>

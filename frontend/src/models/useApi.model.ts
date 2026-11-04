@@ -1,12 +1,14 @@
 import { AxiosResponse } from 'axios';
+import { FieldIssue } from './problem.model';
 
 export interface UseApiCall<T> {
   call: Promise<AxiosResponse<T>>;
   controller: AbortController;
 }
 
-export interface UseApiStatusResponse {
-  status: 'OK' | 'ERROR';
-  title?: string;
-  message?: string;
+export interface ApiError {
+  message: string;
+  statusCode: number | null;
+  code?: string;
+  fieldErrors?: FieldIssue[];
 }

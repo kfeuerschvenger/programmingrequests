@@ -66,6 +66,8 @@ services:
       - /frontend/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      # The Vite dev server forwards /api to the api service on the compose network.
+      - API_PROXY_TARGET=http://api:8080
     depends_on:
       - api
     networks:
