@@ -40,4 +40,14 @@ public class IdeaHandlerImpl implements IdeaHandler {
     public IdeaResponse create(CreateIdeaRequest request) {
         return service.create(request);
     }
+
+    @Override
+    public IdeaResponse vote(long id, int value, String clientAddress) {
+        return service.vote(id, value, voterHasher.hash(clientAddress));
+    }
+
+    @Override
+    public IdeaResponse removeVote(long id, String clientAddress) {
+        return service.removeVote(id, voterHasher.hash(clientAddress));
+    }
 }

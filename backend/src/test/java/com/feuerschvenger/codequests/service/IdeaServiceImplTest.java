@@ -155,6 +155,163 @@ class IdeaServiceImplTest {
     }
 
     @Nested
+    @DisplayName("vote")
+    class CastVote {
+
+        private Idea locked(int score) {
+            var idea = idea(5, score);
+            when(ideaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(idea));
+            return idea;
+        }
+
+        @Test
+        @DisplayName("none to up inserts a vote and raises the score by one")
+        void noneToUp() {
+            var idea = locked(0);
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.empty());
+
+            var response = service.vote(5, 1, VOTER);
+
+            var captor = ArgumentCaptor.forClass(Vote.class);
+            verify(voteRepository).save(captor.capture());
+            assertThat(captor.getValue().getValue()).isEqualTo(1);
+            assertThat(captor.getValue().getVoterHash()).isEqualTo(VOTER);
+            assertThat(idea.getScore()).isEqualTo(1);
+            assertThat(response.score()).isEqualTo(1);
+            assertThat(response.myVote()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("none to down inserts a vote and lowers the score by one")
+        void noneToDown() {
+            var idea = locked(0);
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.empty());
+
+            var response = service.vote(5, -1, VOTER);
+
+            assertThat(idea.getScore()).isEqualTo(-1);
+            assertThat(response.myVote()).isEqualTo(-1);
+        }
+
+        @Test
+        @DisplayName("up again is a no-op")
+        void upToUp() {
+            var idea = locked(1);
+            var vote = new Vote(idea, VOTER, 1);
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.of(vote));
+
+            var response = service.vote(5, 1, VOTER);
+
+            assertThat(idea.getScore()).isEqualTo(1);
+            assertThat(vote.getValue()).isEqualTo(1);
+            assertThat(response.myVote()).isEqualTo(1);
+            verify(voteRepository, never()).save(any());
+            verify(voteRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("up to down switches the vote and moves the score by two")
+        void upToDown() {
+            var idea = locked(1);
+            var vote = new Vote(idea, VOTER, 1);
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.of(vote));
+
+            var response = service.vote(5, -1, VOTER);
+
+            assertThat(idea.getScore()).isEqualTo(-1);
+            assertThat(vote.getValue()).isEqualTo(-1);
+            assertThat(response.score()).isEqualTo(-1);
+            assertThat(response.myVote()).isEqualTo(-1);
+        }
+
+        @Test
+        @DisplayName("down to up switches the vote and moves the score by two")
+        void downToUp() {
+            var idea = locked(-1);
+            var vote = new Vote(idea, VOTER, -1);
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.of(vote));
+
+            service.vote(5, 1, VOTER);
+
+            assertThat(idea.getScore()).isEqualTo(1);
+            assertThat(vote.getValue()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("rejects a value other than 1 or -1 before touching the database")
+        void invalidValue() {
+            assertThatThrownBy(() -> service.vote(5, 0, VOTER)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> service.vote(5, 2, VOTER)).isInstanceOf(IllegalArgumentException.class);
+
+            verify(ideaRepository, never()).findByIdForUpdate(any());
+        }
+
+        @Test
+        @DisplayName("throws not found, taking no vote, for an unknown idea")
+        void unknownIdea() {
+            when(ideaRepository.findByIdForUpdate(9L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.vote(9, 1, VOTER)).isInstanceOf(IdeaNotFoundException.class);
+            verify(voteRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("removeVote")
+    class WithdrawVote {
+
+        @Test
+        @DisplayName("down to none deletes the vote and gives the point back")
+        void downToNone() {
+            var idea = idea(5, -1);
+            when(ideaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(idea));
+            var vote = new Vote(idea, VOTER, -1);
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.of(vote));
+
+            var response = service.removeVote(5, VOTER);
+
+            verify(voteRepository).delete(vote);
+            assertThat(idea.getScore()).isZero();
+            assertThat(response.myVote()).isZero();
+        }
+
+        @Test
+        @DisplayName("up to none deletes the vote and takes the point back")
+        void upToNone() {
+            var idea = idea(5, 4);
+            when(ideaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(idea));
+            var vote = new Vote(idea, VOTER, 1);
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.of(vote));
+
+            service.removeVote(5, VOTER);
+
+            assertThat(idea.getScore()).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("is a no-op when the caller has no vote")
+        void noneToNone() {
+            var idea = idea(5, 4);
+            when(ideaRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(idea));
+            when(voteRepository.findByIdea_IdAndVoterHash(5L, VOTER)).thenReturn(Optional.empty());
+
+            var response = service.removeVote(5, VOTER);
+
+            assertThat(idea.getScore()).isEqualTo(4);
+            assertThat(response.myVote()).isZero();
+            verify(voteRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("throws not found for an unknown idea")
+        void unknownIdea() {
+            when(ideaRepository.findByIdForUpdate(9L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.removeVote(9, VOTER)).isInstanceOf(IdeaNotFoundException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("create")
     class CreateIdea {
 

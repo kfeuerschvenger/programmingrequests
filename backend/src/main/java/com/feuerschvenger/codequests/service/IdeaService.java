@@ -35,4 +35,26 @@ public interface IdeaService {
      * @param request validated request
      */
     IdeaResponse create(CreateIdeaRequest request);
+
+    /**
+     * Records the caller's vote. Voting the same value again changes nothing, and the opposite value switches the vote.
+     * <p>
+     * The idea row is locked for the whole transaction, so concurrent votes on one idea are applied one after the other and the score always equals the sum of the votes.
+     * </p>
+     *
+     * @param ideaId    idea identifier
+     * @param value     1 or -1
+     * @param voterHash HMAC of the caller's address
+     * @throws com.feuerschvenger.codequests.exception.IdeaNotFoundException when the idea does not exist
+     */
+    IdeaResponse vote(long ideaId, int value, byte[] voterHash);
+
+    /**
+     * Removes the caller's vote. It changes nothing when the caller has not voted.
+     *
+     * @param ideaId    idea identifier
+     * @param voterHash HMAC of the caller's address
+     * @throws com.feuerschvenger.codequests.exception.IdeaNotFoundException when the idea does not exist
+     */
+    IdeaResponse removeVote(long ideaId, byte[] voterHash);
 }

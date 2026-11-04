@@ -5,6 +5,7 @@ import com.feuerschvenger.codequests.model.IdeaSort;
 import com.feuerschvenger.codequests.model.dto.CreateIdeaRequest;
 import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.model.dto.IdeaResponse;
+import com.feuerschvenger.codequests.model.dto.VoteRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,9 +19,11 @@ import jakarta.validation.constraints.Min;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -95,5 +98,38 @@ public class IdeaController {
     public ResponseEntity<IdeaResponse> create(@Valid @RequestBody CreateIdeaRequest body) {
         var created = handler.create(body);
         return ResponseEntity.created(URI.create("/api/ideas/" + created.id())).body(created);
+    }
+
+    /**
+     * Records the caller's vote.
+     */
+    @PutMapping("/{id}/vote")
+    @Operation(summary = "Cast a vote", description = "Sets the caller's vote to 1 or -1. Voting the same value again changes nothing, and the opposite value switches the vote.")
+    @ApiResponse(responseCode = "200", description = "The idea with its updated score and the caller's vote.")
+    @ApiResponse(responseCode = "400", description = "The value is missing or is not 1 or -1.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "No idea has that id.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "429", description = "Too many votes from this address. Retry-After says how long to rest.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    public IdeaResponse vote(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
+                             @Valid @RequestBody VoteRequest body,
+                             HttpServletRequest request) {
+        return handler.vote(id, body.value(), request.getRemoteAddr());
+    }
+
+    /**
+     * Removes the caller's vote.
+     */
+    @DeleteMapping("/{id}/vote")
+    @Operation(summary = "Withdraw a vote", description = "Removes the caller's vote. It changes nothing when the caller has not voted.")
+    @ApiResponse(responseCode = "200", description = "The idea with its updated score and myVote of 0.")
+    @ApiResponse(responseCode = "404", description = "No idea has that id.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "429", description = "Too many votes from this address. Retry-After says how long to rest.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    public IdeaResponse removeVote(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
+                                   HttpServletRequest request) {
+        return handler.removeVote(id, request.getRemoteAddr());
     }
 }

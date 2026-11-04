@@ -4,6 +4,7 @@ import com.feuerschvenger.codequests.exception.IdeaNotFoundException;
 import com.feuerschvenger.codequests.mapper.IdeaMapper;
 import com.feuerschvenger.codequests.model.Idea;
 import com.feuerschvenger.codequests.model.IdeaSort;
+import com.feuerschvenger.codequests.model.Vote;
 import com.feuerschvenger.codequests.model.dto.CreateIdeaRequest;
 import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.model.dto.IdeaResponse;
@@ -64,6 +65,36 @@ public class IdeaServiceImpl implements IdeaService {
         var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         var saved = ideaRepository.save(mapper.toEntity(request, now));
         return mapper.toResponse(saved, 0);
+    }
+
+    @Override
+    @Transactional
+    public IdeaResponse vote(long ideaId, int value, byte[] voterHash) {
+        if (value != 1 && value != -1) {
+            throw new IllegalArgumentException("A vote is 1 or -1");
+        }
+        var idea = ideaRepository.findByIdForUpdate(ideaId).orElseThrow(IdeaNotFoundException::new);
+        var existing = voteRepository.findByIdea_IdAndVoterHash(ideaId, voterHash);
+        if (existing.isEmpty()) {
+            voteRepository.save(new Vote(idea, voterHash, value));
+            idea.applyScoreDelta(value);
+        } else if (existing.get().getValue() != value) {
+            var vote = existing.get();
+            idea.applyScoreDelta(value - vote.getValue());
+            vote.changeValue(value);
+        }
+        return mapper.toResponse(idea, value);
+    }
+
+    @Override
+    @Transactional
+    public IdeaResponse removeVote(long ideaId, byte[] voterHash) {
+        var idea = ideaRepository.findByIdForUpdate(ideaId).orElseThrow(IdeaNotFoundException::new);
+        voteRepository.findByIdea_IdAndVoterHash(ideaId, voterHash).ifPresent(vote -> {
+            idea.applyScoreDelta(-vote.getValue());
+            voteRepository.delete(vote);
+        });
+        return mapper.toResponse(idea, 0);
     }
 
     private Map<Long, Integer> votesOf(byte[] voterHash, List<Idea> ideas) {

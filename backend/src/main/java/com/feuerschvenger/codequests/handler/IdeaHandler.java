@@ -34,4 +34,21 @@ public interface IdeaHandler {
      * @param request validated request
      */
     IdeaResponse create(CreateIdeaRequest request);
+
+    /**
+     * Records the caller's vote.
+     *
+     * @param id            idea identifier
+     * @param value         1 or -1
+     * @param clientAddress caller address as resolved by the server
+     */
+    IdeaResponse vote(long id, int value, String clientAddress);
+
+    /**
+     * Removes the caller's vote.
+     *
+     * @param id            idea identifier
+     * @param clientAddress caller address as resolved by the server
+     */
+    IdeaResponse removeVote(long id, String clientAddress);
 }

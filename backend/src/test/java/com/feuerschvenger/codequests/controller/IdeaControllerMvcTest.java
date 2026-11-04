@@ -10,6 +10,8 @@ import com.feuerschvenger.codequests.model.dto.IdeaResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -30,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -284,6 +287,109 @@ class IdeaControllerMvcTest {
                     .andExpect(status().isUnsupportedMediaType())
                     .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
                     .andExpect(jsonPath("$.code").value("UNSUPPORTED_MEDIA_TYPE"));
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT /api/ideas/{id}/vote")
+    class CastVote {
+
+        @Test
+        @DisplayName("returns the updated idea")
+        void ok() throws Exception {
+            when(handler.vote(42, 1, CLIENT)).thenReturn(idea(42, 6, 1));
+
+            mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.score").value(6))
+                    .andExpect(jsonPath("$.myVote").value(1));
+        }
+
+        @Test
+        @DisplayName("accepts -1")
+        void downvote() throws Exception {
+            when(handler.vote(42, -1, CLIENT)).thenReturn(idea(42, 4, -1));
+
+            mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":-1}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.myVote").value(-1));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"{\"value\":0}", "{\"value\":2}", "{\"value\":-7}", "{}", "{\"value\":null}"})
+        @DisplayName("rejects a value other than 1 or -1 with a field error")
+        void invalidValue(String body) throws Exception {
+            mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                    .andExpect(jsonPath("$.errors[0].field").value("value"));
+
+            verify(handler, never()).vote(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyInt(), any());
+        }
+
+        @Test
+        @DisplayName("rejects a value that is not a number as a malformed request")
+        void notANumber() throws Exception {
+            mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":\"up-marker\"}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+                    .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("up-marker"))));
+        }
+
+        @Test
+        @DisplayName("does not read an address from the body")
+        void ignoresAddressInBody() throws Exception {
+            when(handler.vote(42, 1, CLIENT)).thenReturn(idea(42, 1, 1));
+
+            mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"value\":1,\"ipAddress\":\"203.0.113.77\"}"))
+                    .andExpect(status().isOk());
+
+            verify(handler).vote(42, 1, CLIENT);
+        }
+
+        @Test
+        @DisplayName("returns 404 for an unknown idea")
+        void notFound() throws Exception {
+            when(handler.vote(9, 1, CLIENT)).thenThrow(new IdeaNotFoundException());
+
+            mvc.perform(put("/api/ideas/9/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("IDEA_NOT_FOUND"));
+        }
+
+        @Test
+        @DisplayName("answers 405 to POST")
+        void postNotAllowed() throws Exception {
+            mvc.perform(post("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
+                    .andExpect(status().isMethodNotAllowed())
+                    .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"));
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/ideas/{id}/vote")
+    class WithdrawVote {
+
+        @Test
+        @DisplayName("returns the updated idea")
+        void ok() throws Exception {
+            when(handler.removeVote(42, CLIENT)).thenReturn(idea(42, 5, 0));
+
+            mvc.perform(delete("/api/ideas/42/vote"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.score").value(5))
+                    .andExpect(jsonPath("$.myVote").value(0));
+        }
+
+        @Test
+        @DisplayName("returns 404 for an unknown idea")
+        void notFound() throws Exception {
+            when(handler.removeVote(9, CLIENT)).thenThrow(new IdeaNotFoundException());
+
+            mvc.perform(delete("/api/ideas/9/vote"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("IDEA_NOT_FOUND"));
         }
     }
 

@@ -56,6 +56,24 @@ class IdeaHandlerImplTest {
     }
 
     @Test
+    @DisplayName("passes the hashed address when voting")
+    void voteUsesHash() {
+        var expected = new IdeaResponse(5, null, "Forge a CLI that slays merge conflicts", Instant.EPOCH, 1, 1);
+        when(service.vote(5, 1, hasher.hash(ADDRESS))).thenReturn(expected);
+
+        assertThat(handler().vote(5, 1, ADDRESS)).isSameAs(expected);
+    }
+
+    @Test
+    @DisplayName("passes the hashed address when withdrawing a vote")
+    void removeVoteUsesHash() {
+        var expected = new IdeaResponse(5, null, "Forge a CLI that slays merge conflicts", Instant.EPOCH, 0, 0);
+        when(service.removeVote(5, hasher.hash(ADDRESS))).thenReturn(expected);
+
+        assertThat(handler().removeVote(5, ADDRESS)).isSameAs(expected);
+    }
+
+    @Test
     @DisplayName("delegates creation unchanged")
     void createDelegates() {
         var request = new CreateIdeaRequest("Ada", "Forge a CLI that slays merge conflicts");
