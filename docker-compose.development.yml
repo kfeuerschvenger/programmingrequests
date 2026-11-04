@@ -39,6 +39,7 @@ services:
       RATE_LIMIT_CREATE_WINDOW:
       RATE_LIMIT_VOTE_CAPACITY:
       RATE_LIMIT_VOTE_WINDOW:
+      CORS_ALLOWED_ORIGINS:
     ports:
       - "8080:8080"
     depends_on:
