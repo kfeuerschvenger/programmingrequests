@@ -16,6 +16,9 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Each scope owns a Caffeine cache of buckets with a maximum size and an expire-after-access of one window. A client that goes quiet is forgotten after a window, by which time its bucket would have refilled anyway, and a flood of distinct clients cannot grow the map without bound. The state is per process, so a limit is per instance.
  * </p>
+ * <p>
+ * Limits of this class are best effort. The buckets live in a bounded in-memory cache, and once a flood of distinct client keys fills it, the cache evicts entries that are still within their window. An evicted client starts again with a full bucket, so eviction under such a flood resets limits. In production an edge proxy or a WAF should rate limit upstream of the application, and this limiter is the last line of defence rather than the only one.
+ * </p>
  */
 @Component
 public class RateLimiter {
