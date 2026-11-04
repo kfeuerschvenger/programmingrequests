@@ -58,8 +58,11 @@ dependencies {
 }
 
 // Exposes META-INF/build-info.properties so the OpenAPI document reports the project version.
+// The build time would make the jar differ on every build, so it is left out of build-info.properties.
 springBoot {
-	buildInfo()
+	buildInfo {
+		excludes = ['time']
+	}
 }
 
 // One executable archive with a fixed name, so the Dockerfile does not depend on the version.

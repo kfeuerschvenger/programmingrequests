@@ -41,6 +41,18 @@ class SecureLoggerTest {
     }
 
     @Test
+    @DisplayName("removes the C1 control range and the Unicode line and paragraph separators")
+    void stripsUnicodeSeparators() {
+        assertThat(SecureLogger.sanitize("a\u0085b c d\u009fe\u007ff")).isEqualTo("abcdef");
+    }
+
+    @Test
+    @DisplayName("keeps ordinary non-ASCII text")
+    void keepsNonAscii() {
+        assertThat(SecureLogger.sanitize("café ñandú")).isEqualTo("café ñandú");
+    }
+
+    @Test
     @DisplayName("truncates long values to 256 characters")
     void truncates() {
         assertThat(SecureLogger.sanitize("x".repeat(1000))).hasSize(256).endsWith("...");

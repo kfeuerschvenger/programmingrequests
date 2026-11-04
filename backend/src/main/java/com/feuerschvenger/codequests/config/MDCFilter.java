@@ -30,7 +30,8 @@ public class MDCFilter extends OncePerRequestFilter {
     public static final String REQUEST_ID_MDC_KEY = "requestId";
 
     private static final String REQUEST_ID_ATTRIBUTE = MDCFilter.class.getName() + ".REQUEST_ID";
-    private static final Pattern CONTROL_CHARS = Pattern.compile("[\\p{Cntrl}\\u0085\\u2028\\u2029]");
+    // Same class as SecureLogger: ASCII and C1 controls plus the Unicode line and paragraph separators.
+    private static final Pattern CONTROL_CHARS = Pattern.compile("[\\p{Cc}\\u2028\\u2029]");
     private static final Pattern ACCEPTED_ID = Pattern.compile("^[A-Za-z0-9._-]{1,64}$");
 
     /** The error dispatch runs this filter again, so the id is carried in a request attribute instead of being minted twice. */

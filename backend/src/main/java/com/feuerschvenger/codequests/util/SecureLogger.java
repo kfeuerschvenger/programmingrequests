@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * Logging helpers that keep user input and exception messages out of the log.
  * <p>
- * Every argument is turned into a single line: control characters (CR, LF, tab, the rest of the control range, NEL and the Unicode line and paragraph separators) are removed and the value is truncated. A {@link Throwable} argument is reduced to its class chain, because exception messages often embed user input or SQL fragments.
+ * Every argument is turned into a single line: control characters (CR, LF, tab, the rest of the ASCII and C1 control ranges, and the Unicode line and paragraph separators) are removed and the value is truncated. A {@link Throwable} argument is reduced to its class chain, because exception messages often embed user input or SQL fragments.
  * </p>
  */
 public final class SecureLogger {
@@ -17,7 +17,8 @@ public final class SecureLogger {
     private static final int MAX_CAUSE_DEPTH = 10;
     private static final String TRUNCATION_SUFFIX = "...";
     private static final String NULL_VALUE = "null";
-    private static final Pattern CONTROL_CHARS = Pattern.compile("[\\p{Cntrl}\\u0085\\u2028\\u2029]");
+    // The POSIX control class covers ASCII only. \p{Cc} adds the C1 range (including NEL, U+0085), and U+2028 and U+2029 are line separators that some log viewers break lines on.
+    private static final Pattern CONTROL_CHARS = Pattern.compile("[\\p{Cc}\\u2028\\u2029]");
 
     private SecureLogger() {
     }
