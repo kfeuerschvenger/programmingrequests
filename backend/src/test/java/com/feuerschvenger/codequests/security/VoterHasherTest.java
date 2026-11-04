@@ -50,6 +50,21 @@ class VoterHasherTest {
     }
 
     @Test
+    @DisplayName("returns the same value when many threads hash at once")
+    void isThreadSafe() throws Exception {
+        var expected = hasher.hash("203.0.113.9");
+        try (var pool = java.util.concurrent.Executors.newFixedThreadPool(8)) {
+            var results = new java.util.ArrayList<java.util.concurrent.Future<byte[]>>();
+            for (var i = 0; i < 400; i++) {
+                results.add(pool.submit(() -> hasher.hash("203.0.113.9")));
+            }
+            for (var result : results) {
+                assertThat(result.get()).isEqualTo(expected);
+            }
+        }
+    }
+
+    @Test
     @DisplayName("is the HMAC-SHA256 of the address under the secret")
     void isHmacSha256() throws Exception {
         var mac = Mac.getInstance("HmacSHA256");

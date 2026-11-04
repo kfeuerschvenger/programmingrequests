@@ -9,7 +9,8 @@ import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.model.dto.IdeaResponse;
 import com.feuerschvenger.codequests.ratelimit.RateLimitScope;
 import com.feuerschvenger.codequests.ratelimit.RateLimiter;
-import com.feuerschvenger.codequests.security.VoterHasher;
+import com.feuerschvenger.codequests.security.ClientIdentity;
+import com.feuerschvenger.codequests.security.ClientIdentityResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -49,7 +50,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class IdeaControllerMvcTest {
 
     private static final String DESCRIPTION = "Forge a CLI that slays merge conflicts";
-    private static final String CLIENT = "127.0.0.1";
+    private static final byte[] HASH = {9, 8, 7, 6};
+    private static final ClientIdentity IDENTITY = new ClientIdentity(HASH, "client-key");
     private static final Instant CREATED = Instant.parse("2026-11-04T18:30:00.123456Z");
 
     @Autowired
@@ -62,11 +64,11 @@ class IdeaControllerMvcTest {
     private RateLimiter rateLimiter;
 
     @MockitoBean
-    private VoterHasher voterHasher;
+    private ClientIdentityResolver identities;
 
     @BeforeEach
     void permitByDefault() {
-        when(voterHasher.hashHex(any())).thenReturn("client-key");
+        when(identities.resolve(any())).thenReturn(IDENTITY);
         when(rateLimiter.tryAcquire(any(), any())).thenReturn(RateLimiter.Decision.permit());
     }
 
@@ -81,7 +83,7 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("returns the page shape with the defaults newest, page 0, size 20")
         void defaults() throws Exception {
-            when(handler.list(0, 20, IdeaSort.NEWEST, CLIENT))
+            when(handler.list(0, 20, IdeaSort.NEWEST, HASH))
                     .thenReturn(new IdeaPageResponse(List.of(idea(1, 3, 1), idea(2, 0, 0)), 0, 20, 2, 1));
 
             mvc.perform(get("/api/ideas"))
@@ -102,12 +104,12 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("passes page, size and sort to the handler, ignoring the case of sort")
         void passesParameters() throws Exception {
-            when(handler.list(2, 50, IdeaSort.TOP, CLIENT)).thenReturn(new IdeaPageResponse(List.of(), 2, 50, 0, 0));
+            when(handler.list(2, 50, IdeaSort.TOP, HASH)).thenReturn(new IdeaPageResponse(List.of(), 2, 50, 0, 0));
 
             mvc.perform(get("/api/ideas").param("page", "2").param("size", "50").param("sort", "TOP"))
                     .andExpect(status().isOk());
 
-            verify(handler).list(2, 50, IdeaSort.TOP, CLIENT);
+            verify(handler).list(2, 50, IdeaSort.TOP, HASH);
         }
 
         @Test
@@ -121,7 +123,7 @@ class IdeaControllerMvcTest {
                     .andExpect(jsonPath("$.errors[0].message").value("Must be one of newest, oldest or top."))
                     .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("bogus-order"))));
 
-            verify(handler, never()).list(0, 20, IdeaSort.NEWEST, CLIENT);
+            verify(handler, never()).list(0, 20, IdeaSort.NEWEST, HASH);
         }
 
         @Test
@@ -166,7 +168,7 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("returns the idea")
         void found() throws Exception {
-            when(handler.get(42, CLIENT)).thenReturn(idea(42, 5, -1));
+            when(handler.get(42, HASH)).thenReturn(idea(42, 5, -1));
 
             mvc.perform(get("/api/ideas/42"))
                     .andExpect(status().isOk())
@@ -178,7 +180,7 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("returns a 404 problem with the IDEA_NOT_FOUND code")
         void notFound() throws Exception {
-            when(handler.get(404, CLIENT)).thenThrow(new IdeaNotFoundException());
+            when(handler.get(404, HASH)).thenThrow(new IdeaNotFoundException());
 
             mvc.perform(get("/api/ideas/404"))
                     .andExpect(status().isNotFound())
@@ -314,7 +316,7 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("returns the updated idea")
         void ok() throws Exception {
-            when(handler.vote(42, 1, CLIENT)).thenReturn(idea(42, 6, 1));
+            when(handler.vote(42, 1, HASH)).thenReturn(idea(42, 6, 1));
 
             mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
                     .andExpect(status().isOk())
@@ -325,7 +327,7 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("accepts -1")
         void downvote() throws Exception {
-            when(handler.vote(42, -1, CLIENT)).thenReturn(idea(42, 4, -1));
+            when(handler.vote(42, -1, HASH)).thenReturn(idea(42, 4, -1));
 
             mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":-1}"))
                     .andExpect(status().isOk())
@@ -356,19 +358,19 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("does not read an address from the body")
         void ignoresAddressInBody() throws Exception {
-            when(handler.vote(42, 1, CLIENT)).thenReturn(idea(42, 1, 1));
+            when(handler.vote(42, 1, HASH)).thenReturn(idea(42, 1, 1));
 
             mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON)
                             .content("{\"value\":1,\"address\":\"203.0.113.77\"}"))
                     .andExpect(status().isOk());
 
-            verify(handler).vote(42, 1, CLIENT);
+            verify(handler).vote(42, 1, HASH);
         }
 
         @Test
         @DisplayName("returns 404 for an unknown idea")
         void notFound() throws Exception {
-            when(handler.vote(9, 1, CLIENT)).thenThrow(new IdeaNotFoundException());
+            when(handler.vote(9, 1, HASH)).thenThrow(new IdeaNotFoundException());
 
             mvc.perform(put("/api/ideas/9/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
                     .andExpect(status().isNotFound())
@@ -391,7 +393,7 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("returns the updated idea")
         void ok() throws Exception {
-            when(handler.removeVote(42, CLIENT)).thenReturn(idea(42, 5, 0));
+            when(handler.removeVote(42, HASH)).thenReturn(idea(42, 5, 0));
 
             mvc.perform(delete("/api/ideas/42/vote"))
                     .andExpect(status().isOk())
@@ -402,7 +404,7 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("returns 404 for an unknown idea")
         void notFound() throws Exception {
-            when(handler.removeVote(9, CLIENT)).thenThrow(new IdeaNotFoundException());
+            when(handler.removeVote(9, HASH)).thenThrow(new IdeaNotFoundException());
 
             mvc.perform(delete("/api/ideas/9/vote"))
                     .andExpect(status().isNotFound())
@@ -454,7 +456,7 @@ class IdeaControllerMvcTest {
         @DisplayName("limits creation and votes under separate scopes")
         void scopes() throws Exception {
             when(handler.create(any())).thenReturn(idea(1, 0, 0));
-            when(handler.vote(42, 1, CLIENT)).thenReturn(idea(42, 1, 1));
+            when(handler.vote(42, 1, HASH)).thenReturn(idea(42, 1, 1));
 
             mvc.perform(post("/api/ideas").contentType(MediaType.APPLICATION_JSON)
                     .content("{\"description\":\"" + DESCRIPTION + "\"}")).andExpect(status().isCreated());
@@ -468,8 +470,8 @@ class IdeaControllerMvcTest {
         @Test
         @DisplayName("does not limit reads")
         void readsAreFree() throws Exception {
-            when(handler.list(0, 20, IdeaSort.NEWEST, CLIENT)).thenReturn(new IdeaPageResponse(List.of(), 0, 20, 0, 0));
-            when(handler.get(1, CLIENT)).thenReturn(idea(1, 0, 0));
+            when(handler.list(0, 20, IdeaSort.NEWEST, HASH)).thenReturn(new IdeaPageResponse(List.of(), 0, 20, 0, 0));
+            when(handler.get(1, HASH)).thenReturn(idea(1, 0, 0));
 
             mvc.perform(get("/api/ideas")).andExpect(status().isOk());
             mvc.perform(get("/api/ideas/1")).andExpect(status().isOk());

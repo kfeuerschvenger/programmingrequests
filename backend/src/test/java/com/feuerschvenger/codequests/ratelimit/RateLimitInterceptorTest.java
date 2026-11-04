@@ -2,6 +2,7 @@ package com.feuerschvenger.codequests.ratelimit;
 
 import com.feuerschvenger.codequests.config.VoterProperties;
 import com.feuerschvenger.codequests.exception.RateLimitExceededException;
+import com.feuerschvenger.codequests.security.ClientIdentityResolver;
 import com.feuerschvenger.codequests.security.VoterHasher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,13 @@ import static org.mockito.Mockito.when;
 class RateLimitInterceptorTest {
 
     private final VoterHasher hasher = new VoterHasher(new VoterProperties("interceptor-secret-interceptor-secret"));
+    private final ClientIdentityResolver identities = new ClientIdentityResolver(hasher);
 
     @Mock
     private RateLimiter limiter;
 
     private RateLimitInterceptor interceptor() {
-        return new RateLimitInterceptor(limiter, hasher, RateLimitScope.VOTE, Set.of("PUT", "DELETE"));
+        return new RateLimitInterceptor(limiter, identities, RateLimitScope.VOTE, Set.of("PUT", "DELETE"));
     }
 
     private static MockHttpServletRequest request(String method) {

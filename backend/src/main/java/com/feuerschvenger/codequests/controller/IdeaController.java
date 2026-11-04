@@ -6,6 +6,7 @@ import com.feuerschvenger.codequests.model.dto.CreateIdeaRequest;
 import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.model.dto.IdeaResponse;
 import com.feuerschvenger.codequests.model.dto.VoteRequest;
+import com.feuerschvenger.codequests.security.ClientIdentityResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,7 +35,7 @@ import java.net.URI;
 /**
  * HTTP contract for ideas under {@code /api/ideas}. The controller only reads the request and delegates to the handler.
  * <p>
- * The caller's address is {@link HttpServletRequest#getRemoteAddr()}. Tomcat's remote IP valve has already replaced it with the {@code X-Forwarded-For} value when, and only when, the request came from a trusted proxy, so the controller never reads that header itself.
+ * The caller is identified by {@link ClientIdentityResolver}, which hashes the address Tomcat resolved (its remote IP valve has already replaced it with the {@code X-Forwarded-For} value when, and only when, the request came from a trusted proxy), so the controller never reads that header or an address itself.
  * </p>
  */
 @RestController
@@ -45,12 +46,14 @@ public class IdeaController {
     private static final String PROBLEM_JSON = MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 
     private final IdeaHandler handler;
+    private final ClientIdentityResolver identities;
 
     /**
      * Creates the controller.
      */
-    public IdeaController(IdeaHandler handler) {
+    public IdeaController(IdeaHandler handler, ClientIdentityResolver identities) {
         this.handler = handler;
+        this.identities = identities;
     }
 
     /**
@@ -69,7 +72,7 @@ public class IdeaController {
             @Parameter(description = "Ordering: newest, oldest or top.", example = "top")
             @RequestParam(defaultValue = "newest") IdeaSort sort,
             HttpServletRequest request) {
-        return handler.list(page, size, sort, request.getRemoteAddr());
+        return handler.list(page, size, sort, identities.resolve(request).voterHash());
     }
 
     /**
@@ -82,7 +85,7 @@ public class IdeaController {
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     public IdeaResponse get(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
                             HttpServletRequest request) {
-        return handler.get(id, request.getRemoteAddr());
+        return handler.get(id, identities.resolve(request).voterHash());
     }
 
     /**
@@ -115,7 +118,7 @@ public class IdeaController {
     public IdeaResponse vote(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
                              @Valid @RequestBody VoteRequest body,
                              HttpServletRequest request) {
-        return handler.vote(id, body.value(), request.getRemoteAddr());
+        return handler.vote(id, body.value(), identities.resolve(request).voterHash());
     }
 
     /**
@@ -130,6 +133,6 @@ public class IdeaController {
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     public IdeaResponse removeVote(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
                                    HttpServletRequest request) {
-        return handler.removeVote(id, request.getRemoteAddr());
+        return handler.removeVote(id, identities.resolve(request).voterHash());
     }
 }

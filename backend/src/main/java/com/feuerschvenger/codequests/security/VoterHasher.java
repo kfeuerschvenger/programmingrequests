@@ -21,6 +21,7 @@ public class VoterHasher {
     private static final String ALGORITHM = "HmacSHA256";
 
     private final SecretKeySpec key;
+    private final Mac prototype;
 
     /**
      * Creates the hasher from the validated secret.
@@ -29,6 +30,7 @@ public class VoterHasher {
      */
     public VoterHasher(VoterProperties properties) {
         this.key = new SecretKeySpec(properties.hashSecret().getBytes(StandardCharsets.UTF_8), ALGORITHM);
+        this.prototype = newMac();
     }
 
     /**
@@ -38,10 +40,25 @@ public class VoterHasher {
      * @return 32 bytes
      */
     public byte[] hash(String clientAddress) {
+        return freshMac().doFinal(clientAddress.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Returns an initialised {@link Mac}. Looking up the algorithm and deriving the key schedule cost more than the hash itself, so each call clones a prototype that was initialised once and is never used to compute a hash. The clone is private to the caller, which keeps the hasher safe for concurrent use without a thread-local, and a thread-local would hold one instance per virtual thread.
+     */
+    private Mac freshMac() {
+        try {
+            return (Mac) prototype.clone();
+        } catch (CloneNotSupportedException e) {
+            return newMac();
+        }
+    }
+
+    private Mac newMac() {
         try {
             var mac = Mac.getInstance(ALGORITHM);
             mac.init(key);
-            return mac.doFinal(clientAddress.getBytes(StandardCharsets.UTF_8));
+            return mac;
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("HMAC-SHA256 is not available", e);
         }

@@ -5,7 +5,8 @@ import com.feuerschvenger.codequests.handler.IdeaHandler;
 import com.feuerschvenger.codequests.model.IdeaSort;
 import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.ratelimit.RateLimiter;
-import com.feuerschvenger.codequests.security.VoterHasher;
+import com.feuerschvenger.codequests.security.ClientIdentity;
+import com.feuerschvenger.codequests.security.ClientIdentityResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
@@ -27,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("CORS by default")
 class CorsDefaultMvcTest {
 
+    private static final byte[] HASH = {1, 2, 3};
+
     @Autowired
     private MockMvc mvc;
 
@@ -37,12 +41,13 @@ class CorsDefaultMvcTest {
     private RateLimiter rateLimiter;
 
     @MockitoBean
-    private VoterHasher voterHasher;
+    private ClientIdentityResolver identities;
 
     @Test
     @DisplayName("sends no CORS headers to a cross-origin request")
     void noCorsHeaders() throws Exception {
-        when(handler.list(0, 20, IdeaSort.NEWEST, "127.0.0.1")).thenReturn(new IdeaPageResponse(List.of(), 0, 20, 0, 0));
+        when(identities.resolve(any())).thenReturn(new ClientIdentity(HASH, "client-key"));
+        when(handler.list(0, 20, IdeaSort.NEWEST, HASH)).thenReturn(new IdeaPageResponse(List.of(), 0, 20, 0, 0));
 
         mvc.perform(get("/api/ideas").header("Origin", "https://anywhere.example"))
                 .andExpect(status().isOk())

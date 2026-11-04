@@ -6,7 +6,7 @@ import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.model.dto.IdeaResponse;
 
 /**
- * Facade between the controller and the service. It turns the caller's client address into a voter id, so the layers below never see an address.
+ * Facade between the controller and the service. It receives the caller's voter id, never an address, so the layers below never see one.
  */
 public interface IdeaHandler {
 
@@ -16,17 +16,17 @@ public interface IdeaHandler {
      * @param page          zero-based page number
      * @param size          page size
      * @param sort          whitelisted ordering
-     * @param clientAddress caller address as resolved by the server
+     * @param voterHash     caller's voter id from the client identity
      */
-    IdeaPageResponse list(int page, int size, IdeaSort sort, String clientAddress);
+    IdeaPageResponse list(int page, int size, IdeaSort sort, byte[] voterHash);
 
     /**
      * Finds one idea.
      *
      * @param id            idea identifier
-     * @param clientAddress caller address as resolved by the server
+     * @param voterHash     caller's voter id from the client identity
      */
-    IdeaResponse get(long id, String clientAddress);
+    IdeaResponse get(long id, byte[] voterHash);
 
     /**
      * Creates an idea.
@@ -40,15 +40,15 @@ public interface IdeaHandler {
      *
      * @param id            idea identifier
      * @param value         1 or -1
-     * @param clientAddress caller address as resolved by the server
+     * @param voterHash     caller's voter id from the client identity
      */
-    IdeaResponse vote(long id, int value, String clientAddress);
+    IdeaResponse vote(long id, int value, byte[] voterHash);
 
     /**
      * Removes the caller's vote.
      *
      * @param id            idea identifier
-     * @param clientAddress caller address as resolved by the server
+     * @param voterHash     caller's voter id from the client identity
      */
-    IdeaResponse removeVote(long id, String clientAddress);
+    IdeaResponse removeVote(long id, byte[] voterHash);
 }

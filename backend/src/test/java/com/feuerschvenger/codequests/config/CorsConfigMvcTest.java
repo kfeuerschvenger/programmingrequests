@@ -5,7 +5,8 @@ import com.feuerschvenger.codequests.handler.IdeaHandler;
 import com.feuerschvenger.codequests.model.IdeaSort;
 import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.ratelimit.RateLimiter;
-import com.feuerschvenger.codequests.security.VoterHasher;
+import com.feuerschvenger.codequests.security.ClientIdentity;
+import com.feuerschvenger.codequests.security.ClientIdentityResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("CORS with configured origins")
 class CorsConfigMvcTest {
 
+    private static final byte[] HASH = {1, 2, 3};
+
     @Autowired
     private MockMvc mvc;
 
@@ -39,11 +42,12 @@ class CorsConfigMvcTest {
     private RateLimiter rateLimiter;
 
     @MockitoBean
-    private VoterHasher voterHasher;
+    private ClientIdentityResolver identities;
 
     @BeforeEach
     void stub() {
-        when(handler.list(0, 20, IdeaSort.NEWEST, "127.0.0.1")).thenReturn(new IdeaPageResponse(List.of(), 0, 20, 0, 0));
+        when(identities.resolve(any())).thenReturn(new ClientIdentity(HASH, "client-key"));
+        when(handler.list(0, 20, IdeaSort.NEWEST, HASH)).thenReturn(new IdeaPageResponse(List.of(), 0, 20, 0, 0));
         when(rateLimiter.tryAcquire(any(), any())).thenReturn(RateLimiter.Decision.permit());
     }
 
