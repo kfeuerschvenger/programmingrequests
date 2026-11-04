@@ -19,7 +19,7 @@ class SecurityHeadersConfigTest {
     @Test
     @DisplayName("sets the defensive headers and a strict CSP on API responses")
     void setsApiHeaders() throws ServletException, IOException {
-        var response = apply("/requests");
+        var response = apply("/api/ideas");
 
         assertThat(response.getHeader("X-Content-Type-Options")).isEqualTo("nosniff");
         assertThat(response.getHeader("X-Frame-Options")).isEqualTo("DENY");

@@ -12,7 +12,7 @@ services:
     volumes:
       - code_quests_db:/var/lib/mysql
     networks:
-      - prnetwork
+      - db_net
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
@@ -26,13 +26,28 @@ services:
       DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+      # Required: the API refuses to start without a secret of at least 32 bytes.
+      VOTER_HASH_SECRET: ${VOTER_HASH_SECRET}
+      # Tomcat trusts X-Forwarded-For only from this regular expression: the app_net subnet minus its gateway, so only the web container qualifies. Override it with a regex that still matches nothing but the proxy in front of the API.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172\.29\.240\.(?!1\z)\d+}
+      # Optional: a key without a value is passed through only when it is set in the environment or the env file.
+      RATE_LIMIT_CREATE_CAPACITY:
+      RATE_LIMIT_CREATE_WINDOW:
+      RATE_LIMIT_VOTE_CAPACITY:
+      RATE_LIMIT_VOTE_WINDOW:
+      CORS_ALLOWED_ORIGINS:
     ports:
-      - "8080:8080"
+      # Loopback only. Requests that arrive through this mapping come from the app_net gateway, which is not a trusted proxy, so their X-Forwarded-For is ignored.
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - prnetwork
+      app_net:
+        # Unique name for the web proxy: another service called api on a shared network cannot answer for it.
+        aliases:
+          - code-quests-api
+      db_net:
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/manage/health || exit 1"]
       interval: 15s
@@ -43,17 +58,32 @@ services:
   web:
     build: ./frontend
     restart: always
+    environment:
+      # Optional: outer reverse proxies (addresses or CIDR ranges, comma or space separated) allowed to state the client address in X-Forwarded-For. Empty trusts nobody and the client address is the TCP peer.
+      TRUSTED_EDGE_PROXIES:
     expose:
       - "80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
+      - app_net
+      # Edge network: attach an outer reverse proxy here. When deploying behind it, TRUSTED_EDGE_PROXIES must hold the outer proxy's own address, not the subnet of this shared network: trusting a shared subnet would let any other container on it forge X-Forwarded-For. Left empty, every visitor appears as the outer proxy and shares one identity.
       - prnetwork
 
 volumes:
   code_quests_db:
 
 networks:
+  # Carries the traffic between web and api. The subnet is fixed so TRUSTED_PROXIES can name it, and it sits high in 172.16.0.0/12, which Docker's default allocator reaches only after many networks and which common LAN ranges rarely use. This stack and the development stack use different defaults so both can run on one host. Compose fails with an overlap error when the host already routes the range, for example through a VPN or another stack: set APP_NET_SUBNET to a free range and TRUSTED_PROXIES to a regex for the same range, both together. The gateway (the first address) is the host side of published ports, so the TRUSTED_PROXIES default excludes it.
+  app_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${APP_NET_SUBNET:-172.29.240.0/24}
+  # Only db and api attach to this network.
+  db_net:
+    driver: bridge
   prnetwork:
     name: prnetwork
     driver: bridge

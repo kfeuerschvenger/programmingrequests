@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { UseApiCall } from '@/models';
-import axios from 'axios';
+import { ApiError, UseApiCall } from '@/models';
+import { toApiError } from '@/utils';
 
 type UseApiOptions<P> = {
   autoFetch?: boolean;
@@ -11,10 +11,7 @@ type UseApiOptions<P> = {
 };
 
 type Data<T> = T | null;
-type CustomError = {
-  message: string;
-  statusCode: number | null;
-} | null;
+type CustomError = ApiError | null;
 
 interface UseApiResult<T, P> {
   loading: boolean;
@@ -50,18 +47,7 @@ export const useApi = <T, P>(apiCall: (param: P) => UseApiCall<T>, options?: Use
           }
           return { data: response.data, error: null };
         } catch (err) {
-          let apiError: CustomError = {
-            message: 'An unknown error occurred',
-            statusCode: null,
-          };
-          if (axios.isAxiosError(err) && err.response) {
-            apiError = {
-              message: err.response.statusText,
-              statusCode: err.response.status,
-            };
-          } else if (err instanceof Error) {
-            apiError.message = err.message;
-          }
+          const apiError = toApiError(err);
           setError(apiError);
           if (attempts < retries) {
             attempts++;

@@ -44,6 +44,15 @@ class MDCFilterTest {
         }
 
         @Test
+        @DisplayName("loses C1 controls and Unicode separators before it is used")
+        void stripsUnicodeSeparators() throws ServletException, IOException {
+            var seen = new AtomicReference<String>();
+            var response = run("abc\u0085  def", seen);
+
+            assertThat(response.getHeader(MDCFilter.REQUEST_ID_HEADER)).isEqualTo("abcdef");
+        }
+
+        @Test
         @DisplayName("is replaced by a UUID when it has forbidden characters")
         void replacesInvalidId() throws ServletException, IOException {
             var response = run("bad id with spaces", new AtomicReference<>());
@@ -94,7 +103,7 @@ class MDCFilterTest {
 
     private MockHttpServletResponse run(String inboundId, AtomicReference<String> seenInChain)
             throws ServletException, IOException {
-        var request = new MockHttpServletRequest("GET", "/requests");
+        var request = new MockHttpServletRequest("GET", "/api/ideas");
         if (inboundId != null) {
             request.addHeader(MDCFilter.REQUEST_ID_HEADER, inboundId);
         }

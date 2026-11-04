@@ -12,8 +12,7 @@ export function showInfo() {
       <>
         <Text size="sm">
           In this realm of choices, you wield the power of a single vote, for or against. Should doubt cloud your mind,
-          fear not: by striking with the opposite vote, you erase your past decision and regain the right to cast your
-          will once more!
+          fear not: strike the same arrow again to withdraw your vote, or the opposite arrow to change your will!
         </Text>
         <Space h="md" />
         <Flex justify="flex-end">
