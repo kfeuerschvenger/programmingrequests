@@ -46,3 +46,4 @@ dist/
 .no-telemetry
 .atl/
 docs/private/
+.claude/worktrees/
