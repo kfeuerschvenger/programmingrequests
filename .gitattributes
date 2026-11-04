@@ -1,3 +1,14 @@
-/gradlew text eol=lf
+* text=auto eol=lf
 *.bat text eol=crlf
 *.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
+backend/gradlew text eol=lf
