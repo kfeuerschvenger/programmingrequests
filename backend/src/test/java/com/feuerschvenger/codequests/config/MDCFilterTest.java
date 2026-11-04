@@ -94,7 +94,7 @@ class MDCFilterTest {
 
     private MockHttpServletResponse run(String inboundId, AtomicReference<String> seenInChain)
             throws ServletException, IOException {
-        var request = new MockHttpServletRequest("GET", "/requests");
+        var request = new MockHttpServletRequest("GET", "/api/ideas");
         if (inboundId != null) {
             request.addHeader(MDCFilter.REQUEST_ID_HEADER, inboundId);
         }

@@ -31,6 +31,10 @@ services:
       DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
+      # Required: the API refuses to start without a secret of at least 32 bytes.
+      VOTER_HASH_SECRET: ${VOTER_HASH_SECRET}
+      # Optional: a key without a value is passed through only when it is set in the environment or the env file.
+      TRUSTED_PROXIES:
     ports:
       - "8080:8080"
     depends_on:

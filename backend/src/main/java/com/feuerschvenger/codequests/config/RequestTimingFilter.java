@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * Logs method, path template, status and duration of every API request.
  * <p>
- * The path is the matched route pattern (for example {@code /requests/{id}}), never the raw URI, so identifiers and user input stay out of the log and the output groups cleanly. A request that matched no route is logged as {@code UNMAPPED}. Actuator and OpenAPI paths are skipped, as is the error dispatch, which would otherwise log the same request twice.
+ * The path is the matched route pattern (for example {@code /api/ideas/{id}}), never the raw URI, so identifiers and user input stay out of the log and the output groups cleanly. A request that matched no route is logged as {@code UNMAPPED}. Actuator and OpenAPI paths are skipped, as is the error dispatch, which would otherwise log the same request twice.
  * </p>
  */
 @Slf4j

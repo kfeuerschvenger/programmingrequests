@@ -1,9 +1,12 @@
 package com.feuerschvenger.codequests.repository;
 
-import com.feuerschvenger.codequests.model.Request;
+import com.feuerschvenger.codequests.model.Idea;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Persistence for {@link Idea}.
+ */
 @Repository
-public interface RequestRepository extends JpaRepository<Request, Long> {
+public interface IdeaRepository extends JpaRepository<Idea, Long> {
 }
