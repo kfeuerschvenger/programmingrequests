@@ -15,7 +15,7 @@ public final class ClientAddressNormalizer {
 
     private static final int IPV6_PREFIX_BYTES = 8;
     private static final String IPV6_PREFIX_SUFFIX = "/64";
-    // A literal only: parsing a string that holds anything else could ask the resolver for a host name.
+    // Cheap pre-filter. The strict check is InetAddress.ofLiteral, which accepts address literals only and never asks the resolver for a host name, whereas InetAddress.getByName treats a malformed literal such as dead:beef as a host name and may query DNS.
     private static final Pattern IPV6_LITERAL = Pattern.compile("[0-9A-Fa-f:.]+");
 
     private ClientAddressNormalizer() {
@@ -40,7 +40,7 @@ public final class ClientAddressNormalizer {
             return address;
         }
         try {
-            var parsed = InetAddress.getByName(literal);
+            var parsed = InetAddress.ofLiteral(literal);
             if (parsed instanceof Inet4Address) {
                 return parsed.getHostAddress();
             }
@@ -49,7 +49,7 @@ public final class ClientAddressNormalizer {
                 bytes[i] = 0;
             }
             return InetAddress.getByAddress(bytes).getHostAddress() + IPV6_PREFIX_SUFFIX;
-        } catch (UnknownHostException e) {
+        } catch (IllegalArgumentException | UnknownHostException e) {
             return address;
         }
     }

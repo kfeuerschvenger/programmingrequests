@@ -58,4 +58,19 @@ class ClientAddressNormalizerTest {
         assertThat(ClientAddressNormalizer.normalize("host.example:8080")).isEqualTo("host.example:8080");
         assertThat(ClientAddressNormalizer.normalize("1:2:3:4:5:6:7:8:9")).isEqualTo("1:2:3:4:5:6:7:8:9");
     }
+
+    @ParameterizedTest
+    @CsvSource({"dead:beef", "1.2.3.4:80", "abcd:ef", "1:2:3:4:5:6:7:8:9", "::1::2", "12345::1", "::ffff:999.1.1.1"})
+    @DisplayName("leaves a malformed IPv6 literal unchanged without resolving it")
+    void leavesMalformedLiteralAlone(String address) {
+        assertThat(ClientAddressNormalizer.normalize(address)).isEqualTo(address);
+    }
+
+    @Test
+    @DisplayName("reduces valid compressed and IPv4-mapped literals")
+    void parsesValidLiterals() {
+        assertThat(ClientAddressNormalizer.normalize("2001:db8::")).isEqualTo("2001:db8:0:0:0:0:0:0/64");
+        assertThat(ClientAddressNormalizer.normalize("::ffff:1.2.3.4")).isEqualTo("1.2.3.4");
+        assertThat(ClientAddressNormalizer.normalize("::")).isEqualTo("0:0:0:0:0:0:0:0/64");
+    }
 }
