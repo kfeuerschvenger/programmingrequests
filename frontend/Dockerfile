@@ -22,6 +22,8 @@ COPY nginx/templates/ /etc/nginx/templates/
 # Runs before the template step. It writes the set_real_ip_from list from TRUSTED_EDGE_PROXIES, which is empty by default.
 ENV TRUSTED_EDGE_PROXIES=
 
+COPY nginx/security-headers.conf /etc/nginx/security-headers.conf
+
 COPY nginx/25-trusted-edge-proxies.sh /docker-entrypoint.d/25-trusted-edge-proxies.sh
 
 RUN chmod 0755 /docker-entrypoint.d/25-trusted-edge-proxies.sh
