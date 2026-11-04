@@ -75,7 +75,7 @@ volumes:
   code_quests_db:
 
 networks:
-  # Carries the traffic between web and api. The subnet is fixed so TRUSTED_PROXIES can name it, and it sits high in 172.16.0.0/12, which Docker's default allocator reaches only after many networks and which common LAN ranges rarely use. This stack and the development stack use different defaults so both can run on one host. Compose fails with an overlap error when the host already routes the range, for example through a VPN or another stack: set APP_NET_SUBNET to a free range and TRUSTED_PROXIES to a regex for the same range, both together. The gateway (the first address) is the host side of published ports, so the TRUSTED_PROXIES default excludes it.
+  # Carries the traffic between web and api. The subnet is fixed so TRUSTED_PROXIES can name it, and it sits high in 172.16.0.0/12, which Docker's default allocator reaches only after many networks and which common LAN ranges rarely use. This stack and the development stack use different default subnets so their networks never overlap, but they still cannot run on one host at the same time: both publish the same host ports (3307 and 8080). Compose fails with an overlap error when the host already routes the range, for example through a VPN or another stack: set APP_NET_SUBNET to a free range and TRUSTED_PROXIES to a regex for the same range, both together. The gateway (the first address) is the host side of published ports, so the TRUSTED_PROXIES default excludes it.
   app_net:
     driver: bridge
     ipam:
