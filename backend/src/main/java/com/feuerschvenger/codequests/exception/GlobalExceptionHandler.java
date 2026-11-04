@@ -28,6 +28,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.net.URI;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +59,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final String GENERAL_FIELD = "request";
     private static final String TYPE_MISMATCH = "typeMismatch";
     private static final String MISSING = "required";
+    private static final String VOTE_UNIQUE_CONSTRAINT = "uq_votes_idea_voter";
+    private static final String INTEGRITY_SQL_STATE_PREFIX = "23";
+    private static final String APPLICATION_PACKAGE = "com.feuerschvenger.codequests";
+    private static final String UNKNOWN_ORIGIN = "unknown";
+    private static final int MAX_CAUSE_DEPTH = 10;
 
     private final MessageSource messageSource;
 
@@ -86,16 +92,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return respond(ex, problem, headers, HttpStatus.TOO_MANY_REQUESTS, request);
     }
 
-    /** A unique-constraint race or a lock failure: the client may retry. */
-    @ExceptionHandler({DataIntegrityViolationException.class, ConcurrencyFailureException.class})
-    public ResponseEntity<Object> handleConflict(Exception ex, WebRequest request) {
+    /** A lock or transaction collision: the client may retry. */
+    @ExceptionHandler(ConcurrencyFailureException.class)
+    public ResponseEntity<Object> handleConcurrencyFailure(ConcurrencyFailureException ex, WebRequest request) {
         return problem(ex, HttpStatus.CONFLICT, ErrorCode.CONFLICT, request);
+    }
+
+    /**
+     * A constraint violation. Only the unique constraint on a voter and an idea is a conflict the client can retry, because it means two requests from one voter raced. Any other violation is a defect in the application or the schema and is a 500.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException ex, WebRequest request) {
+        if (isVoteUniqueViolation(ex)) {
+            return problem(ex, HttpStatus.CONFLICT, ErrorCode.CONFLICT, request);
+        }
+        return handleUnexpected(ex, request);
     }
 
     /** Anything unexpected. The cause chain is logged by class name only. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleUnexpected(Exception ex, WebRequest request) {
-        SecureLogger.errorWithCause(log, "Unhandled exception", ex);
         return problem(ex, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, request);
     }
 
@@ -161,7 +177,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             problem.setInstance(URI.create(INSTANCE_PREFIX + requestId()));
             problem.setProperty(CODE_PROPERTY, code.name());
         }
-        SecureLogger.info(log, "Request failed with {} ({})", statusCode.value(), ex.getClass().getSimpleName());
+        logFailure(ex, statusCode);
         return response;
     }
 
@@ -191,6 +207,46 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
+    /**
+     * Logs a handled failure: a 5xx at ERROR with what failed, where in the application it came from and the cause chain by class name, a 4xx at DEBUG with the status and exception type only. Neither carries request input or exception messages.
+     */
+    private void logFailure(Exception ex, HttpStatusCode status) {
+        if (status.is5xxServerError()) {
+            SecureLogger.errorWithCause(log, "Request failed with {} in {}", ex, status.value(), origin(ex));
+        } else {
+            SecureLogger.debug(log, "Request rejected with {} ({})", status.value(), ex.getClass().getSimpleName());
+        }
+    }
+
+    /** The first application frame of the deepest cause, as {@code Class.method:line}. */
+    private static String origin(Throwable thrown) {
+        var root = thrown;
+        for (var depth = 0; root.getCause() != null && root.getCause() != root && depth < MAX_CAUSE_DEPTH; depth++) {
+            root = root.getCause();
+        }
+        for (var frame : root.getStackTrace()) {
+            if (frame.getClassName().startsWith(APPLICATION_PACKAGE)) {
+                var simpleName = frame.getClassName().substring(frame.getClassName().lastIndexOf('.') + 1);
+                return simpleName + "." + frame.getMethodName() + ":" + frame.getLineNumber();
+            }
+        }
+        return UNKNOWN_ORIGIN;
+    }
+
+    /** True when the cause chain holds a MySQL or standard integrity error that names the vote uniqueness constraint. */
+    private static boolean isVoteUniqueViolation(Throwable thrown) {
+        var current = thrown;
+        for (var depth = 0; current != null && depth < MAX_CAUSE_DEPTH; depth++) {
+            if (current instanceof SQLException sql && sql.getSQLState() != null
+                    && sql.getSQLState().startsWith(INTEGRITY_SQL_STATE_PREFIX)
+                    && sql.getMessage() != null && sql.getMessage().contains(VOTE_UNIQUE_CONSTRAINT)) {
+                return true;
+            }
+            current = current.getCause() == current ? null : current.getCause();
+        }
+        return false;
+    }
+
     private ProblemDetail newProblem(HttpStatus status, ErrorCode code) {
         var problem = ProblemDetail.forStatusAndDetail(status, message(code));
         problem.setProperty(CODE_PROPERTY, code.name());
@@ -205,8 +261,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * Resolves the text for a failed field: the field-specific key first, then the constraint key, then a generic one.
      */
     private String fieldMessage(String field, String constraint) {
+        var name = field == null ? GENERAL_FIELD : field;
         var resolvable = new DefaultMessageSourceResolvable(
-                new String[]{FIELD_MESSAGE_KEY + field + "." + constraint, FIELD_MESSAGE_KEY + constraint, FALLBACK_FIELD_KEY},
+                new String[]{FIELD_MESSAGE_KEY + name + "." + constraint, FIELD_MESSAGE_KEY + constraint, FALLBACK_FIELD_KEY},
                 FALLBACK_FIELD_TEXT);
         return messageSource.getMessage(resolvable, LocaleContextHolder.getLocale());
     }

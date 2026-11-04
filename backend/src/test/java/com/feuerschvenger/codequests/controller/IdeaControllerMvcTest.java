@@ -20,11 +20,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 
@@ -506,14 +508,32 @@ class IdeaControllerMvcTest {
         }
 
         @Test
-        @DisplayName("answers 409 with the CONFLICT code for a constraint violation")
+        @DisplayName("answers 409 with the CONFLICT code for a lock or concurrency failure")
         void conflict() throws Exception {
-            when(handler.create(any())).thenThrow(new DataIntegrityViolationException("Duplicate entry 'secret-key' for key 'uq'"));
+            when(handler.create(any())).thenThrow(new ConcurrencyFailureException("Deadlock found for key 'secret-key'"));
 
             mvc.perform(post("/api/ideas").contentType(MediaType.APPLICATION_JSON)
                             .content("{\"description\":\"" + DESCRIPTION + "\"}"))
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.code").value("CONFLICT"))
+                    .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("secret-key"))));
+        }
+
+        @Test
+        @DisplayName("answers 409 for a duplicate vote and 500 for any other constraint violation")
+        void integrityViolations() throws Exception {
+            when(handler.vote(eq(5L), eq(1), any())).thenThrow(new DataIntegrityViolationException("x",
+                    new SQLException("Duplicate entry 'secret-key' for key 'votes.uq_votes_idea_voter'", "23000", 1062)));
+            when(handler.create(any())).thenThrow(new DataIntegrityViolationException("x",
+                    new SQLException("Column 'description' cannot be null secret-key", "23000", 1048)));
+
+            mvc.perform(put("/api/ideas/5/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value("CONFLICT"));
+            mvc.perform(post("/api/ideas").contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"description\":\"" + DESCRIPTION + "\"}"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
                     .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("secret-key"))));
         }
 
