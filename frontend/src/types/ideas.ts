@@ -1,12 +1,17 @@
 export type VoteValue = 1 | -1;
 
+/** The caller's vote on an idea: 0 means no vote. */
+export type MyVote = VoteValue | 0;
+
+export type IdeaSort = 'newest' | 'oldest' | 'top';
+
 export interface Idea {
   id: number;
   author: string | null;
   description: string;
   createdAt: string;
   score: number;
-  myVote: -1 | 0 | 1;
+  myVote: MyVote;
 }
 
 export interface IdeaPage {
@@ -22,7 +27,8 @@ export interface NewIdea {
   description: string;
 }
 
-export interface VoteArgs {
-  ideaId: number;
-  value: VoteValue;
+export interface ListIdeasParams {
+  page: number;
+  size: number;
+  sort: IdeaSort;
 }

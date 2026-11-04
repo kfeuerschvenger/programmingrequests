@@ -3,7 +3,8 @@ import classes from './HomePage.module.css';
 import { lazy, Suspense } from 'react';
 import { Divider, Space, Text } from '@mantine/core';
 
-import { SubmitIdeaForm } from '@/components';
+import { SubmitIdeaForm } from '@/components/SubmitIdeaForm/SubmitIdeaForm';
+import { IdeaListSkeleton } from '@/components/ui';
 
 const IdeasList = lazy(() => import('@/components/IdeasList/IdeasList'));
 
@@ -32,7 +33,7 @@ export function HomePage() {
       <Divider my="md" />
       <SubmitIdeaForm />
       <Divider my="md" />
-      <Suspense fallback={<div>Loading ideas...</div>}>
+      <Suspense fallback={<IdeaListSkeleton />}>
         <IdeasList />
       </Suspense>
     </>

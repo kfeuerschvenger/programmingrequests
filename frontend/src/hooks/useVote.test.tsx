@@ -1,0 +1,146 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import type { InfiniteData } from '@tanstack/react-query';
+import { notifications } from '@mantine/notifications';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/test/server';
+import { createTestQueryClient, createWrapper, makeIdea, makePage, problem } from '@/test/utils';
+import type { Idea, IdeaPage } from '@/types/ideas';
+import { ideasKeys } from './queryKeys';
+import { nextVote, useVote } from './useVote';
+
+const seed = (ideas: Idea[][]) => {
+  const client = createTestQueryClient();
+  const data: InfiniteData<IdeaPage, number> = {
+    pages: ideas.map((items, index) => makePage(items, { page: index, totalPages: ideas.length })),
+    pageParams: ideas.map((_, index) => index),
+  };
+  client.setQueryData(ideasKeys.list('newest'), data);
+  client.setQueryData(ideasKeys.list('top'), data);
+  return client;
+};
+
+const cached = (client: ReturnType<typeof createTestQueryClient>, sort: 'newest' | 'top' = 'newest') =>
+  client.getQueryData<InfiniteData<IdeaPage>>(ideasKeys.list(sort))!.pages.flatMap(page => page.items);
+
+describe('nextVote', () => {
+  it('withdraws when the same arrow is pressed and switches otherwise', () => {
+    expect(nextVote(makeIdea({ myVote: 1 }), 1)).toBe(0);
+    expect(nextVote(makeIdea({ myVote: 1 }), -1)).toBe(-1);
+    expect(nextVote(makeIdea({ myVote: 0 }), 1)).toBe(1);
+  });
+});
+
+describe('useVote', () => {
+  beforeEach(() => {
+    vi.spyOn(notifications, 'show').mockReturnValue('id');
+  });
+
+  it('updates score and myVote in every cached page and sort before the server answers', async () => {
+    const target = makeIdea({ id: 2, score: 5, myVote: 0 });
+    const client = seed([[makeIdea({ id: 1 })], [target]]);
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>(resolve => (release = resolve));
+    server.use(
+      http.put('/api/ideas/2/vote', async () => {
+        await gate;
+        return HttpResponse.json({ ...target, score: 6, myVote: 1 });
+      }),
+    );
+
+    const { result } = renderHook(() => useVote(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: 1 }));
+
+    await waitFor(() => expect(cached(client)[1]).toMatchObject({ score: 6, myVote: 1 }));
+    expect(cached(client, 'top')[1]).toMatchObject({ score: 6, myVote: 1 });
+    expect(cached(client)[0]).toMatchObject({ id: 1, score: 3 });
+
+    release();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote submitted!' }));
+  });
+
+  it('switching a vote moves the score by two', async () => {
+    const target = makeIdea({ id: 1, score: 4, myVote: 1 });
+    const client = seed([[target]]);
+    server.use(http.put('/api/ideas/1/vote', () => HttpResponse.json({ ...target, score: 2, myVote: -1 })));
+
+    const { result } = renderHook(() => useVote(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: -1 }));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(cached(client)[0]).toMatchObject({ score: 2, myVote: -1 });
+  });
+
+  it('withdraws through DELETE when the active arrow is pressed again', async () => {
+    const target = makeIdea({ id: 1, score: 4, myVote: 1 });
+    const client = seed([[target]]);
+    server.use(http.delete('/api/ideas/1/vote', () => HttpResponse.json({ ...target, score: 3, myVote: 0 })));
+
+    const { result } = renderHook(() => useVote(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: 1 }));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(cached(client)[0]).toMatchObject({ score: 3, myVote: 0 });
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote withdrawn' }));
+  });
+
+  it('rolls back and explains a rate limit with the wait time', async () => {
+    const target = makeIdea({ id: 1, score: 3, myVote: 0 });
+    const client = seed([[target]]);
+    server.use(http.put('/api/ideas/1/vote', () => problem(429, 'RATE_LIMITED', { retryAfterSeconds: 9 })));
+
+    const { result } = renderHook(() => useVote(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: 1 }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(cached(client)[0]).toMatchObject({ score: 3, myVote: 0 });
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        color: 'red',
+        title: 'Too many votes',
+        message: expect.stringContaining('9 seconds') as string,
+      }),
+    );
+  });
+
+  it('rolls back and shows a conflict message on 409', async () => {
+    const target = makeIdea({ id: 1, score: 3, myVote: 0 });
+    const client = seed([[target]]);
+    server.use(http.put('/api/ideas/1/vote', () => problem(409, 'CONFLICT')));
+
+    const { result } = renderHook(() => useVote(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: 1 }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(cached(client)[0]).toMatchObject({ score: 3, myVote: 0 });
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote not saved' }));
+  });
+
+  it('shows the server message for any other failure', async () => {
+    const target = makeIdea({ id: 1 });
+    const client = seed([[target]]);
+    server.use(http.put('/api/ideas/1/vote', () => problem(404, 'IDEA_NOT_FOUND')));
+
+    const { result } = renderHook(() => useVote(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: 1 }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Voting not allowed', message: 'IDEA_NOT_FOUND detail' }),
+    );
+  });
+
+  it('explains a rate limit without a wait time', async () => {
+    const target = makeIdea({ id: 1 });
+    const client = seed([[target]]);
+    server.use(http.put('/api/ideas/1/vote', () => problem(429, 'RATE_LIMITED')));
+
+    const { result } = renderHook(() => useVote(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: 1 }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('in a moment') as string }),
+    );
+  });
+});
