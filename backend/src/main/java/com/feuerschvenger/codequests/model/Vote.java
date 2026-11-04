@@ -28,7 +28,7 @@ public class Vote {
     private int value;
 
     @ManyToOne
-    @JoinColumn(name = "request_id")
+    @JoinColumn(name = "idea_id")
     private Request request;
 
     public Vote(String ipAddress, int value, Request request) {
