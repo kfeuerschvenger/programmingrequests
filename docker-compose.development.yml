@@ -34,7 +34,7 @@ services:
       # Required: the API refuses to start without a secret of at least 32 bytes.
       VOTER_HASH_SECRET: ${VOTER_HASH_SECRET}
       # Tomcat trusts X-Forwarded-For only from this regular expression: the app_net subnet minus its gateway, so only the web container qualifies. Override it with a regex that still matches nothing but the proxy in front of the API.
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172\.29\.240\.(?!1\z)\d+}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172\.29\.241\.(?!1\z)\d+}
       # Optional: a key without a value is passed through only when it is set in the environment or the env file.
       RATE_LIMIT_CREATE_CAPACITY:
       RATE_LIMIT_CREATE_WINDOW:
@@ -48,8 +48,11 @@ services:
       db:
         condition: service_healthy
     networks:
-      - app_net
-      - db_net
+      app_net:
+        # Unique name for the web proxy: another service called api on a shared network cannot answer for it.
+        aliases:
+          - code-quests-api
+      db_net:
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/manage/health || exit 1"]
       interval: 15s
@@ -70,9 +73,10 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       # The Vite dev server forwards /api to the api service on the compose network.
-      - API_PROXY_TARGET=http://api:8080
+      - API_PROXY_TARGET=http://code-quests-api:8080
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - app_net
 
@@ -80,13 +84,12 @@ volumes:
   code_quests_db:
 
 networks:
-  # Carries the traffic between web and api. The subnet is fixed so TRUSTED_PROXIES can name it, and it sits high in 172.16.0.0/12, which Docker's default allocator reaches only after many networks and which common LAN ranges rarely use. Compose fails with an overlap error if the host already uses it. Change it here and in the TRUSTED_PROXIES default together. The gateway address is the host side of published ports, so it is not trusted.
+  # Carries the traffic between web and api. The subnet is fixed so TRUSTED_PROXIES can name it, and it sits high in 172.16.0.0/12, which Docker's default allocator reaches only after many networks and which common LAN ranges rarely use. This stack and the production stack use different defaults so both can run on one host. Compose fails with an overlap error when the host already routes the range, for example through a VPN or another stack: set APP_NET_SUBNET to a free range and TRUSTED_PROXIES to a regex for the same range, both together. The gateway (the first address) is the host side of published ports, so the TRUSTED_PROXIES default excludes it.
   app_net:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.29.240.0/24
-          gateway: 172.29.240.1
+        - subnet: ${APP_NET_SUBNET:-172.29.241.0/24}
   # Only db and api attach to this network.
   db_net:
     driver: bridge
