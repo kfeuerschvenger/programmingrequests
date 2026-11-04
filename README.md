@@ -20,50 +20,50 @@ The repository is organized as follows:
 
 ```
 programmingrequests/
-├── gradle
-│   └── wrapper
-└── src
-    ├── main
-    │   ├── java
-    │   │   └── com
-    │   │       └── feuerschvenger
-    │   │           └── pr
-    │   │               ├── config
-    │   │               ├── controller
-    │   │               ├── model
-    │   │               │   └── helper
-    │   │               ├── repository
-    │   │               └── service
-    │   ├── react
-    │   │   └── programmingrequests
-    │   │       ├── public
-    │   │       └── src
-    │   │           ├── assets
-    │   │           ├── components
-    │   │           │   ├── Footer
-    │   │           │   ├── IdeasList
-    │   │           │   ├── Logo
-    │   │           │   └── SubmitIdeaForm
-    │   │           │       └── components
-    │   │           │           └── CustomForm
-    │   │           │               ├── components
-    │   │           │               └── models
-    │   │           ├── context
-    │   │           ├── hooks
-    │   │           ├── models
-    │   │           ├── services
-    │   │           └── utils
-    │   └── resources
-    └── test
-        └── java
-            └── com
-                └── feuerschvenger
-                    └── pr
+├── backend
+│   ├── gradle
+│   │   └── wrapper
+│   └── src
+│       ├── main
+│       │   ├── java
+│       │   │   └── com
+│       │   │       └── feuerschvenger
+│       │   │           └── codequests
+│       │   │               ├── config
+│       │   │               ├── controller
+│       │   │               ├── model
+│       │   │               │   └── helper
+│       │   │               ├── repository
+│       │   │               └── service
+│       │   └── resources
+│       └── test
+│           └── java
+│               └── com
+│                   └── feuerschvenger
+│                       └── codequests
+└── frontend
+    ├── public
+    └── src
+        ├── assets
+        ├── components
+        │   ├── Footer
+        │   ├── IdeasList
+        │   ├── Logo
+        │   └── SubmitIdeaForm
+        │       └── components
+        │           └── CustomForm
+        │               ├── components
+        │               └── models
+        ├── context
+        ├── hooks
+        ├── models
+        ├── services
+        └── utils
 ```
 
-- **backend** (src/main/java/com/feuerschvenger/pr): Contains the Spring Boot application.
+- **backend** (backend/): Contains the Spring Boot application (Gradle project, package `com.feuerschvenger.codequests`).
 
-- **frontend** (src/main/react/programmingrequests): Contains the React application built with Vite.
+- **frontend** (frontend/): Contains the React application built with Vite.
 
 ## Getting Started
 
