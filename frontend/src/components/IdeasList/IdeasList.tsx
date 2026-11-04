@@ -5,7 +5,7 @@ import { getIdeasList } from '@/services';
 
 import IdeaItem from './components/IdeaItem';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -18,24 +18,36 @@ const FIRST_PAGE = 0;
 
 const IdeasList = () => {
   const { ideasFlag, setIdeasFlag } = useGlobalContext();
-  const options = { autoFetch: true, params: FIRST_PAGE, retry: 4, retryDelayMs: 1500 };
-  const { loading, error, data, fetch } = useApi<IdeaPage, number>(getIdeasList, options);
+  const options = { retry: 4, retryDelayMs: 1500 };
+  const { loading, error, fetch } = useApi<IdeaPage, number>(getIdeasList, options);
   const [items, setItems] = useState<Idea[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextPage, setNextPage] = useState(FIRST_PAGE + 1);
+  // Counts the requests started. Only the response of the latest one is applied: a refresh from page 0 resets the pagination, so a slower page requested before it must not be appended to the new list.
+  const latestRequest = useRef(0);
 
   // Page 0 replaces the list; any later page is appended, skipping ideas already shown because a new idea shifts the pages.
-  useEffect(() => {
-    if (!data) return;
+  const load = async (page: number) => {
+    const requestId = ++latestRequest.current;
+    const { data } = await fetch(page);
+    if (!data || requestId !== latestRequest.current) return;
     setItems(previous => {
       if (data.page === FIRST_PAGE) return data.items;
       const known = new Set(previous.map(idea => idea.id));
       return [...previous, ...data.items.filter(idea => !known.has(idea.id))];
     });
-  }, [data]);
+    setHasMore(data.page + 1 < data.totalPages);
+    setNextPage(data.page + 1);
+  };
+
+  useEffect(() => {
+    load(FIRST_PAGE);
+  }, []);
 
   // A new idea refreshes the list from page 0. Votes update their own row in place.
   useEffect(() => {
     if (ideasFlag === 1) {
-      fetch(FIRST_PAGE);
+      load(FIRST_PAGE);
       setIdeasFlag(0);
     }
   }, [ideasFlag]);
@@ -47,8 +59,6 @@ const IdeasList = () => {
   if (error && items.length === 0) {
     return <div>UPS! There was an error: {error.message}</div>;
   }
-
-  const hasMore = data !== null && data.page + 1 < data.totalPages;
 
   const ideas =
     items.length > 0 ? items.map(idea => <IdeaItem key={idea.id} idea={idea} />) : <div>No previous ideas where found</div>;
@@ -68,7 +78,7 @@ const IdeasList = () => {
           )}
           {hasMore && (
             <Center mt="md">
-              <Button variant="light" loading={loading} onClick={() => fetch(data.page + 1)}>
+              <Button variant="light" loading={loading} onClick={() => load(nextPage)}>
                 Load more
               </Button>
             </Center>
