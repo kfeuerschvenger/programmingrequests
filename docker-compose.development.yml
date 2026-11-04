@@ -35,6 +35,10 @@ services:
       VOTER_HASH_SECRET: ${VOTER_HASH_SECRET}
       # Optional: a key without a value is passed through only when it is set in the environment or the env file.
       TRUSTED_PROXIES:
+      RATE_LIMIT_CREATE_CAPACITY:
+      RATE_LIMIT_CREATE_WINDOW:
+      RATE_LIMIT_VOTE_CAPACITY:
+      RATE_LIMIT_VOTE_WINDOW:
     ports:
       - "8080:8080"
     depends_on:

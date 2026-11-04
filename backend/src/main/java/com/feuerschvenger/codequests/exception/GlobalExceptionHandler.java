@@ -48,6 +48,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** Name of the problem property that lists the failed fields. */
     public static final String ERRORS_PROPERTY = "errors";
 
+    /** Name of the problem property that repeats the Retry-After value of a 429. */
+    public static final String RETRY_AFTER_PROPERTY = "retryAfterSeconds";
+
     private static final String INSTANCE_PREFIX = "urn:request-id:";
     private static final String FIELD_MESSAGE_KEY = "validation.";
     private static final String FALLBACK_FIELD_KEY = "validation.invalid";
@@ -71,6 +74,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(IdeaNotFoundException.class)
     public ResponseEntity<Object> handleIdeaNotFound(IdeaNotFoundException ex, WebRequest request) {
         return problem(ex, HttpStatus.NOT_FOUND, ErrorCode.IDEA_NOT_FOUND, request);
+    }
+
+    /** A rate limit was exceeded: 429 with Retry-After in whole seconds. */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Object> handleRateLimited(RateLimitExceededException ex, WebRequest request) {
+        var problem = newProblem(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.RATE_LIMITED);
+        problem.setProperty(RETRY_AFTER_PROPERTY, ex.getRetryAfterSeconds());
+        var headers = new HttpHeaders();
+        headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()));
+        return respond(ex, problem, headers, HttpStatus.TOO_MANY_REQUESTS, request);
     }
 
     /** A unique-constraint race or a lock failure: the client may retry. */

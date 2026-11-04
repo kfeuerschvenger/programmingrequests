@@ -7,6 +7,10 @@ import com.feuerschvenger.codequests.model.IdeaSort;
 import com.feuerschvenger.codequests.model.dto.CreateIdeaRequest;
 import com.feuerschvenger.codequests.model.dto.IdeaPageResponse;
 import com.feuerschvenger.codequests.model.dto.IdeaResponse;
+import com.feuerschvenger.codequests.ratelimit.RateLimitScope;
+import com.feuerschvenger.codequests.ratelimit.RateLimiter;
+import com.feuerschvenger.codequests.security.VoterHasher;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -52,6 +57,18 @@ class IdeaControllerMvcTest {
 
     @MockitoBean
     private IdeaHandler handler;
+
+    @MockitoBean
+    private RateLimiter rateLimiter;
+
+    @MockitoBean
+    private VoterHasher voterHasher;
+
+    @BeforeEach
+    void permitByDefault() {
+        when(voterHasher.hashHex(any())).thenReturn("client-key");
+        when(rateLimiter.tryAcquire(any(), any())).thenReturn(RateLimiter.Decision.permit());
+    }
 
     private static IdeaResponse idea(long id, int score, int myVote) {
         return new IdeaResponse(id, "Ada", DESCRIPTION, CREATED, score, myVote);
@@ -390,6 +407,74 @@ class IdeaControllerMvcTest {
             mvc.perform(delete("/api/ideas/9/vote"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("IDEA_NOT_FOUND"));
+        }
+    }
+
+    @Nested
+    @DisplayName("rate limiting")
+    class RateLimiting {
+
+        @Test
+        @DisplayName("answers 429 with Retry-After when creating ideas too often, without calling the handler")
+        void createLimited() throws Exception {
+            when(rateLimiter.tryAcquire(RateLimitScope.CREATE_IDEA, "client-key")).thenReturn(RateLimiter.Decision.deny(42));
+
+            mvc.perform(post("/api/ideas").contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"description\":\"" + DESCRIPTION + "\"}"))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(header().string("Retry-After", "42"))
+                    .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                    .andExpect(jsonPath("$.code").value("RATE_LIMITED"))
+                    .andExpect(jsonPath("$.retryAfterSeconds").value(42));
+
+            verify(handler, never()).create(any());
+        }
+
+        @Test
+        @DisplayName("answers 429 when voting too often")
+        void voteLimited() throws Exception {
+            when(rateLimiter.tryAcquire(RateLimitScope.VOTE, "client-key")).thenReturn(RateLimiter.Decision.deny(7));
+
+            mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(header().string("Retry-After", "7"));
+        }
+
+        @Test
+        @DisplayName("answers 429 when withdrawing votes too often")
+        void withdrawLimited() throws Exception {
+            when(rateLimiter.tryAcquire(RateLimitScope.VOTE, "client-key")).thenReturn(RateLimiter.Decision.deny(7));
+
+            mvc.perform(delete("/api/ideas/42/vote"))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(header().string("Retry-After", "7"));
+        }
+
+        @Test
+        @DisplayName("limits creation and votes under separate scopes")
+        void scopes() throws Exception {
+            when(handler.create(any())).thenReturn(idea(1, 0, 0));
+            when(handler.vote(42, 1, CLIENT)).thenReturn(idea(42, 1, 1));
+
+            mvc.perform(post("/api/ideas").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"description\":\"" + DESCRIPTION + "\"}")).andExpect(status().isCreated());
+            mvc.perform(put("/api/ideas/42/vote").contentType(MediaType.APPLICATION_JSON).content("{\"value\":1}"))
+                    .andExpect(status().isOk());
+
+            verify(rateLimiter).tryAcquire(RateLimitScope.CREATE_IDEA, "client-key");
+            verify(rateLimiter).tryAcquire(RateLimitScope.VOTE, "client-key");
+        }
+
+        @Test
+        @DisplayName("does not limit reads")
+        void readsAreFree() throws Exception {
+            when(handler.list(0, 20, IdeaSort.NEWEST, CLIENT)).thenReturn(new IdeaPageResponse(List.of(), 0, 20, 0, 0));
+            when(handler.get(1, CLIENT)).thenReturn(idea(1, 0, 0));
+
+            mvc.perform(get("/api/ideas")).andExpect(status().isOk());
+            mvc.perform(get("/api/ideas/1")).andExpect(status().isOk());
+
+            verifyNoInteractions(rateLimiter);
         }
     }
 
