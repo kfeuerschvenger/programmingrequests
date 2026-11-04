@@ -208,11 +208,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Logs a handled failure: a 5xx at ERROR with what failed, where in the application it came from and the cause chain by class name, a 4xx at DEBUG with the status and exception type only. Neither carries request input or exception messages.
+     * Logs a handled failure: a 5xx at ERROR with what failed, where in the application it came from and the cause chain by class name, a 409 at WARN with the status only because a conflict signals contention worth seeing, any other 4xx at DEBUG with the status and exception type only. None carries request input or exception messages.
      */
     private void logFailure(Exception ex, HttpStatusCode status) {
         if (status.is5xxServerError()) {
             SecureLogger.errorWithCause(log, "Request failed with {} in {}", ex, status.value(), origin(ex));
+        } else if (status.value() == HttpStatus.CONFLICT.value()) {
+            SecureLogger.warn(log, "Request conflicted with {}", status.value());
         } else {
             SecureLogger.debug(log, "Request rejected with {} ({})", status.value(), ex.getClass().getSimpleName());
         }

@@ -246,11 +246,12 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("does not log a 409 at ERROR")
-        void conflictBelowError() {
-            handler.handleConcurrencyFailure(new ConcurrencyFailureException("x"), request);
+        @DisplayName("logs a 409 once at WARN without the exception message")
+        void conflictAtWarn() {
+            handler.handleConcurrencyFailure(new ConcurrencyFailureException("password=hunter2"), request);
 
-            assertThat(appender.list).extracting(ILoggingEvent::getLevel).containsExactly(Level.DEBUG);
+            assertThat(appender.list).extracting(ILoggingEvent::getLevel).containsExactly(Level.WARN);
+            assertThat(appender.list.getFirst().getFormattedMessage()).contains("409").doesNotContain("hunter2");
         }
     }
 }
