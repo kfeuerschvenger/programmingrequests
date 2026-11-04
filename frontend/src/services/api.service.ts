@@ -9,12 +9,12 @@ const IDEAS_URL = `${BASE_URL}/ideas`;
 
 const LIST_PAGE_SIZE = 50;
 
-export const getIdeasList = (): UseApiCall<IdeaPage> => {
+export const getIdeasList = (page: number = 0): UseApiCall<IdeaPage> => {
   const controller = loadAbort();
 
   return {
     call: axios.get<IdeaPage>(IDEAS_URL, {
-      params: { page: 0, size: LIST_PAGE_SIZE, sort: 'newest' },
+      params: { page, size: LIST_PAGE_SIZE, sort: 'newest' },
       signal: controller.signal,
     }),
     controller,
