@@ -40,6 +40,16 @@ class SecurityHeadersConfigTest {
     }
 
     @Test
+    @DisplayName("does not relax the CSP for paths that only look like Swagger UI")
+    void ignoresTraversalAndEncodedVariants() throws ServletException, IOException {
+        for (var path : new String[] {"/swagger-ui/../requests", "/swagger-ui/%2e%2e/requests", "/swagger-uix"}) {
+            var response = apply(path);
+
+            assertThat(response.getHeader("Content-Security-Policy")).as(path).isEqualTo(SecurityHeadersConfig.API_CSP);
+        }
+    }
+
+    @Test
     @DisplayName("registers the filter after the MDC and timing filters")
     void registersWithExplicitOrder() {
         var registration = new SecurityHeadersConfig().securityHeadersFilter();

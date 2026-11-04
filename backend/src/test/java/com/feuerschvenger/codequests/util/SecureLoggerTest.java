@@ -47,6 +47,34 @@ class SecureLoggerTest {
     }
 
     @Test
+    @DisplayName("removes NEL and the Unicode line and paragraph separators")
+    void stripsUnicodeLineSeparators() {
+        assertThat(SecureLogger.sanitize("ab c d")).isEqualTo("abcd");
+    }
+
+    @Test
+    @DisplayName("keeps every placeholder and argument of a template longer than 256 characters")
+    void keepsLongTemplates() {
+        var template = "x".repeat(300) + " {} {}";
+
+        SecureLogger.info(logger, template, "first", "second");
+
+        assertThat(appender.list).singleElement()
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .isEqualTo("x".repeat(300) + " first second");
+    }
+
+    @Test
+    @DisplayName("strips control characters from the template")
+    void stripsTemplateControlCharacters() {
+        SecureLogger.info(logger, "line\r\nbreak {}", "v");
+
+        assertThat(appender.list).singleElement()
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .isEqualTo("linebreak v");
+    }
+
+    @Test
     @DisplayName("renders null as the text null")
     void handlesNull() {
         assertThat(SecureLogger.sanitize(null)).isEqualTo("null");

@@ -8,7 +8,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.UrlPathHelper;
 
 import java.io.IOException;
 
@@ -54,8 +56,9 @@ public class SecurityHeadersConfig {
             chain.doFilter(request, response);
         }
 
+        /** Matches on the decoded path with dot segments resolved, so {@code /swagger-ui/../x} and its encoded forms do not get the relaxed CSP. */
         private static boolean isSwagger(HttpServletRequest request) {
-            var path = request.getRequestURI().substring(request.getContextPath().length());
+            var path = StringUtils.cleanPath(UrlPathHelper.defaultInstance.getPathWithinApplication(request));
             return path.equals(SWAGGER_PREFIX) || path.startsWith(SWAGGER_PREFIX + "/");
         }
     }
