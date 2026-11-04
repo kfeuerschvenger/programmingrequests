@@ -23,7 +23,7 @@ class CodeQuestsApplicationTests {
 
     @Container
     @ServiceConnection
-    static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.0");
+    static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4");
 
     @Autowired
     private Flyway flyway;

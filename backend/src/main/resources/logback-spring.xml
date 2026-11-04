@@ -2,8 +2,9 @@
 <configuration>
     <!--
         Console only. requestId is put in the MDC by MDCFilter on every HTTP request.
-        %nopex suppresses stack traces on every appender: the message has to carry the
-        exception class explicitly (see SecureLogger.errorWithCause).
+        Outside the dev profile %nopex suppresses stack traces: the message has to carry the
+        exception class explicitly (see SecureLogger.errorWithCause). The dev profile prints full
+        stack traces.
     -->
     <conversionRule conversionWord="clr" class="org.springframework.boot.logging.logback.ColorConverter"/>
 
@@ -11,7 +12,7 @@
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
                 <charset>UTF-8</charset>
-                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%X{requestId:--}]){cyan} %clr(%-5level){highlight} %clr(%logger{36}){magenta} - %msg%nopex%n</pattern>
+                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%X{requestId:--}]){cyan} %clr(%-5level){highlight} %clr(%logger{36}){magenta} - %msg%n</pattern>
             </encoder>
         </appender>
     </springProfile>
