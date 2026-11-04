@@ -16,7 +16,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { IconHelp, IconMoon, IconSun } from '@tabler/icons-react';
 
-import { Logo } from '@/components';
+import { Logo } from '@/components/Logo/Logo';
 import { showInfo, NavigationLinks } from './components';
 
 export function Header() {

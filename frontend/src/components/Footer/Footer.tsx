@@ -1,6 +1,6 @@
 import { ActionIcon, Container, Group, Space, Text, Tooltip } from '@mantine/core';
 import { IconBrandGithub, IconBrandGmail, IconBrandLinkedin } from '@tabler/icons-react';
-import { Logo } from '@/components';
+import { Logo } from '@/components/Logo/Logo';
 import classes from './Footer.module.css';
 
 export function Footer() {
