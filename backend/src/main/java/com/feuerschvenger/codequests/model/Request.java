@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "requests")
+@Table(name = "ideas")
 public class Request {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

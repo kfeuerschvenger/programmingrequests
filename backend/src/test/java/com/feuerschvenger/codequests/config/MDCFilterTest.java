@@ -1,0 +1,93 @@
+package com.feuerschvenger.codequests.config;
+
+import jakarta.servlet.ServletException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
+import org.springframework.mock.web.MockFilterChain;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DisplayName("MDCFilter")
+class MDCFilterTest {
+
+    private final MDCFilter filter = new MDCFilter();
+
+    @Nested
+    @DisplayName("inbound request id")
+    class InboundId {
+
+        @Test
+        @DisplayName("is reused, echoed in the response and visible in the MDC during the request")
+        void reusesValidId() throws ServletException, IOException {
+            var seen = new AtomicReference<String>();
+            var response = run("abc-123.X_y", seen);
+
+            assertThat(response.getHeader(MDCFilter.REQUEST_ID_HEADER)).isEqualTo("abc-123.X_y");
+            assertThat(seen.get()).isEqualTo("abc-123.X_y");
+        }
+
+        @Test
+        @DisplayName("loses its control characters before it is used")
+        void stripsControlCharacters() throws ServletException, IOException {
+            var seen = new AtomicReference<String>();
+            var response = run("abc\r\ninjected\t1", seen);
+
+            assertThat(response.getHeader(MDCFilter.REQUEST_ID_HEADER)).isEqualTo("abcinjected1");
+            assertThat(seen.get()).isEqualTo("abcinjected1");
+        }
+
+        @Test
+        @DisplayName("is replaced by a UUID when it has forbidden characters")
+        void replacesInvalidId() throws ServletException, IOException {
+            var response = run("bad id with spaces", new AtomicReference<>());
+
+            assertThat(response.getHeader(MDCFilter.REQUEST_ID_HEADER)).hasSize(36).doesNotContain(" ");
+        }
+
+        @Test
+        @DisplayName("is replaced by a UUID when it is longer than 64 characters")
+        void replacesOversizedId() throws ServletException, IOException {
+            var response = run("a".repeat(65), new AtomicReference<>());
+
+            assertThat(response.getHeader(MDCFilter.REQUEST_ID_HEADER)).hasSize(36);
+        }
+    }
+
+    @Test
+    @DisplayName("generates an id when the header is missing")
+    void generatesIdWhenAbsent() throws ServletException, IOException {
+        var response = run(null, new AtomicReference<>());
+
+        assertThat(response.getHeader(MDCFilter.REQUEST_ID_HEADER)).hasSize(36);
+    }
+
+    @Test
+    @DisplayName("clears the MDC when the request completes")
+    void clearsMdc() throws ServletException, IOException {
+        run("abc", new AtomicReference<>());
+
+        assertThat(MDC.get(MDCFilter.REQUEST_ID_MDC_KEY)).isNull();
+    }
+
+    private MockHttpServletResponse run(String inboundId, AtomicReference<String> seenInChain)
+            throws ServletException, IOException {
+        var request = new MockHttpServletRequest("GET", "/requests");
+        if (inboundId != null) {
+            request.addHeader(MDCFilter.REQUEST_ID_HEADER, inboundId);
+        }
+        var response = new MockHttpServletResponse();
+        var chain = new MockFilterChain();
+        filter.doFilter(request, response, (req, res) -> {
+            seenInChain.set(MDC.get(MDCFilter.REQUEST_ID_MDC_KEY));
+            chain.doFilter(req, res);
+        });
+        return response;
+    }
+}

@@ -25,12 +25,10 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "23"
+          java-version: "25"
           cache: gradle
-      - name: Make the Gradle wrapper executable
-        run: chmod +x gradlew
-      - name: Compile main and test sources
-        run: ./gradlew compileJava compileTestJava --no-daemon
+      - name: Build and test
+        run: ./gradlew build --no-daemon
 
   frontend:
     name: frontend
