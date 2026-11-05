@@ -1,7 +1,7 @@
 {
   "name": "Code Quests",
   "short_name": "Code Quests",
-  "description": "Post a quest. Rally the guild. Pin your programming idea to the board and let the party vote it up.",
+  "description": "Post a quest. Let the hero code. Pin your programming idea to the board and let the party vote it up.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
