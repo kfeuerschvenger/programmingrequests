@@ -5,7 +5,7 @@ export interface FieldIssue {
   message: string;
 }
 
-export type ApiErrorKind = 'http' | 'network' | 'timeout' | 'canceled' | 'unknown';
+export type ApiErrorKind = 'http' | 'network' | 'timeout' | 'canceled' | 'invalid_response' | 'unknown';
 
 interface ApiErrorInit {
   kind: ApiErrorKind;
@@ -69,10 +69,15 @@ const toFieldIssues = (value: unknown): FieldIssue[] => {
   return issues;
 };
 
+/** Reads Retry-After as delta-seconds or as an HTTP-date, clamping a date in the past to 0. */
 const parseRetryAfterHeader = (value: unknown): number | null => {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
-  const seconds = Number(value);
-  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : null;
+  const text = String(value).trim();
+  if (text === '') return null;
+  const seconds = Number(text);
+  if (Number.isFinite(seconds)) return Math.max(0, Math.ceil(seconds));
+  const date = Date.parse(text);
+  return Number.isNaN(date) ? null : Math.max(0, Math.ceil((date - Date.now()) / 1000));
 };
 
 /** Reads an RFC 9457 problem body, falling back to the Retry-After header for the wait. */

@@ -3,7 +3,7 @@ import classes from './IdeaItem.module.css';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { ActionIcon, Avatar, Grid, Group, Paper, Text } from '@mantine/core';
+import { ActionIcon, Avatar, Grid, Group, Paper, Text, VisuallyHidden } from '@mantine/core';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 
 import { useVote } from '@/hooks/useVote';
@@ -18,13 +18,16 @@ interface IdeaItemProps {
 const ANONYMOUS = 'Anonymous';
 
 const IdeaItem = ({ idea }: IdeaItemProps) => {
-  const { mutate, isPending } = useVote();
+  const { mutate, isPending } = useVote(idea.id);
 
   // Pressing the arrow that is already active withdraws the vote; the other arrow switches it.
+  // While a vote on this idea is in flight the arrows are aria-disabled and dimmed, and clicks are ignored.
   const handleVote = (value: VoteValue) => {
     if (isPending) return;
     mutate({ idea, value });
   };
+
+  const pendingStyle = { outline: 'none', opacity: isPending ? 0.5 : 1 };
 
   const author = idea.author ?? ANONYMOUS;
 
@@ -54,8 +57,9 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
               radius="md"
               aria-label="Vote up"
               aria-pressed={idea.myVote === 1}
+              aria-disabled={isPending}
               onClick={() => handleVote(1)}
-              style={{ outline: 'none' }}
+              style={pendingStyle}
             >
               <IconChevronUp color="var(--mantine-color-teal-text)" />
             </ActionIcon>
@@ -65,9 +69,11 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
               color="dark.4"
               size="md"
               radius="md"
-              aria-label="Score"
+              role="status"
+              aria-live="polite"
               data-testid="score"
             >
+              <VisuallyHidden>Score: </VisuallyHidden>
               <Text fw={700} c="var(--mantine-color-text)">
                 {idea.score}
               </Text>
@@ -79,8 +85,9 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
               radius="md"
               aria-label="Vote down"
               aria-pressed={idea.myVote === -1}
+              aria-disabled={isPending}
               onClick={() => handleVote(-1)}
-              style={{ outline: 'none' }}
+              style={pendingStyle}
             >
               <IconChevronDown color="var(--mantine-color-red-text)" />
             </ActionIcon>

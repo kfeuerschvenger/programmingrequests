@@ -45,6 +45,30 @@ describe('normalizeError', () => {
     expect(error.retryAfterSeconds).toBe(7);
   });
 
+  it('reads Retry-After given as an HTTP-date', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-01-01T10:00:00Z'));
+    try {
+      const error = normalizeError(responseError(429, {}, { 'retry-after': 'Wed, 01 Jan 2025 10:00:30 GMT' }));
+      expect(error.retryAfterSeconds).toBe(30);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clamps a negative or past Retry-After to 0', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-01-01T10:00:00Z'));
+    try {
+      expect(normalizeError(responseError(429, {}, { 'retry-after': '-5' })).retryAfterSeconds).toBe(0);
+      expect(
+        normalizeError(responseError(429, {}, { 'retry-after': 'Wed, 01 Jan 2025 09:00:00 GMT' })).retryAfterSeconds,
+      ).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('ignores an invalid Retry-After header', () => {
     expect(normalizeError(responseError(429, {}, { 'retry-after': 'soon' })).retryAfterSeconds).toBeNull();
   });
