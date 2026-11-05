@@ -69,16 +69,38 @@ const toFieldIssues = (value: unknown): FieldIssue[] => {
   return issues;
 };
 
-/** Reads Retry-After as delta-seconds or as an HTTP-date, clamping a date in the past to 0. */
+/** The longest wait the UI will ever announce, so a hostile or mistaken value cannot promise hours. */
+const MAX_RETRY_AFTER_SECONDS = 3600;
+
+const DELTA_SECONDS = /^\d+$/;
+const IMF_FIXDATE =
+  /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+
+const clampSeconds = (seconds: number): number => Math.min(MAX_RETRY_AFTER_SECONDS, Math.max(0, Math.ceil(seconds)));
+
+/** Reads Retry-After as delta-seconds or as an IMF-fixdate, the only two forms HTTP defines, clamped to 0..3600. Anything looser (hex, exponent, fraction, free-form dates) is ignored. */
 const parseRetryAfterHeader = (value: unknown): number | null => {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
   const text = String(value).trim();
-  if (text === '') return null;
-  const seconds = Number(text);
-  if (Number.isFinite(seconds)) return Math.max(0, Math.ceil(seconds));
+  if (DELTA_SECONDS.test(text)) return clampSeconds(Number(text));
+  if (!IMF_FIXDATE.test(text)) return null;
   const date = Date.parse(text);
-  return Number.isNaN(date) ? null : Math.max(0, Math.ceil((date - Date.now()) / 1000));
+  return Number.isNaN(date) ? null : clampSeconds((date - Date.now()) / 1000);
 };
+
+/** The wait stated in the problem body, rounded up and clamped like the header. */
+const parseRetryAfterBody = (value: unknown): number | null => {
+  const seconds = asPositiveNumber(value);
+  return seconds === null ? null : clampSeconds(seconds);
+};
+
+/** The failure the server reports when a client sends too many requests: its code decides, and a 429 with no code is the fallback. */
+export const isRateLimited = (error: ApiError): boolean =>
+  error.is('RATE_LIMITED') || (error.code === null && error.status === 429);
+
+/** The failure the server reports when two requests collide: its code decides, and a 409 with no code is the fallback. */
+export const isConflict = (error: ApiError): boolean =>
+  error.is('CONFLICT') || (error.code === null && error.status === 409);
 
 /** Reads an RFC 9457 problem body, falling back to the Retry-After header for the wait. */
 const fromResponse = (status: number, data: unknown, retryAfterHeader: unknown): ApiError => {
@@ -94,7 +116,7 @@ const fromResponse = (status: number, data: unknown, retryAfterHeader: unknown):
     title,
     detail,
     fieldErrors: toFieldIssues(problem.errors),
-    retryAfterSeconds: asPositiveNumber(problem.retryAfterSeconds) ?? parseRetryAfterHeader(retryAfterHeader),
+    retryAfterSeconds: parseRetryAfterBody(problem.retryAfterSeconds) ?? parseRetryAfterHeader(retryAfterHeader),
   });
 };
 
