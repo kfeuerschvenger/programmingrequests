@@ -3,7 +3,7 @@
 # /etc/nginx/trusted-edge-proxies.conf holds one set_real_ip_from line per entry, and /etc/nginx/trusted-edge-geo.conf holds the geo block that sets $trusted_edge to 1 for the same peers.
 # The list should contain the outer proxy's own address, not a wide range: every address listed may state the client address in X-Forwarded-For and the scheme and port in X-Forwarded-Proto and X-Forwarded-Port.
 # An empty value trusts nobody. Any entry that is not an address or a CIDR range stops the container, so a typo never widens or silently drops the trust list. A range must be at least a /8 for IPv4 and a /16 for IPv6: anything wider would trust a large part of the address space. An IPv6 prefix below /16, such as fd00::/8, is rejected by design for the same reason, so list the exact addresses or a narrower range instead.
-# An IPv4-mapped IPv6 address (::ffff:10.0.0.1) is accepted when its IPv4 part is valid.
+# An IPv4-mapped IPv6 address (::ffff:10.0.0.1) is accepted when its IPv4 part is valid, and is written as the plain IPv4 address because nginx matches an IPv4 peer only against IPv4 entries. A mapped range ::ffff:a.b.c.d/n must have n between 104 and 128 and is written as a.b.c.d/(n-96).
 set -eu
 # No pathname expansion: an entry such as "*" must be rejected, not expanded to file names.
 set -f
@@ -104,8 +104,26 @@ valid_entry() {
     else
         valid_ipv6 "$address" || return 1
         [ "$entry" = "$address" ] && return 0
-        in_range "$prefix" 16 128
+        case "$address" in
+            # The 96 bits before the IPv4 part are fixed, so a prefix of 104 to 128 is a /8 to /32 of the IPv4 address.
+            ::[fF][fF][fF][fF]:*.*) in_range "$prefix" 104 128 ;;
+            *) in_range "$prefix" 16 128 ;;
+        esac
     fi
+}
+
+# Prints the entry as nginx must match it. nginx matches an IPv4 peer only against IPv4 entries, so an IPv4-mapped entry (::ffff:a.b.c.d or ::ffff:a.b.c.d/n) becomes a.b.c.d or a.b.c.d/(n-96). Any other entry is printed unchanged.
+normalise_entry() {
+    case "$1" in
+        ::[fF][fF][fF][fF]:*.*)
+            mapped=${1#::????:}
+            case "$mapped" in
+                */*) echo "${mapped%%/*}/$((${mapped#*/} - 96))" ;;
+                *) echo "$mapped" ;;
+            esac
+            ;;
+        *) echo "$1" ;;
+    esac
 }
 
 {
@@ -120,8 +138,9 @@ valid_entry() {
 entries=0
 for entry in $(printf '%s' "${TRUSTED_EDGE_PROXIES:-}" | tr ',' ' '); do
     if valid_entry "$entry"; then
-        echo "set_real_ip_from $entry;" >> "$real_ip_target.tmp"
-        echo "    $entry 1;" >> "$geo_target.tmp"
+        normalised=$(normalise_entry "$entry")
+        echo "set_real_ip_from $normalised;" >> "$real_ip_target.tmp"
+        echo "    $normalised 1;" >> "$geo_target.tmp"
         entries=$((entries + 1))
     else
         echo "25-trusted-edge-proxies.sh: TRUSTED_EDGE_PROXIES contains an entry that is not an IP address or a CIDR range of at least /8 (IPv4) or /16 (IPv6): $entry" >&2
