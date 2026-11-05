@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/server';
 import { makeIdea, makePage, problem } from '@/test/utils';
-import { castVote, createIdea, getIdea, listIdeas, withdrawVote } from './ideas.service';
+import { castVote, createIdea, listIdeas, withdrawVote } from './ideas.service';
 import { ApiError } from './http/apiError';
 
 describe('ideas service', () => {
@@ -22,9 +22,33 @@ describe('ideas service', () => {
     expect(page.items).toHaveLength(1);
   });
 
-  it('gets one idea', async () => {
-    server.use(http.get('/api/ideas/7', () => HttpResponse.json(makeIdea({ id: 7 }))));
-    expect((await getIdea(7)).id).toBe(7);
+  it('rejects a list response that is not a page', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.html('<html>login</html>')));
+
+    await expect(listIdeas({ page: 0, size: 20, sort: 'newest' })).rejects.toMatchObject({
+      constructor: ApiError,
+      kind: 'invalid_response',
+    });
+  });
+
+  it('rejects a page whose ideas have the wrong shape', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json({ ...makePage([]), items: [{ id: 'x' }] })));
+
+    await expect(listIdeas({ page: 0, size: 20, sort: 'newest' })).rejects.toMatchObject({ kind: 'invalid_response' });
+  });
+
+  it('rejects a vote response that is not an idea', async () => {
+    server.use(http.put('/api/ideas/1/vote', () => HttpResponse.json({ ok: true })));
+
+    await expect(castVote(1, 1)).rejects.toMatchObject({ kind: 'invalid_response' });
+  });
+
+  it('rejects a created idea that is not an idea', async () => {
+    server.use(http.post('/api/ideas', () => HttpResponse.json([], { status: 201 })));
+
+    await expect(createIdea({ description: 'A long enough description' })).rejects.toMatchObject({
+      kind: 'invalid_response',
+    });
   });
 
   it('creates an idea', async () => {

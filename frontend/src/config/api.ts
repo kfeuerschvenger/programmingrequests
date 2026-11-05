@@ -6,6 +6,5 @@ export const API_TIMEOUT_MS = 15_000;
 
 export const endpoints = {
   ideas: () => `${API_BASE_URL}/ideas`,
-  idea: (id: number) => `${API_BASE_URL}/ideas/${id}`,
   vote: (id: number) => `${API_BASE_URL}/ideas/${id}/vote`,
 } as const;
