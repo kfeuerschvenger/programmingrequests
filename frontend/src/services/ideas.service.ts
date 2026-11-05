@@ -22,16 +22,19 @@ const pageSchema = z.object({
 });
 
 /** Checks a response body against its schema so a 200 with an unexpected body cannot reach the UI. */
-const parseResponse = <T>(schema: z.ZodType<T>, data: unknown): T => {
+const parseResponse = <T>(
+  schema: z.ZodType<T>,
+  data: unknown,
+  message = 'The server sent an unexpected response. Please try again.',
+): T => {
   const result = schema.safeParse(data);
-  if (!result.success) {
-    throw new ApiError({
-      kind: 'invalid_response',
-      message: 'The server sent an unexpected response. Please try again.',
-    });
-  }
+  if (!result.success) throw new ApiError({ kind: 'invalid_response', message });
   return result.data;
 };
+
+/** A create that reached the server but came back unreadable may have been stored, so asking for a plain retry would invite a duplicate. */
+const CREATE_UNREADABLE_MESSAGE =
+  'The server sent an unexpected answer, so your idea may have been posted. Check the list before submitting it again.';
 
 export const listIdeas = async (params: ListIdeasParams, signal?: AbortSignal): Promise<IdeaPage> => {
   const { data } = await httpClient.get<unknown>(endpoints.ideas(), { params, signal });
@@ -40,7 +43,7 @@ export const listIdeas = async (params: ListIdeasParams, signal?: AbortSignal): 
 
 export const createIdea = async (idea: NewIdea): Promise<Idea> => {
   const { data } = await httpClient.post<unknown>(endpoints.ideas(), idea);
-  return parseResponse(ideaSchema, data);
+  return parseResponse(ideaSchema, data, CREATE_UNREADABLE_MESSAGE);
 };
 
 export const castVote = async (id: number, value: VoteValue): Promise<Idea> => {

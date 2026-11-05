@@ -51,6 +51,48 @@ describe('useCreateIdea', () => {
     );
   });
 
+  it('refreshes the lists and warns that the idea may exist when the answer cannot be read', async () => {
+    const client = createTestQueryClient();
+    client.setQueryData(ideasKeys.list('newest'), { pages: [], pageParams: [] });
+    server.use(http.post('/api/ideas', () => HttpResponse.json({ ok: true }, { status: 201 })));
+
+    const { result } = renderHook(() => useCreateIdea(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ description: 'A long enough description' }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(client.getQueryState(ideasKeys.list('newest'))?.isInvalidated).toBe(true);
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Idea may have been posted',
+        message: expect.stringContaining('Check the list before submitting it again') as string,
+      }),
+    );
+  });
+
+  it('refreshes the lists after a rejected create too', async () => {
+    const client = createTestQueryClient();
+    client.setQueryData(ideasKeys.list('newest'), { pages: [], pageParams: [] });
+    server.use(http.post('/api/ideas', () => problem(500, 'INTERNAL_ERROR')));
+
+    const { result } = renderHook(() => useCreateIdea(), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ description: 'A long enough description' }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(client.getQueryState(ideasKeys.list('newest'))?.isInvalidated).toBe(true);
+  });
+
+  it('notifies a conflict', async () => {
+    server.use(http.post('/api/ideas', () => new HttpResponse(null, { status: 409 })));
+
+    const { result } = renderHook(() => useCreateIdea(), { wrapper: createWrapper() });
+    act(() => result.current.mutate({ description: 'A long enough description' }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('Another request') as string }),
+    );
+  });
+
   it('notifies any other failure with the server message', async () => {
     server.use(http.post('/api/ideas', () => problem(500, 'INTERNAL_ERROR')));
 

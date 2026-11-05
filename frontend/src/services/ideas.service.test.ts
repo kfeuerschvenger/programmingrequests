@@ -48,6 +48,7 @@ describe('ideas service', () => {
 
     await expect(createIdea({ description: 'A long enough description' })).rejects.toMatchObject({
       kind: 'invalid_response',
+      message: expect.stringContaining('may have been posted') as string,
     });
   });
 
