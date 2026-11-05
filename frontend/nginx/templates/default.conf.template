@@ -8,9 +8,11 @@ map "$trusted_edge:$http_x_forwarded_proto" $forwarded_proto {
     "1:http" http;
 }
 
-map "$trusted_edge:$http_x_forwarded_port" $forwarded_port {
+# A trusted edge's port is accepted only as a decimal number from 1 to 65535 without leading zeros. When it sends https and no port, the port is 443. Anything else falls back to the port this server saw.
+map "$trusted_edge:$http_x_forwarded_proto:$http_x_forwarded_port" $forwarded_port {
     default $server_port;
-    "~^1:(?<edge_port>[0-9]{1,5})$" $edge_port;
+    "1:https:" 443;
+    "~^1:[A-Za-z]*:(?<edge_port>[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$" $edge_port;
 }
 
 # HSTS only when the visitor is on https: sent over plain http it would be ignored by browsers and mislead anyone reading the headers. An empty value makes add_header skip the header.
@@ -68,6 +70,7 @@ server {
     # nginx resolves a fixed host name once, at start. A variable in proxy_pass is resolved at request time through Docker's DNS (127.0.0.11), so a recreated api container is found without restarting web. With no URI in proxy_pass, the request URI, /api/ included, goes upstream unchanged.
     location /api/ {
         resolver 127.0.0.11 valid=10s ipv6=off;
+        resolver_timeout 2s;
         set $api_upstream http://code-quests-api:8080;
         proxy_pass $api_upstream;
 
