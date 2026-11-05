@@ -169,7 +169,51 @@ describe('IdeasList', () => {
 
     expect(screen.queryByTestId('idea-list-skeleton')).not.toBeInTheDocument();
     expect(screen.getByText('Newest idea')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Ideas' })).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByText('Oldest idea')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Ideas' })).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('is not busy once the first load has finished', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea()]))));
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText(makeIdea().description);
+    expect(screen.getByRole('region', { name: 'Ideas' })).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('keeps the arrows disabled for an idea whose vote is in flight after the item remounts', async () => {
+    const user = userEvent.setup();
+    const idea = makeIdea({ id: 5, score: 3, myVote: 0 });
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>(resolve => (release = resolve));
+    const votes: unknown[] = [];
+    server.use(
+      http.get('/api/ideas', () => HttpResponse.json(makePage([idea]))),
+      http.put('/api/ideas/5/vote', async ({ request }) => {
+        votes.push(await request.json());
+        await gate;
+        return HttpResponse.json({ ...idea, score: 4, myVote: 1 });
+      }),
+    );
+    const { client, rerender } = renderWithProviders(<IdeasList key="first" />);
+
+    await screen.findByText(idea.description);
+    await user.click(screen.getByRole('button', { name: 'Vote up' }));
+    await waitFor(() => expect(votes).toHaveLength(1));
+
+    // A different key remounts the whole list, and with it every item and its hook instance.
+    rerender(<IdeasList key="second" />);
+    const arrow = await screen.findByRole('button', { name: 'Vote up' });
+    expect(client.isMutating()).toBe(1);
+    expect(arrow).toHaveAttribute('aria-disabled', 'true');
+
+    await user.click(arrow);
+    release();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Vote up' })).toHaveAttribute('aria-disabled', 'false'),
+    );
+    expect(votes).toHaveLength(1);
   });
 
   it('requests the sort from the URL and changes it with the control', async () => {

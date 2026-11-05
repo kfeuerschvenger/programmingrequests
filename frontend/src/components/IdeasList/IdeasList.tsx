@@ -4,6 +4,7 @@ import { useListQueryState } from '@/hooks/useListQueryState';
 import type { IdeaSort } from '@/types/ideas';
 import { EmptyState, ErrorState, IdeaListSkeleton } from '@/components/ui';
 import IdeaItem from './components/IdeaItem';
+import classes from './IdeasList.module.css';
 
 const SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
   { value: 'newest', label: 'Newest' },
@@ -24,6 +25,7 @@ const IdeasList = () => {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
+    isPlaceholderData,
   } = useIdeas(sort);
 
   let content;
@@ -66,7 +68,16 @@ const IdeasList = () => {
       <Space h="xl" />
       <Grid>
         <Grid.Col span="auto"></Grid.Col>
-        <Grid.Col span={8}>{content}</Grid.Col>
+        <Grid.Col span={8}>
+          <div
+            role="region"
+            aria-label="Ideas"
+            aria-busy={isPlaceholderData}
+            className={`${classes.region} ${isPlaceholderData ? classes.stale : ''}`.trim()}
+          >
+            {content}
+          </div>
+        </Grid.Col>
         <Grid.Col span="auto"></Grid.Col>
       </Grid>
     </>
