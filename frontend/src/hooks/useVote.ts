@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient, type InfiniteData, type QueryKey } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type InfiniteData, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import { castVote, withdrawVote } from '@/services/ideas.service';
-import type { ApiError } from '@/services/http/apiError';
+import { isConflict, isRateLimited, type ApiError } from '@/services/http/apiError';
 import type { Idea, IdeaPage, MyVote, VoteValue } from '@/types/ideas';
 import { ideasKeys } from './queryKeys';
 
@@ -17,6 +17,9 @@ type Previous = Pick<Idea, 'score' | 'myVote'>;
 type PreviousByList = [QueryKey, Previous][];
 
 const VOTE_MUTATION_KEY = ['ideas', 'vote'] as const;
+
+/** Identifies the votes on one idea, so a component can tell that one is in flight whichever instance started it. */
+export const voteMutationKey = (ideaId: number) => [...VOTE_MUTATION_KEY, ideaId] as const;
 
 /** The vote that results from pressing an arrow: the active arrow withdraws, the other one switches. */
 export const nextVote = (idea: Idea, value: VoteValue): MyVote => (idea.myVote === value ? 0 : value);
@@ -35,10 +38,7 @@ const findIdea = (cache: ListCache | undefined, id: number): Idea | undefined =>
   return undefined;
 };
 
-const isRateLimited = (error: ApiError) => error.is('RATE_LIMITED') || (error.code === null && error.status === 429);
-const isConflict = (error: ApiError) => error.is('CONFLICT') || (error.code === null && error.status === 409);
-
-/** The code decides first and the status is the fallback; failures that say nothing about the vote itself get a neutral title. */
+/** Only a refusal of the user's identity or permission says the vote is not allowed; every other failure says only that it was not saved. */
 const failureMessage = (error: ApiError): { title: string; message: string } => {
   if (isRateLimited(error)) {
     return {
@@ -51,8 +51,27 @@ const failureMessage = (error: ApiError): { title: string; message: string } => 
   if (isConflict(error)) {
     return { title: 'Vote not saved', message: 'Another vote on this idea was in progress. Please try again.' };
   }
-  const transport = error.kind !== 'http' || (error.status !== null && error.status >= 500);
-  return { title: transport ? 'Vote not saved' : 'Voting not allowed', message: error.message };
+  const refused = error.kind === 'http' && (error.status === 401 || error.status === 403);
+  return { title: refused ? 'Voting not allowed' : 'Vote not saved', message: error.message };
+};
+
+/**
+ * Stops the list refetches in flight so their answer cannot overwrite an optimistic patch made after they started.
+ * A "Load more" fetch is left alone, and so is a first load: neither is a reconciliation of data the vote can change.
+ * Cancelling reverts a query to the state it had when the fetch began, so the data it holds now is put back afterwards.
+ */
+const cancelListRefetches = async (queryClient: QueryClient) => {
+  const refetching = queryClient
+    .getQueryCache()
+    .findAll({ queryKey: ideasKeys.lists(), fetchStatus: 'fetching' })
+    .filter(query => query.state.data !== undefined && !query.state.fetchMeta?.fetchMore);
+  await Promise.all(
+    refetching.map(async query => {
+      const data = query.state.data as ListCache;
+      await queryClient.cancelQueries({ queryKey: query.queryKey, exact: true });
+      if (query.state.data !== data) queryClient.setQueryData<ListCache>(query.queryKey, data);
+    }),
+  );
 };
 
 /**
@@ -63,10 +82,11 @@ export const useVote = (ideaId: number) => {
   const queryClient = useQueryClient();
 
   return useMutation<Idea, ApiError, VoteVariables, { previous: PreviousByList }>({
-    mutationKey: VOTE_MUTATION_KEY,
+    mutationKey: voteMutationKey(ideaId),
     scope: { id: `vote-${ideaId}` },
     mutationFn: ({ idea, value }) => (nextVote(idea, value) === 0 ? withdrawVote(idea.id) : castVote(idea.id, value)),
-    onMutate: ({ idea, value }) => {
+    onMutate: async ({ idea, value }) => {
+      await cancelListRefetches(queryClient);
       const previous: PreviousByList = [];
       for (const [key, cache] of queryClient.getQueriesData<ListCache>({ queryKey: ideasKeys.lists() })) {
         const current = findIdea(cache, idea.id);

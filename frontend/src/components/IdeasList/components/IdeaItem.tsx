@@ -6,7 +6,9 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { ActionIcon, Avatar, Grid, Group, Paper, Text, VisuallyHidden } from '@mantine/core';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 
-import { useVote } from '@/hooks/useVote';
+import { useIsMutating } from '@tanstack/react-query';
+
+import { useVote, voteMutationKey } from '@/hooks/useVote';
 import type { Idea, VoteValue } from '@/types/ideas';
 
 dayjs.extend(relativeTime);
@@ -18,7 +20,9 @@ interface IdeaItemProps {
 const ANONYMOUS = 'Anonymous';
 
 const IdeaItem = ({ idea }: IdeaItemProps) => {
-  const { mutate, isPending } = useVote(idea.id);
+  const { mutate } = useVote(idea.id);
+  // Read from the mutation cache rather than from this instance, so a remount in the middle of a vote keeps the arrows disabled.
+  const isPending = useIsMutating({ mutationKey: voteMutationKey(idea.id) }) > 0;
 
   // Pressing the arrow that is already active withdraws the vote; the other arrow switches it.
   // While a vote on this idea is in flight the arrows are aria-disabled and dimmed, and clicks are ignored.

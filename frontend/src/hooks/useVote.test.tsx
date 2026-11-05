@@ -6,6 +6,7 @@ import { server } from '@/test/server';
 import { createTestQueryClient, createWrapper, makeIdea, makePage, problem } from '@/test/utils';
 import type { Idea, IdeaPage } from '@/types/ideas';
 import { ideasKeys } from './queryKeys';
+import { useIdeas } from './useIdeas';
 import { nextVote, useVote } from './useVote';
 
 const seed = (ideas: Idea[][]) => {
@@ -169,18 +170,32 @@ describe('useVote', () => {
     expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote not saved' }));
   });
 
-  it('shows the server message for a rejected vote', async () => {
-    const target = makeIdea({ id: 1 });
-    const client = seed([[target]]);
-    server.use(http.put('/api/ideas/1/vote', () => problem(404, 'IDEA_NOT_FOUND')));
+  it.each([
+    [401, 'UNAUTHORIZED'],
+    [403, 'FORBIDDEN'],
+  ])('says voting is not allowed for a %i', async (status, code) => {
+    await failingVote(() => problem(status, code));
 
-    const { result } = renderHook(() => useVote(1), { wrapper: createWrapper({ client }) });
-    act(() => result.current.mutate({ idea: target, value: 1 }));
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
     expect(notifications.show).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Voting not allowed', message: 'IDEA_NOT_FOUND detail' }),
+      expect.objectContaining({ title: 'Voting not allowed', message: `${code} detail` }),
     );
+  });
+
+  it.each([
+    [400, 'VALIDATION_FAILED'],
+    [404, 'IDEA_NOT_FOUND'],
+  ])('uses the neutral title with the server detail for a %i', async (status, code) => {
+    await failingVote(() => problem(status, code));
+
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Vote not saved', message: `${code} detail` }),
+    );
+  });
+
+  it('uses the neutral title for a response that cannot be read', async () => {
+    await failingVote(() => HttpResponse.json({ ok: true }));
+
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote not saved' }));
   });
 
   it('explains a rate limit without a wait time', async () => {
@@ -273,5 +288,85 @@ describe('useVote', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ideasKeys.lists() });
+  });
+
+  it('does not refetch while another vote is still in flight', async () => {
+    const first = makeIdea({ id: 1, score: 3, myVote: 0 });
+    const second = makeIdea({ id: 2, score: 5, myVote: 0 });
+    const client = seed([[first, second]]);
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const secondGate = deferred();
+    server.use(
+      http.put('/api/ideas/1/vote', () => HttpResponse.json({ ...first, score: 4, myVote: 1 })),
+      http.put('/api/ideas/2/vote', async () => {
+        await secondGate.gate;
+        return HttpResponse.json({ ...second, score: 6, myVote: 1 });
+      }),
+    );
+
+    const { result } = renderHook(() => ({ a: useVote(1), b: useVote(2) }), { wrapper: createWrapper({ client }) });
+    act(() => {
+      result.current.a.mutate({ idea: first, value: 1 });
+      result.current.b.mutate({ idea: second, value: 1 });
+    });
+    await waitFor(() => expect(result.current.a.isSuccess).toBe(true));
+    expect(invalidate).not.toHaveBeenCalled();
+
+    secondGate.release();
+    await waitFor(() => expect(result.current.b.isSuccess).toBe(true));
+    await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(1));
+  });
+
+  it('keeps a vote started during the refetch of an earlier vote from being reverted by its answer', async () => {
+    const first = makeIdea({ id: 1, score: 3, myVote: 0 });
+    const second = makeIdea({ id: 2, score: 5, myVote: 0 });
+    const secondGate = deferred();
+    const refetchGate = deferred();
+    let listCalls = 0;
+    server.use(
+      http.get('/api/ideas', async () => {
+        listCalls += 1;
+        if (listCalls === 2) {
+          await refetchGate.gate;
+          // The answer to the reconciliation refetch started by the first vote: it predates the second vote.
+          return HttpResponse.json(makePage([{ ...first, score: 4, myVote: 1 }, second]));
+        }
+        if (listCalls === 1) return HttpResponse.json(makePage([first, second]));
+        return HttpResponse.json(
+          makePage([
+            { ...first, score: 4, myVote: 1 },
+            { ...second, score: 6, myVote: 1 },
+          ]),
+        );
+      }),
+      http.put('/api/ideas/1/vote', () => HttpResponse.json({ ...first, score: 4, myVote: 1 })),
+      http.put('/api/ideas/2/vote', async () => {
+        await secondGate.gate;
+        return HttpResponse.json({ ...second, score: 6, myVote: 1 });
+      }),
+    );
+
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => ({ list: useIdeas('newest'), a: useVote(1), b: useVote(2) }), {
+      wrapper: createWrapper({ client }),
+    });
+    await waitFor(() => expect(result.current.list.ideas).toHaveLength(2));
+
+    act(() => result.current.a.mutate({ idea: first, value: 1 }));
+    await waitFor(() => expect(listCalls).toBe(2));
+
+    act(() => result.current.b.mutate({ idea: second, value: 1 }));
+    await waitFor(() => expect(cached(client)[1]).toMatchObject({ score: 6, myVote: 1 }));
+
+    refetchGate.release();
+    await pause(50);
+    expect(cached(client)[1]).toMatchObject({ score: 6, myVote: 1 });
+    expect(cached(client)[0]).toMatchObject({ score: 4, myVote: 1 });
+
+    secondGate.release();
+    await waitFor(() => expect(result.current.b.isSuccess).toBe(true));
+    await waitFor(() => expect(listCalls).toBe(3));
+    await waitFor(() => expect(result.current.list.isFetching).toBe(false));
+    expect(cached(client)[1]).toMatchObject({ score: 6, myVote: 1 });
   });
 });
