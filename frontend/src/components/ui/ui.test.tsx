@@ -45,10 +45,16 @@ describe('ErrorBoundary', () => {
 });
 
 describe('ErrorState', () => {
-  it('is an alert with the message and no button without a retry handler', () => {
+  it('is a status with the message and no button without a retry handler', () => {
     renderUi(<ErrorState message="Nope" />);
-    expect(screen.getByRole('alert')).toHaveTextContent('Nope');
+    expect(screen.getByRole('status')).toHaveTextContent('Nope');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('is an alert when asked to be', () => {
+    renderUi(<ErrorState message="Nope" role="alert" />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Nope');
   });
 
   it('calls the retry handler', async () => {

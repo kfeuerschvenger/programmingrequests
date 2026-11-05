@@ -13,8 +13,18 @@ const SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
 
 const IdeasList = () => {
   const { sort, setSort } = useListQueryState();
-  const { ideas, isPending, isError, error, refetch, isRefetching, hasNextPage, fetchNextPage, isFetchingNextPage } =
-    useIdeas(sort);
+  const {
+    ideas,
+    isPending,
+    isError,
+    isFetchNextPageError,
+    error,
+    refetch,
+    isRefetching,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useIdeas(sort);
 
   let content;
   if (isPending) {
@@ -29,8 +39,15 @@ const IdeasList = () => {
         {ideas.map(idea => (
           <IdeaItem key={idea.id} idea={idea} />
         ))}
-        {isError && <ErrorState message={error.message} onRetry={() => void fetchNextPage()} />}
-        {hasNextPage && (
+        {isError && (
+          // Retry what failed: the next page when that was the failed request, otherwise the list itself.
+          <ErrorState
+            message={error.message}
+            onRetry={() => void (isFetchNextPageError ? fetchNextPage() : refetch())}
+            retrying={isFetchNextPageError ? isFetchingNextPage : isRefetching}
+          />
+        )}
+        {hasNextPage && !isError && (
           <Center mt="md">
             <Button variant="light" loading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
               Load more

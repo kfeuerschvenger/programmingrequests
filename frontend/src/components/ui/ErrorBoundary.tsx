@@ -25,6 +25,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.hasError) return this.props.children;
     return (
       <ErrorState
+        role="alert"
         title="Something went wrong"
         message="An unexpected error stopped the page from loading. Reloading usually fixes it."
         retryLabel="Reload page"

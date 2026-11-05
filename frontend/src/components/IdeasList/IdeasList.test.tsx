@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/server';
@@ -25,7 +25,7 @@ describe('IdeasList', () => {
     expect(await screen.findByText('No previous ideas where found')).toBeInTheDocument();
   });
 
-  it('shows an alert with a retry that recovers', async () => {
+  it('shows a status error with a retry that recovers', async () => {
     const user = userEvent.setup();
     let fail = true;
     server.use(
@@ -37,11 +37,12 @@ describe('IdeasList', () => {
     );
     renderWithProviders(<IdeasList />);
 
-    const alert = await screen.findByRole('alert');
-    expect(within(alert).getByText('VALIDATION_FAILED detail')).toBeInTheDocument();
+    const status = (await screen.findByText('VALIDATION_FAILED detail')).closest<HTMLElement>('[role="status"]')!;
+    expect(status).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     fail = false;
-    await user.click(within(alert).getByRole('button', { name: 'Try again' }));
+    await user.click(within(status).getByRole('button', { name: 'Try again' }));
 
     expect(await screen.findByText('Recovered idea')).toBeInTheDocument();
   });
@@ -85,8 +86,90 @@ describe('IdeasList', () => {
     await screen.findByText('Idea on page one');
     await user.click(screen.getByRole('button', { name: 'Load more' }));
 
-    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(await screen.findByText('VALIDATION_FAILED detail')).toBeInTheDocument();
     expect(screen.getByText('Idea on page one')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+  });
+
+  it('retries only the next page when that is what failed', async () => {
+    const user = userEvent.setup();
+    const pages: (string | null)[] = [];
+    let failNext = true;
+    server.use(
+      http.get('/api/ideas', ({ request }) => {
+        const page = new URL(request.url).searchParams.get('page');
+        pages.push(page);
+        if (page === '0') {
+          return HttpResponse.json(
+            makePage([makeIdea({ id: 1, description: 'Idea on page one' })], { page: 0, totalPages: 2 }),
+          );
+        }
+        return failNext
+          ? problem(400, 'VALIDATION_FAILED')
+          : HttpResponse.json(
+              makePage([makeIdea({ id: 2, description: 'Idea on page two' })], { page: 1, totalPages: 2 }),
+            );
+      }),
+    );
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText('Idea on page one');
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    await screen.findByText('VALIDATION_FAILED detail');
+
+    failNext = false;
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByText('Idea on page two')).toBeInTheDocument();
+    expect(pages).toEqual(['0', '1', '1']);
+  });
+
+  it('refetches the list, without Load more, when a background refetch fails', async () => {
+    const user = userEvent.setup();
+    let calls = 0;
+    server.use(
+      http.get('/api/ideas', () => {
+        calls += 1;
+        return calls === 2
+          ? problem(400, 'VALIDATION_FAILED')
+          : HttpResponse.json(
+              makePage([makeIdea({ id: 1, description: 'Idea on page one' })], { page: 0, totalPages: 2 }),
+            );
+      }),
+    );
+    const { client } = renderWithProviders(<IdeasList />);
+
+    await screen.findByText('Idea on page one');
+    await act(() => client.invalidateQueries());
+    await screen.findByText('VALIDATION_FAILED detail');
+    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+    await waitFor(() => expect(screen.queryByText('VALIDATION_FAILED detail')).not.toBeInTheDocument());
+    expect(calls).toBe(3);
+    expect(screen.getByRole('button', { name: 'Load more' })).toBeInTheDocument();
+  });
+
+  it('keeps the current ideas on screen while a new sort loads', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/ideas', async ({ request }) => {
+        if (new URL(request.url).searchParams.get('sort') === 'oldest') {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return HttpResponse.json(makePage([makeIdea({ id: 2, description: 'Oldest idea' })]));
+        }
+        return HttpResponse.json(makePage([makeIdea({ id: 1, description: 'Newest idea' })]));
+      }),
+    );
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText('Newest idea');
+    await user.click(screen.getByText('Oldest'));
+
+    expect(screen.queryByTestId('idea-list-skeleton')).not.toBeInTheDocument();
+    expect(screen.getByText('Newest idea')).toBeInTheDocument();
+    expect(await screen.findByText('Oldest idea')).toBeInTheDocument();
   });
 
   it('requests the sort from the URL and changes it with the control', async () => {
@@ -109,9 +192,14 @@ describe('IdeasList', () => {
   it('votes optimistically from the list', async () => {
     const user = userEvent.setup();
     const idea = makeIdea({ id: 5, score: 3, myVote: 0 });
+    // The list refetches after the vote settles, so the server state has to move with the vote.
+    let stored = idea;
     server.use(
-      http.get('/api/ideas', () => HttpResponse.json(makePage([idea]))),
-      http.put('/api/ideas/5/vote', () => HttpResponse.json({ ...idea, score: 4, myVote: 1 })),
+      http.get('/api/ideas', () => HttpResponse.json(makePage([stored]))),
+      http.put('/api/ideas/5/vote', () => {
+        stored = { ...idea, score: 4, myVote: 1 };
+        return HttpResponse.json(stored);
+      }),
     );
     renderWithProviders(<IdeasList />, { withNotifications: true });
 
@@ -119,6 +207,8 @@ describe('IdeasList', () => {
     await user.click(screen.getByRole('button', { name: 'Vote up' }));
 
     await waitFor(() => expect(screen.getByTestId('score')).toHaveTextContent('4'));
+    expect(screen.getByTestId('score')).toHaveTextContent('Score: 4');
+    expect(screen.getByTestId('score')).toHaveAttribute('aria-live', 'polite');
     expect(screen.getByRole('button', { name: 'Vote up' })).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByText('Vote submitted!')).toBeInTheDocument();
   });

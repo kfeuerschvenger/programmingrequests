@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { IDEAS_PAGE_SIZE } from '@/config/constants';
 import { listIdeas } from '@/services/ideas.service';
 import type { Idea, IdeaSort } from '@/types/ideas';
@@ -10,6 +10,8 @@ export const useIdeas = (sort: IdeaSort) => {
   const query = useInfiniteQuery({
     queryKey: ideasKeys.list(sort),
     queryFn: ({ pageParam, signal }) => listIdeas({ page: pageParam, size: IDEAS_PAGE_SIZE, sort }, signal),
+    // Keeps the previous sort on screen while the new one loads, so changing the sort does not flash the skeleton.
+    placeholderData: keepPreviousData,
     initialPageParam: 0,
     getNextPageParam: lastPage => (lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined),
   });

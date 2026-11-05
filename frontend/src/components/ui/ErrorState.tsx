@@ -7,6 +7,8 @@ interface ErrorStateProps {
   retryLabel?: string;
   onRetry?: () => void;
   retrying?: boolean;
+  /** `alert` interrupts the screen reader and is for the last-resort fallback; `status` announces politely. */
+  role?: 'alert' | 'status';
 }
 
 export function ErrorState({
@@ -15,9 +17,10 @@ export function ErrorState({
   retryLabel = 'Try again',
   onRetry,
   retrying,
+  role = 'status',
 }: ErrorStateProps) {
   return (
-    <Alert role="alert" color="red" variant="light" title={title} icon={<IconAlertCircle />}>
+    <Alert role={role} color="red" variant="light" title={title} icon={<IconAlertCircle />}>
       <Stack gap="sm" align="flex-start">
         {message}
         {onRetry && (
