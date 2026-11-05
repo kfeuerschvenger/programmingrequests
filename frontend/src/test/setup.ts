@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { notifications } from '@mantine/notifications';
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from './server';
@@ -35,6 +36,8 @@ window.HTMLElement.prototype.scrollIntoView = () => undefined;
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 afterEach(() => {
   cleanup();
+  // The notification store is module-level, so a notification shown by one test would appear in the next one that mounts <Notifications />.
+  notifications.clean();
   server.resetHandlers();
 });
 afterAll(() => server.close());

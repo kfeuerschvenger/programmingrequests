@@ -11,16 +11,17 @@ export const useCreateIdea = () => {
 
   return useMutation<Awaited<ReturnType<typeof createIdea>>, ApiError, NewIdea>({
     mutationFn: createIdea,
-    onSuccess: async () => {
+    onSuccess: () => {
       notifications.show({
         title: 'Idea submitted!',
         message: 'Thank you for sharing your idea!',
         color: 'teal',
       });
-      await queryClient.invalidateQueries({ queryKey: ideasKeys.lists() });
+      // Not awaited: the mutation settles, and the form resets and re-enables, without waiting for the list refetch.
+      void queryClient.invalidateQueries({ queryKey: ideasKeys.lists() });
     },
     onError: error => {
-      // Field errors are shown next to their inputs by the form.
+      // Field errors are shown next to their inputs by the form, which also notifies any that map to no input.
       if (error.fieldErrors.length > 0) return;
       notifications.show({
         title: error.is('RATE_LIMITED') ? 'Slow down' : 'Idea not submitted',

@@ -41,11 +41,38 @@ describe('SubmitIdeaForm', () => {
     const user = userEvent.setup();
     renderWithProviders(<SubmitIdeaForm />);
 
-    await user.type(screen.getByLabelText('Author'), 'a'.repeat(61));
+    // Pasting is one event; typing 61 characters one by one is slow enough to hit the test timeout on a busy machine.
+    await user.click(screen.getByLabelText('Author'));
+    await user.paste('a'.repeat(61));
     await user.type(screen.getByLabelText('Description'), VALID);
     await user.click(screen.getByRole('button', { name: 'Submit' }));
 
     expect(await screen.findByText(/60 characters at most/)).toBeInTheDocument();
+  });
+
+  it('keeps the inputs focusable and read-only while the request is pending', async () => {
+    const user = userEvent.setup();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>(resolve => (release = resolve));
+    server.use(
+      http.post('/api/ideas', async () => {
+        await gate;
+        return HttpResponse.json(makeIdea(), { status: 201 });
+      }),
+    );
+    const { container } = renderWithProviders(<SubmitIdeaForm />);
+
+    await user.type(screen.getByLabelText('Description'), VALID);
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    await waitFor(() => expect(screen.getByLabelText('Description')).toHaveAttribute('readonly'));
+    expect(screen.getByLabelText('Description')).not.toBeDisabled();
+    expect(screen.getByLabelText('Author')).toHaveAttribute('readonly');
+    expect(container.querySelector('form')).toHaveAttribute('aria-busy', 'true');
+
+    release();
+    await waitFor(() => expect(screen.getByLabelText('Description')).not.toHaveAttribute('readonly'));
+    expect(screen.getByLabelText('Description')).toHaveValue('');
   });
 
   it('submits trimmed values, omits an empty author and clears the form', async () => {
@@ -106,6 +133,28 @@ describe('SubmitIdeaForm', () => {
     expect(await screen.findByText('The description is not acceptable.')).toBeInTheDocument();
     expect(screen.getByText('The author is not acceptable.')).toBeInTheDocument();
     expect(screen.getByLabelText('Description')).toHaveValue(VALID);
+  });
+
+  it('notifies a field error that maps to no input', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post('/api/ideas', () =>
+        problem(400, 'VALIDATION_FAILED', {
+          errors: [
+            { field: 'description', message: 'The description is not acceptable.' },
+            { field: 'request', message: 'The request is malformed.' },
+          ],
+        }),
+      ),
+    );
+    renderWithProviders(<SubmitIdeaForm />, { withNotifications: true });
+
+    await user.type(screen.getByLabelText('Description'), VALID);
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(await screen.findByText('The description is not acceptable.')).toBeInTheDocument();
+    expect(await screen.findByText('The request is malformed.')).toBeInTheDocument();
+    expect(screen.getByText('Idea not submitted')).toBeInTheDocument();
   });
 
   it('notifies a failure that has no field errors', async () => {

@@ -1,5 +1,6 @@
 import { Button, Group, Space, Textarea, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 
 import { useCreateIdea } from '@/hooks/useCreateIdea';
@@ -26,17 +27,23 @@ export function SubmitIdeaForm() {
         // The server repeats the validation, so its field errors appear next to their inputs.
         onError: error => {
           const errors: Record<string, string> = {};
+          const unmapped: string[] = [];
           for (const issue of error.fieldErrors) {
             if ((FORM_FIELDS as readonly string[]).includes(issue.field)) errors[issue.field] = issue.message;
+            else unmapped.push(issue.message);
           }
           form.setErrors(errors);
+          // An error that belongs to no input would otherwise vanish, leaving a rejected submit with no explanation.
+          if (unmapped.length > 0) {
+            notifications.show({ title: 'Idea not submitted', message: unmapped.join(' '), color: 'red' });
+          }
         },
       },
     );
   };
 
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
+    <form onSubmit={form.onSubmit(handleSubmit)} noValidate aria-busy={isPending}>
       <Title order={3}>Submit your idea</Title>
       <Space h="xl" />
       <Group align="flex-start">
@@ -44,7 +51,7 @@ export function SubmitIdeaForm() {
           label="Author"
           placeholder="Author (optional)"
           type="text"
-          disabled={isPending}
+          readOnly={isPending}
           {...form.getInputProps('author')}
         />
         <Button type="submit" loading={isPending}>
@@ -55,7 +62,7 @@ export function SubmitIdeaForm() {
       <Textarea
         label="Description"
         placeholder="Write your idea here"
-        disabled={isPending}
+        readOnly={isPending}
         autosize
         minRows={3}
         maxRows={8}
