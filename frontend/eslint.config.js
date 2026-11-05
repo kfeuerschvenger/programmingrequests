@@ -1,34 +1,40 @@
+import js from '@eslint/js';
 import globals from 'globals';
-import pluginJs from '@eslint/js';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
-import pluginReact from 'eslint-plugin-react';
-import stylisticJs from '@stylistic/eslint-plugin-js';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import prettier from 'eslint-config-prettier/flat';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
+export default defineConfig([
+  globalIgnores(['dist', 'coverage', 'node_modules']),
   {
-    files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
-  },
-  {
-    languageOptions: { globals: globals.browser },
-  },
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  pluginReact.configs.flat.recommended,
-  eslintPluginPrettierRecommended,
-  {
-    plugins: {
-      '@stylistic/js': stylisticJs,
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommendedTypeChecked,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+      prettier,
+    ],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.browser,
+      parserOptions: {
+        project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     rules: {
-      '@stylistic/js/indent': ['error', 2],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
     },
   },
   {
-    rules: {
-      'react/react-in-jsx-scope': 0,
-      'semi-style': ['error', 'last'],
-    },
+    files: ['**/*.{js,cjs,mjs}'],
+    extends: [js.configs.recommended, prettier],
+    languageOptions: { ecmaVersion: 2022, globals: globals.node },
   },
-];
+]);

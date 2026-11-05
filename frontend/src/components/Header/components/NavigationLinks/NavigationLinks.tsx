@@ -5,10 +5,7 @@ interface Link {
   path: string;
 }
 
-const links: Link[] = [
-  { label: 'Home', path: '/' },
-  { label: 'Pixel Art', path: '/pixel-art' },
-];
+const links: Link[] = [{ label: 'Home', path: '/' }];
 
 export function NavigationLinks({ className, onClick }: { className?: string; onClick?: () => void }) {
   return (

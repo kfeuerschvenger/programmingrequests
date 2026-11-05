@@ -1,27 +1,16 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react-swc';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import react from '@vitejs/plugin-react';
+import path from 'node:path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// The backend the dev server forwards /api to. Inside the dev compose network it is http://api:8080.
+// The backend the dev server forwards /api to. Inside the dev compose network it is http://code-quests-api:8080, the API's alias on app_net.
 const apiProxyTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:8080';
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
+      '@': path.resolve(import.meta.dirname, 'src'),
     },
-  },
-  build: {
-    ssr: false,
-  },
-  optimizeDeps: {
-    include: ['@mantine/core', '@mantine/hooks', '@tabler/icons-react', 'dayjs'],
   },
   server: {
     host: true,
@@ -36,7 +25,7 @@ export default defineConfig({
         changeOrigin: false,
         xfwd: true,
         // The API trusts X-Forwarded-For from this dev server, so the header must carry only the address of the browser connection. An inbound value is dropped, never extended, which keeps a client from choosing its own identity.
-        configure: (proxy) => {
+        configure: proxy => {
           proxy.on('proxyReq', (proxyReq, req) => {
             const address = req.socket.remoteAddress;
             if (address) {

@@ -1,16 +1,16 @@
-FROM node:20-alpine AS build
+FROM node:22.23.4-alpine3.24 AS build
 
 WORKDIR /front
 
-COPY package*.json .
+COPY package*.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
 RUN npm run build
 
-FROM nginx:alpine
+FROM nginx:1.31.8-alpine3.24
 
 COPY --from=build /front/dist /usr/share/nginx/html
 
@@ -19,8 +19,10 @@ ENV NGINX_ENVSUBST_FILTER=^NGINX_TEMPLATE_VAR_
 
 COPY nginx/templates/ /etc/nginx/templates/
 
-# Runs before the template step. It writes the set_real_ip_from list from TRUSTED_EDGE_PROXIES, which is empty by default.
+# Runs after the template step (20-envsubst-on-templates). That order is safe because the template only includes the generated files, and nginx reads them when it starts. The script writes the set_real_ip_from list from TRUSTED_EDGE_PROXIES, which is empty by default.
 ENV TRUSTED_EDGE_PROXIES=
+
+COPY nginx/security-headers.conf /etc/nginx/security-headers.conf
 
 COPY nginx/25-trusted-edge-proxies.sh /docker-entrypoint.d/25-trusted-edge-proxies.sh
 

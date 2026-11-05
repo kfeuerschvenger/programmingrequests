@@ -1,0 +1,8 @@
+.region {
+  transition: opacity 150ms ease;
+}
+
+/* The previous sort is still on screen while the new one loads, so it is dimmed to read as out of date. */
+.stale {
+  opacity: 0.6;
+}

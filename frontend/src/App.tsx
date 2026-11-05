@@ -1,10 +1,9 @@
-import '@mantine/core/styles.css';
-
 import { Routes, Route } from 'react-router-dom';
 import { Container } from '@mantine/core';
 
-import { HomePage, PixelArtPage } from '@/views';
-import { Footer, Header } from '@/components';
+import { HomePage } from '@/views/HomePage';
+import { Footer } from '@/components/Footer/Footer';
+import { Header } from '@/components/Header/Header';
 
 function App() {
   return (
@@ -13,7 +12,6 @@ function App() {
       <Container className="maincontainer" my="md">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/pixel-art" element={<PixelArtPage />} />
         </Routes>
       </Container>
       <Footer />

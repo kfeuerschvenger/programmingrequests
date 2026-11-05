@@ -214,6 +214,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if (status.is5xxServerError()) {
             SecureLogger.errorWithCause(log, "Request failed with {} in {}", ex, status.value(), origin(ex));
         } else if (status.value() == HttpStatus.CONFLICT.value()) {
+            // A client can provoke conflicts on purpose, so this line could flood the log. The write rate limiter bounds it: a voter reaches this branch only as often as its vote and create budget allows.
             SecureLogger.warn(log, "Request conflicted with {}", status.value());
         } else {
             SecureLogger.debug(log, "Request rejected with {} ({})", status.value(), ex.getClass().getSimpleName());
