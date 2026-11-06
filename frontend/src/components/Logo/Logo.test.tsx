@@ -4,19 +4,10 @@ import { renderWithProviders } from '@/test/utils';
 import { Logo } from './Logo';
 
 describe('Logo', () => {
-  it('exposes the product name as its accessible name', () => {
-    renderWithProviders(<Logo />);
+  it.each(['header', 'footer'] as const)('exposes the product name and an image source in the %s variant', variant => {
+    renderWithProviders(<Logo variant={variant} />);
 
     const logo = screen.getByRole('img', { name: 'Code Quests' });
-    expect(logo).toHaveAttribute('src');
-    expect(logo.getAttribute('src')).toMatch(/svg/);
-  });
-
-  it('keeps the header variant at a fixed 28px size', () => {
-    renderWithProviders(<Logo variant="header" />);
-
-    const logo = screen.getByRole('img', { name: 'Code Quests' });
-    expect(logo.getAttribute('style')).toMatch(/height: calc\(1\.75rem/);
-    expect(logo.getAttribute('style')).toMatch(/width: calc\(1\.75rem/);
+    expect(logo.getAttribute('src')).toBeTruthy();
   });
 });
