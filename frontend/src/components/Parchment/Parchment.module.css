@@ -1,0 +1,100 @@
+/* The outlines and the wear overlays are generated SVG, stretched to the size of the element. Each look is a mask for the shape and an overlay for the burnt edges and the stains. */
+.root {
+  position: relative;
+  isolation: isolate;
+  filter: var(--cq-paper-shadow);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.root[data-lifts]:hover,
+.root[data-lifts]:focus-within {
+  transform: rotate(0deg) translateY(-4px);
+}
+
+.root[data-kind='card'][data-tear='0'] {
+  --mask: url('../../assets/paper/card-0-mask.svg');
+  --wear: url('../../assets/paper/card-0-wear.svg');
+}
+
+.root[data-kind='card'][data-tear='1'] {
+  --mask: url('../../assets/paper/card-1-mask.svg');
+  --wear: url('../../assets/paper/card-1-wear.svg');
+}
+
+.root[data-kind='card'][data-tear='2'] {
+  --mask: url('../../assets/paper/card-2-mask.svg');
+  --wear: url('../../assets/paper/card-2-wear.svg');
+}
+
+.root[data-kind='card'][data-tear='3'] {
+  --mask: url('../../assets/paper/card-3-mask.svg');
+  --wear: url('../../assets/paper/card-3-wear.svg');
+}
+
+.root[data-kind='card'][data-tear='4'] {
+  --mask: url('../../assets/paper/card-4-mask.svg');
+  --wear: url('../../assets/paper/card-4-wear.svg');
+}
+
+.root[data-kind='card'][data-tear='5'] {
+  --mask: url('../../assets/paper/card-5-mask.svg');
+  --wear: url('../../assets/paper/card-5-wear.svg');
+}
+
+.root[data-kind='sheet'][data-tear='0'] {
+  --mask: url('../../assets/paper/sheet-0-mask.svg');
+  --wear: url('../../assets/paper/sheet-0-wear.svg');
+}
+
+.root[data-kind='sheet'][data-tear='1'] {
+  --mask: url('../../assets/paper/sheet-1-mask.svg');
+  --wear: url('../../assets/paper/sheet-1-wear.svg');
+}
+
+/* Text stays inside the padding, clear of the torn edge, and is never touched by the mask: it only clips the paper behind it. */
+.sheet {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 2.1rem 1.9rem 1.7rem;
+  color: var(--cq-ink);
+  background-color: var(--cq-parchment);
+  background-image:
+    linear-gradient(var(--cq-paper-dim), var(--cq-paper-dim)), var(--wear), url('../../assets/textures/parchment.webp');
+  background-size:
+    100% 100%,
+    100% 100%,
+    320px 320px;
+  background-position:
+    0 0,
+    0 0,
+    var(--tx, 0) var(--ty, 0);
+  -webkit-mask-image: var(--mask);
+  mask-image: var(--mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.root[data-kind='sheet'] > .sheet {
+  padding: 2.6rem clamp(1.6rem, 5vw, 3.2rem) 2.2rem;
+}
+
+/* A brass pin, outside the masked sheet so the tear does not clip it. */
+.pin {
+  position: absolute;
+  top: 0.45rem;
+  left: var(--pin-x, 50%);
+  z-index: 1;
+  width: 1rem;
+  height: 1rem;
+  margin-left: -0.5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1c9 0 12%, #e9b15a 32%, #c8962e 62%, #7a5614 100%);
+  box-shadow:
+    0 2px 2px rgb(24 12 4 / 0.55),
+    inset 0 -1px 1px rgb(60 30 4 / 0.5);
+  pointer-events: none;
+}

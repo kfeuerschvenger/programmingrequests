@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { ErrorState } from './ErrorState';
+import classes from './States.module.css';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -24,13 +25,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render() {
     if (!this.state.hasError) return this.props.children;
     return (
-      <ErrorState
-        role="alert"
-        title="Something went wrong"
-        message="An unexpected error stopped the page from loading. Reloading usually fixes it."
-        retryLabel="Reload page"
-        onRetry={() => window.location.reload()}
-      />
+      <main className={classes.boundary}>
+        <ErrorState
+          role="alert"
+          title="The tavern is on fire"
+          message="An unexpected error stopped the board from loading. Reloading the page usually puts the fire out."
+          retryLabel="Reload page"
+          onRetry={() => window.location.reload()}
+        />
+      </main>
     );
   }
 }

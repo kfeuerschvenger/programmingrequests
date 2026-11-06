@@ -1,0 +1,76 @@
+.state {
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.boundary {
+  padding: 4rem 1rem;
+}
+
+.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.icon {
+  color: #7a5614;
+}
+
+.alertIcon {
+  color: var(--cq-wax-text);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--cq-heading-font);
+  font-size: 1.35rem;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.message {
+  max-width: 34rem;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.skeletonCard {
+  list-style: none;
+}
+
+.bar {
+  display: block;
+  height: 0.8rem;
+  margin-bottom: 0.7rem;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgb(74 60 48 / 0.14) 25%, rgb(74 60 48 / 0.26) 50%, rgb(74 60 48 / 0.14) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.barShort {
+  width: 55%;
+}
+
+.barByline {
+  width: 38%;
+  margin-top: 1.4rem;
+}
+
+.barVote {
+  height: 2.6rem;
+  margin: 1rem 0 0;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}

@@ -3,11 +3,11 @@ import classes from './IdeaItem.module.css';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { ActionIcon, Avatar, Grid, Group, Paper, Text, VisuallyHidden } from '@mantine/core';
-import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
-
+import { IconShieldCheck, IconShieldX } from '@tabler/icons-react';
 import { useIsMutating } from '@tanstack/react-query';
 
+import { Parchment } from '@/components/Parchment/Parchment';
+import { WaxSeal } from '@/components/WaxSeal/WaxSeal';
 import { useVote, voteMutationKey } from '@/hooks/useVote';
 import type { Idea, VoteValue } from '@/types/ideas';
 
@@ -17,88 +17,62 @@ interface IdeaItemProps {
   idea: Idea;
 }
 
-const ANONYMOUS = 'Anonymous';
+export const ANONYMOUS = 'Anonymous adventurer';
 
 const IdeaItem = ({ idea }: IdeaItemProps) => {
   const { mutate } = useVote(idea.id);
-  // Read from the mutation cache rather than from this instance, so a remount in the middle of a vote keeps the arrows disabled.
+  // Read from the mutation cache rather than from this instance, so a remount in the middle of a vote keeps the buttons disabled.
   const isPending = useIsMutating({ mutationKey: voteMutationKey(idea.id) }) > 0;
 
-  // Pressing the arrow that is already active withdraws the vote; the other arrow switches it.
-  // While a vote on this idea is in flight the arrows are aria-disabled and dimmed, and clicks are ignored.
+  // Pressing the button that is already active withdraws the vote; the other one switches it.
+  // While a vote on this quest is in flight the buttons are aria-disabled and dimmed, and clicks are ignored.
   const handleVote = (value: VoteValue) => {
     if (isPending) return;
     mutate({ idea, value });
   };
 
-  const pendingStyle = { outline: 'none', opacity: isPending ? 0.5 : 1 };
-
   const author = idea.author ?? ANONYMOUS;
 
   return (
-    <Paper withBorder radius="md" className={classes.comment}>
-      <Grid>
-        <Grid.Col span={11}>
-          <Group>
-            <Avatar name={author} color="initials" />
-            <div>
-              <Text fz="sm">{author}</Text>
-              <Text fz="xs" c="dimmed">
-                {dayjs(idea.createdAt).fromNow()}
-              </Text>
-            </div>
-          </Group>
-          <Text className={classes.body} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-            {idea.description}
-          </Text>
-        </Grid.Col>
-        <Grid.Col span={1}>
-          <ActionIcon.Group orientation="vertical">
-            <ActionIcon
-              variant={idea.myVote === 1 ? 'light' : 'transparent'}
-              color="teal"
-              size="md"
-              radius="md"
-              aria-label="Vote up"
-              aria-pressed={idea.myVote === 1}
-              aria-disabled={isPending}
-              onClick={() => handleVote(1)}
-              style={pendingStyle}
-            >
-              <IconChevronUp color="var(--mantine-color-teal-text)" />
-            </ActionIcon>
-            <ActionIcon
-              component="div"
-              variant="transparent"
-              color="dark.4"
-              size="md"
-              radius="md"
-              role="status"
-              aria-live="polite"
-              data-testid="score"
-            >
-              <VisuallyHidden>Score: </VisuallyHidden>
-              <Text fw={700} c="var(--mantine-color-text)">
-                {idea.score}
-              </Text>
-            </ActionIcon>
-            <ActionIcon
-              variant={idea.myVote === -1 ? 'light' : 'transparent'}
-              color="red"
-              size="md"
-              radius="md"
-              aria-label="Vote down"
-              aria-pressed={idea.myVote === -1}
-              aria-disabled={isPending}
-              onClick={() => handleVote(-1)}
-              style={pendingStyle}
-            >
-              <IconChevronDown color="var(--mantine-color-red-text)" />
-            </ActionIcon>
-          </ActionIcon.Group>
-        </Grid.Col>
-      </Grid>
-    </Paper>
+    <Parchment as="li" seed={idea.id} pinned lifts className={classes.item}>
+      <p className={classes.body}>{idea.description}</p>
+      <div className={classes.rule} aria-hidden="true" />
+      <p className={classes.byline}>
+        <span className={classes.author}>{author}</span>
+        <time className={classes.time} dateTime={idea.createdAt}>
+          {dayjs(idea.createdAt).fromNow()}
+        </time>
+      </p>
+      <div className={classes.vote}>
+        <button
+          type="button"
+          className={classes.button}
+          data-kind="back"
+          data-pending={isPending || undefined}
+          aria-label="Back this quest"
+          aria-pressed={idea.myVote === 1}
+          aria-disabled={isPending}
+          onClick={() => handleVote(1)}
+        >
+          <IconShieldCheck size={20} stroke={2} aria-hidden="true" />
+          Back
+        </button>
+        <WaxSeal value={idea.score} testId="score" />
+        <button
+          type="button"
+          className={classes.button}
+          data-kind="reject"
+          data-pending={isPending || undefined}
+          aria-label="Reject this quest"
+          aria-pressed={idea.myVote === -1}
+          aria-disabled={isPending}
+          onClick={() => handleVote(-1)}
+        >
+          <IconShieldX size={20} stroke={2} aria-hidden="true" />
+          Reject
+        </button>
+      </div>
+    </Parchment>
   );
 };
 

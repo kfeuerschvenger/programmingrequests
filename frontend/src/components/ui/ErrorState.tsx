@@ -1,5 +1,7 @@
-import { Alert, Button, Stack } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { Button } from '@mantine/core';
+import { IconFlame } from '@tabler/icons-react';
+import { Parchment } from '@/components/Parchment/Parchment';
+import classes from './States.module.css';
 
 interface ErrorStateProps {
   title?: string;
@@ -12,7 +14,7 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  title = 'UPS! There was an error',
+  title = 'The board creaked and something broke',
   message,
   retryLabel = 'Try again',
   onRetry,
@@ -20,15 +22,17 @@ export function ErrorState({
   role = 'status',
 }: ErrorStateProps) {
   return (
-    <Alert role={role} color="red" variant="light" title={title} icon={<IconAlertCircle />}>
-      <Stack gap="sm" align="flex-start">
-        {message}
+    <Parchment kind="sheet" seed={5} pinned leans={false} role={role} className={classes.state}>
+      <div className={classes.centered}>
+        <IconFlame size={44} stroke={1.5} aria-hidden="true" className={classes.alertIcon} />
+        <h3 className={classes.title}>{title}</h3>
+        <p className={classes.message}>{message}</p>
         {onRetry && (
-          <Button variant="light" color="red" size="xs" loading={retrying} onClick={onRetry}>
+          <Button color="wax" loading={retrying} onClick={onRetry} mt="xs">
             {retryLabel}
           </Button>
         )}
-      </Stack>
-    </Alert>
+      </div>
+    </Parchment>
   );
 }

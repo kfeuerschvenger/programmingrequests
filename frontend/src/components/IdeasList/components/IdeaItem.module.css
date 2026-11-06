@@ -1,16 +1,114 @@
-.comment {
-  padding: var(--mantine-spacing-lg) var(--mantine-spacing-xl);
-  margin-bottom: var(--mantine-spacing-lg);
+.item {
+  list-style: none;
+  min-width: 0;
 }
 
 .body {
-  padding-left: 54px;
-  padding-top: var(--mantine-spacing-sm);
-  font-size: var(--mantine-font-size-sm);
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-.content {
-  & > p:last-child {
-    margin-bottom: 0;
+/* A brass hairline with a diamond, the one ornament inside the card text area. */
+.rule {
+  position: relative;
+  height: 1px;
+  margin: 1.1rem 0 0.8rem;
+  background: linear-gradient(90deg, transparent, #9a6f1c 15%, #9a6f1c 85%, transparent);
+}
+
+.rule::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  background: #9a6f1c;
+  transform: rotate(45deg);
+}
+
+.byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 0.75rem;
+  margin: 0 0 0.9rem;
+}
+
+.author {
+  min-width: 0;
+  color: var(--cq-wax-text);
+  font-family: var(--cq-heading-font);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
+
+.time {
+  color: var(--cq-ink-soft);
+  font-size: 0.95rem;
+}
+
+.vote {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.button {
+  --accent: var(--cq-guild-text);
+  --accent-fill: var(--cq-guild);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.6rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 4px;
+  background: rgb(251 244 224 / 0.7);
+  color: var(--accent);
+  font-family: var(--cq-heading-font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 140ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &[data-kind='reject'] {
+    --accent: var(--cq-wax-text);
+    --accent-fill: var(--cq-wax);
+  }
+
+  @mixin hover {
+    background: rgb(255 250 236 / 0.95);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &[aria-pressed='true'] {
+    background: var(--accent-fill);
+    border-color: var(--accent-fill);
+    color: #fffaec;
+  }
+
+  &[data-pending] {
+    opacity: 0.55;
+    cursor: progress;
+    transform: none;
   }
 }

@@ -1,4 +1,4 @@
-import { Button, Center, Grid, SegmentedControl, Space, Title } from '@mantine/core';
+import { Button, SegmentedControl } from '@mantine/core';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useListQueryState } from '@/hooks/useListQueryState';
 import type { IdeaSort } from '@/types/ideas';
@@ -8,7 +8,7 @@ import classes from './IdeasList.module.css';
 
 const SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
   { value: 'newest', label: 'Newest' },
-  { value: 'top', label: 'Top' },
+  { value: 'top', label: 'Most backed' },
   { value: 'oldest', label: 'Oldest' },
 ];
 
@@ -34,53 +34,56 @@ const IdeasList = () => {
   } else if (isError && ideas.length === 0) {
     content = <ErrorState message={error.message} onRetry={() => void refetch()} retrying={isRefetching} />;
   } else if (ideas.length === 0) {
-    content = <EmptyState message="No previous ideas where found" />;
+    content = (
+      <EmptyState message="No quests are pinned yet. Post the first one above and let the guild have its say." />
+    );
   } else {
     content = (
       <>
-        {ideas.map(idea => (
-          <IdeaItem key={idea.id} idea={idea} />
-        ))}
+        <ul className={classes.grid}>
+          {ideas.map(idea => (
+            <IdeaItem key={idea.id} idea={idea} />
+          ))}
+        </ul>
         {isError && (
           // Retry what failed: the next page when that was the failed request, otherwise the list itself.
-          <ErrorState
-            message={error.message}
-            onRetry={() => void (isFetchNextPageError ? fetchNextPage() : refetch())}
-            retrying={isFetchNextPageError ? isFetchingNextPage : isRefetching}
-          />
+          <div className={classes.after}>
+            <ErrorState
+              message={error.message}
+              onRetry={() => void (isFetchNextPageError ? fetchNextPage() : refetch())}
+              retrying={isFetchNextPageError ? isFetchingNextPage : isRefetching}
+            />
+          </div>
         )}
-        {hasNextPage && !isError && (
-          <Center mt="md">
-            <Button variant="light" loading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
-              Load more
+        {/* While the previous sort is still shown as placeholder data, the next page would be fetched for the new sort. */}
+        {hasNextPage && !isError && !isPlaceholderData && (
+          <div className={classes.after}>
+            <Button loading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
+              Load more quests
             </Button>
-          </Center>
+          </div>
         )}
       </>
     );
   }
 
   return (
-    <>
-      <Title order={3}>Pool of ideas</Title>
-      <Space h="md" />
-      <SegmentedControl aria-label="Sort ideas" size="xs" value={sort} onChange={setSort} data={SORT_OPTIONS} />
-      <Space h="xl" />
-      <Grid>
-        <Grid.Col span="auto"></Grid.Col>
-        <Grid.Col span={8}>
-          <div
-            role="region"
-            aria-label="Ideas"
-            aria-busy={isPlaceholderData}
-            className={`${classes.region} ${isPlaceholderData ? classes.stale : ''}`.trim()}
-          >
-            {content}
-          </div>
-        </Grid.Col>
-        <Grid.Col span="auto"></Grid.Col>
-      </Grid>
-    </>
+    <section aria-labelledby="quest-board-title" className={classes.board}>
+      <div className={classes.head}>
+        <h2 id="quest-board-title" className={classes.plank}>
+          The Quest Board
+        </h2>
+        <SegmentedControl aria-label="Sort quests" value={sort} onChange={setSort} data={SORT_OPTIONS} />
+      </div>
+      <div
+        role="region"
+        aria-label="Quests"
+        aria-busy={isPlaceholderData}
+        className={`${classes.region} ${isPlaceholderData ? classes.stale : ''}`.trim()}
+      >
+        {content}
+      </div>
+    </section>
   );
 };
 
