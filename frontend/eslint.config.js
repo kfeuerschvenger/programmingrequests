@@ -34,7 +34,14 @@ export default defineConfig([
   },
   {
     files: ['**/*.{js,cjs,mjs}'],
+    ignores: ['public/**'],
     extends: [js.configs.recommended, prettier],
     languageOptions: { ecmaVersion: 2022, globals: globals.node },
+  },
+  {
+    // Classic scripts served as they are, so they run in the browser and not in Node.
+    files: ['public/**/*.js'],
+    extends: [js.configs.recommended, prettier],
+    languageOptions: { ecmaVersion: 2022, sourceType: 'script', globals: globals.browser },
   },
 ]);

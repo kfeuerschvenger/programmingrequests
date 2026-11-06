@@ -1,0 +1,153 @@
+/*
+ * Quest board tokens. Surfaces come in two kinds: wood (the board, the planks) carries cream text, and parchment (cards, the form, the modal) carries ink.
+ * Both kinds keep that pairing in light and dark mode, so contrast never depends on the scheme. The scheme changes the light in the room: daylight on the board, or candles.
+ */
+:root {
+  --cq-wood: #3b2a1e;
+  --cq-wood-deep: #241811;
+  --cq-parchment: #f3e6c8;
+  --cq-cream: #f3e6c8;
+  --cq-cream-soft: #d9c9a6;
+  --cq-ink: #2b2622;
+  --cq-ink-soft: #4a3c30;
+  --cq-wax: #9e2b25;
+  --cq-wax-text: #7c211d;
+  --cq-wax-deep: #6e1b17;
+  --cq-brass: #c8962e;
+  --cq-brass-light: #f2c46b;
+  --cq-glyph: #fbe6b4;
+  --cq-guild: #3f6b3a;
+  --cq-guild-text: #32552e;
+  --cq-heading-font: 'Cinzel', 'Trajan Pro', Georgia, 'Times New Roman', serif;
+  --cq-z-sticky: 20;
+
+  /* Light: parchment by day. */
+  --cq-board-lift: rgb(255 226 170 / 0.1);
+  --cq-board-glow: radial-gradient(ellipse 70% 45% at 50% 0%, rgb(255 222 160 / 0.22), transparent 70%);
+  --cq-board-vignette: radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgb(24 12 4 / 0.5) 100%);
+  --cq-paper-dim: transparent;
+  --cq-paper-shadow: drop-shadow(0 6px 5px rgb(24 12 4 / 0.42)) drop-shadow(0 1px 1px rgb(24 12 4 / 0.5));
+  --cq-plank-sheen: rgb(255 226 170 / 0.14);
+  --cq-field-bg: #fbf4e0;
+}
+
+[data-mantine-color-scheme='dark'] {
+  /* Dark: the same room lit by candles. */
+  --cq-board-lift: rgb(0 0 0 / 0.38);
+  --cq-board-glow:
+    radial-gradient(ellipse 36% 40% at 12% 8%, rgb(255 170 70 / 0.26), transparent 70%),
+    radial-gradient(ellipse 36% 40% at 88% 6%, rgb(255 160 60 / 0.2), transparent 70%);
+  --cq-board-vignette: radial-gradient(ellipse 110% 85% at 50% 30%, transparent 35%, rgb(4 2 0 / 0.78) 100%);
+  --cq-paper-dim: rgb(40 20 6 / 0.2);
+  --cq-paper-shadow: drop-shadow(0 8px 7px rgb(0 0 0 / 0.6)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.6));
+  --cq-plank-sheen: rgb(255 190 110 / 0.08);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background-color: var(--cq-wood);
+  background-image:
+    linear-gradient(var(--cq-board-lift), var(--cq-board-lift)), url('../assets/textures/wood-dark.webp');
+  background-size:
+    auto,
+    512px 512px;
+  color: var(--cq-cream);
+  font-family: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Candle or daylight and the dark corners, painted once on a fixed layer so scrolling never repaints it. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--cq-board-glow), var(--cq-board-vignette);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--cq-heading-font);
+  font-weight: 700;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 5.2vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1 0 auto;
+  padding-bottom: 1rem;
+}
+
+.main:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+::selection {
+  background: var(--cq-brass-light);
+  color: var(--cq-ink);
+}
+
+/* Two rings, ink inside and brass outside, so a focused control stands out on both wood and parchment. */
+:focus-visible,
+.mantine-focus-auto:focus-visible,
+.mantine-focus-always:focus {
+  outline: 2px solid var(--cq-ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--cq-brass-light);
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background: var(--cq-parchment);
+  color: var(--cq-ink);
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

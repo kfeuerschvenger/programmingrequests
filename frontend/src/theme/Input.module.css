@@ -1,0 +1,63 @@
+/* Fields sit on parchment in both colour schemes, so they are always light fields with ink text. */
+.wrapper {
+  --input-bg: var(--cq-field-bg);
+  --input-bd: #8a6a45;
+  --input-bd-focus: var(--cq-ink);
+  --input-color: var(--cq-ink);
+  --input-placeholder-color: #6b5a49;
+  --input-error-color: var(--cq-wax-text);
+}
+
+.label {
+  margin-bottom: 0.25rem;
+  color: var(--cq-ink);
+  font-family: var(--cq-heading-font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.description {
+  margin-bottom: 0.3rem;
+  color: var(--cq-ink-soft);
+  font-size: 0.95rem;
+}
+
+.error {
+  margin-top: 0.3rem;
+  color: var(--cq-wax-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* Doubled selectors outrank Mantine's dark-scheme input rules. */
+[data-mantine-color-scheme] .input.input {
+  border-color: #8a6a45;
+  background-color: var(--cq-field-bg);
+  color: var(--cq-ink);
+
+  &:focus {
+    border-color: var(--cq-ink);
+  }
+
+  &[data-error] {
+    border-color: var(--cq-wax-text);
+  }
+}
+
+.input {
+  border-width: 1.5px;
+  box-shadow: inset 0 2px 3px rgb(60 36 12 / 0.16);
+  color: var(--cq-ink);
+  font-size: 1.0625rem;
+
+  &[data-error] {
+    border-color: var(--cq-wax-text);
+    color: var(--cq-ink);
+  }
+
+  &::placeholder {
+    color: #6b5a49;
+    opacity: 1;
+  }
+}

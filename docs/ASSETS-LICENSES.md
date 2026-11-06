@@ -20,13 +20,14 @@ All textures come from ambientCG, which publishes every asset under the Creative
 | `frontend/src/assets/textures/parchment.webp` | Paper 006 | `Paper006` | https://ambientcg.com/a/Paper006 | CC0 1.0 |
 | `frontend/src/assets/textures/leather.webp` | Leather 028 | `Leather028` | https://ambientcg.com/a/Leather028 | CC0 1.0 |
 
-## Typeface
+## Typefaces
 
 | Asset | Source | Licence | Licence text in the repo |
 | --- | --- | --- | --- |
-| Cinzel, by the Cinzel Project Authors | https://github.com/google/fonts/tree/main/ofl/cinzel | SIL Open Font License 1.1 | [`docs/assets/brand/fonts/Cinzel-OFL.txt`](assets/brand/fonts/Cinzel-OFL.txt) |
+| Cinzel, by the Cinzel Project Authors | https://github.com/google/fonts/tree/main/ofl/cinzel | SIL Open Font License 1.1 | [`frontend/src/assets/fonts/Cinzel-OFL.txt`](../frontend/src/assets/fonts/Cinzel-OFL.txt) and [`docs/assets/brand/fonts/Cinzel-OFL.txt`](assets/brand/fonts/Cinzel-OFL.txt) |
+| Alegreya Sans (Regular, Medium, Bold), by the Alegreya Sans Project Authors | https://github.com/google/fonts/tree/main/ofl/alegreyasans | SIL Open Font License 1.1 | [`frontend/src/assets/fonts/AlegreyaSans-OFL.txt`](../frontend/src/assets/fonts/AlegreyaSans-OFL.txt) |
 
-The font file itself is not committed. The wordmark and the taglines in `docs/assets/brand/` are Cinzel glyphs converted to outlined paths, so the SVG files need no font. The licence text is kept next to them as the OFL asks.
+The web app serves both typefaces from its own origin, as WOFF2 files in `frontend/src/assets/fonts/`. Each file is the upstream font from the `google/fonts` repository, subset to Latin and converted to WOFF2 with fontTools, with no other change. Cinzel is the variable font, so one file covers every weight. The wordmark and the taglines in `docs/assets/brand/` are Cinzel glyphs converted to outlined paths, so those SVG files need no font. The licence texts are kept next to the fonts as the OFL asks.
 
 ## Original work
 
