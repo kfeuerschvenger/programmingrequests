@@ -38,18 +38,28 @@ const findIdea = (cache: ListCache | undefined, id: number): Idea | undefined =>
   return undefined;
 };
 
-/** Only a refusal of the user's identity or permission says the vote is not allowed; every other failure says only that it was not saved. */
+/** A timeout, a network error or an unreadable answer arrive after the request left, so the server may have stored the vote. */
+const isUncertain = (error: ApiError) =>
+  error.kind === 'timeout' || error.kind === 'network' || error.kind === 'invalid_response';
+
+/** Only a refusal of the user's identity or permission says the vote is not allowed. An uncertain outcome says the vote may not have been saved, never that it was not; every other failure says it was not saved. */
 const failureMessage = (error: ApiError): { title: string; message: string } => {
   if (isRateLimited(error)) {
     return {
-      title: 'Too many votes',
+      title: 'Easy there, adventurer',
       message: error.retryAfterSeconds
         ? `You are voting too fast. Try again in ${error.retryAfterSeconds} seconds.`
         : 'You are voting too fast. Try again in a moment.',
     };
   }
   if (isConflict(error)) {
-    return { title: 'Vote not saved', message: 'Another vote on this idea was in progress. Please try again.' };
+    return { title: 'Vote not saved', message: 'Another vote on this quest was in progress. Please try again.' };
+  }
+  if (isUncertain(error)) {
+    return {
+      title: 'Vote may not have been saved',
+      message: `${error.message} The board will refresh to show where your vote stands.`,
+    };
   }
   const refused = error.kind === 'http' && (error.status === 401 || error.status === 403);
   return { title: refused ? 'Voting not allowed' : 'Vote not saved', message: error.message };
@@ -77,6 +87,9 @@ const cancelListRefetches = async (queryClient: QueryClient) => {
 /**
  * Casts, switches or withdraws a vote on one idea, updating the score and the user's vote in every cached page at once.
  * Votes on the same idea run one after another; a failure restores only that idea, never the rest of the cache.
+ *
+ * The optimistic patch is not defended against every refetch: a "Load more" in flight, or a refetch that was paused while the browser was offline, can land after the patch and briefly show the score the server had before the vote.
+ * The invalidation in `onSettled` reconciles it, so the list always ends on the server's answer.
  */
 export const useVote = (ideaId: number) => {
   const queryClient = useQueryClient();
@@ -116,15 +129,17 @@ export const useVote = (ideaId: number) => {
         patchIdea(cache, updated.id, () => updated),
       );
       notifications.show({
-        color: 'teal',
-        title: updated.myVote === 0 ? 'Vote withdrawn' : 'Vote submitted!',
-        message: updated.myVote === 0 ? 'Your vote on this idea is gone.' : 'Thank you for your feedback on this idea!',
+        color: 'green',
+        title: updated.myVote === 0 ? 'Vote withdrawn' : 'Vote sealed',
+        message:
+          updated.myVote === 0 ? 'Your vote has left the board.' : 'Your vote is on the board. The guild thanks you.',
       });
     },
     onSettled: () => {
       // Reconcile with the server once the last vote in flight has settled: refetching earlier would overwrite another idea's optimistic state.
+      // `cancelRefetch: false` joins a fetch already in flight instead of cancelling it, so a "Load more" the user just pressed is not thrown away.
       if (queryClient.isMutating({ mutationKey: VOTE_MUTATION_KEY }) <= 1) {
-        void queryClient.invalidateQueries({ queryKey: ideasKeys.lists() });
+        void queryClient.invalidateQueries({ queryKey: ideasKeys.lists() }, { cancelRefetch: false });
       }
     },
   });
