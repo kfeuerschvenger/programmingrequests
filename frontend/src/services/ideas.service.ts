@@ -25,7 +25,7 @@ const pageSchema = z.object({
 const parseResponse = <T>(
   schema: z.ZodType<T>,
   data: unknown,
-  message = 'The server sent an unexpected response. Please try again.',
+  message = 'The server answered in a language we could not read. Please try again.',
 ): T => {
   const result = schema.safeParse(data);
   if (!result.success) throw new ApiError({ kind: 'invalid_response', message });
@@ -34,7 +34,7 @@ const parseResponse = <T>(
 
 /** A create that reached the server but came back unreadable may have been stored, so asking for a plain retry would invite a duplicate. */
 const CREATE_UNREADABLE_MESSAGE =
-  'The server sent an unexpected answer, so your idea may have been posted. Check the list before submitting it again.';
+  'The server answered in a language we could not read, so your quest may have been posted. Check the board before posting it again.';
 
 export const listIdeas = async (params: ListIdeasParams, signal?: AbortSignal): Promise<IdeaPage> => {
   const { data } = await httpClient.get<unknown>(endpoints.ideas(), { params, signal });

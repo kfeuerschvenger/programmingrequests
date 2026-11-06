@@ -45,9 +45,9 @@ export class ApiError extends Error {
   }
 }
 
-const FALLBACK_MESSAGE = 'Something went wrong. Please try again.';
-const NETWORK_MESSAGE = 'Could not reach the server. Check your connection and try again.';
-const TIMEOUT_MESSAGE = 'The server took too long to respond. Please try again.';
+const FALLBACK_MESSAGE = 'The quest board hit a snag. Please try again.';
+const NETWORK_MESSAGE = 'The messenger raven did not come back. Check your connection and try again.';
+const TIMEOUT_MESSAGE = 'The server is taking too long to answer. Please try again.';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
@@ -123,7 +123,7 @@ const fromResponse = (status: number, data: unknown, retryAfterHeader: unknown):
 /** Turns anything thrown by a request into an {@link ApiError}. */
 export const normalizeError = (error: unknown): ApiError => {
   if (error instanceof ApiError) return error;
-  if (axios.isCancel(error)) return new ApiError({ kind: 'canceled', message: 'The request was canceled.' });
+  if (axios.isCancel(error)) return new ApiError({ kind: 'canceled', message: 'The request was called off.' });
   if (axios.isAxiosError(error)) {
     if (error.response) {
       return fromResponse(error.response.status, error.response.data, error.response.headers?.['retry-after']);
