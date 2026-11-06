@@ -1,61 +1,42 @@
-import { ActionIcon, Container, Group, Space, Text, Tooltip } from '@mantine/core';
-import { IconBrandGithub, IconBrandGmail, IconBrandLinkedin } from '@tabler/icons-react';
+import { IconBrandGithub, IconBrandLinkedin, IconWorld } from '@tabler/icons-react';
 import { Logo } from '@/components/Logo/Logo';
 import classes from './Footer.module.css';
+
+const LINKS = [
+  { label: 'GitHub', href: 'https://github.com/kfeuerschvenger', Icon: IconBrandGithub },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/kevin-feuerschvenger/', Icon: IconBrandLinkedin },
+  { label: 'Portfolio', href: 'https://feuerschvenger.com/', Icon: IconWorld },
+] as const;
 
 export function Footer() {
   return (
     <footer className={classes.footer}>
-      <Container className={classes.inner}>
-        <div className={classes.logo}>
-          <Logo variant="footer" />
+      <div className={classes.inner}>
+        <div className={classes.about}>
+          <Logo variant="footer" decorative />
+          <div>
+            <p className={classes.credit}>
+              Built with care by <span className={classes.author}>Kevin Feuerschvenger</span>
+            </p>
+            <p className={classes.note}>
+              No accounts, no scrolls to sign. A vote is tied to a keyed hash of your network address, never to your
+              name.
+            </p>
+          </div>
         </div>
-      </Container>
-      <Container className={classes.afterFooter}>
-        <Text c="dimmed" size="sm">
-          &#129414; 2025 Kevin Feuerschvenger. Made with &#10084; and some &#9749;.
-        </Text>
-        <Group gap={0} className={classes.social} justify="flex-end" wrap="nowrap">
-          <Tooltip label="Checkout my LinkedIn profile!">
-            <ActionIcon
-              component="a"
-              href="https://www.linkedin.com/in/kevin-feuerschvenger/"
-              target="_blank"
-              size="lg"
-              color="gray"
-              variant="subtle"
-            >
-              <IconBrandLinkedin size={38} stroke={1.5} />
-            </ActionIcon>
-          </Tooltip>
-          <Space w="sm" />
-          <Tooltip label="Send me a mail if you want :)">
-            <ActionIcon
-              component="a"
-              href="mailto:kfeuerschvenger@gmail.com"
-              target="_blank"
-              size="lg"
-              color="gray"
-              variant="subtle"
-            >
-              <IconBrandGmail size={38} stroke={1.5} />
-            </ActionIcon>
-          </Tooltip>
-          <Space w="sm" />
-          <Tooltip label="This proyect is on my GitHub account">
-            <ActionIcon
-              component="a"
-              href="https://github.com/kfeuerschvenger"
-              target="_blank"
-              size="lg"
-              color="gray"
-              variant="subtle"
-            >
-              <IconBrandGithub size={38} stroke={1.5} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Container>
+        <nav aria-label="Author links">
+          <ul className={classes.links}>
+            {LINKS.map(({ label, href, Icon }) => (
+              <li key={label}>
+                <a className={classes.link} href={href} target="_blank" rel="noopener noreferrer">
+                  <Icon size={20} stroke={1.75} aria-hidden="true" />
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
     </footer>
   );
 }

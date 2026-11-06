@@ -1,29 +1,58 @@
-.maincontainer {
-  position: relative;
-  min-height: 100%;
-  padding-bottom: 60px;
-  box-sizing: border-box;
-  -webkit-box-sizing: border-box;
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+  width: 100%;
+  max-width: 75rem;
+  margin-inline: auto;
+  padding: 3.2rem 1rem 0;
+
+  @media (min-width: $mantine-breakpoint-sm) {
+    padding-inline: 1.6rem;
+  }
 }
 
-.icon {
-  width: 22px;
-  height: 22px;
+.hero {
+  max-width: 48rem;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .title {
-  font-family:
-    Greycliff CF,
-    var(--mantine-font-family);
-  font-size: 62px;
-  font-weight: 900;
-  line-height: 1.1;
   margin: 0;
-  padding: 0;
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  color: var(--cq-cream);
+  text-shadow:
+    0 2px 0 rgb(0 0 0 / 0.65),
+    0 6px 18px rgb(0 0 0 / 0.55);
+  text-wrap: balance;
+}
 
-  @media (max-width: $mantine-breakpoint-sm) {
-    font-size: 42px;
-    line-height: 1.2;
-  }
+/* A brass line with a diamond, drawn once, under the title. */
+.rule {
+  position: relative;
+  width: min(100%, 22rem);
+  height: 2px;
+  margin: 1.4rem auto;
+  background: linear-gradient(90deg, transparent, var(--cq-brass) 18%, var(--cq-brass) 82%, transparent);
+}
+
+.rule::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: calc(50% - 6px);
+  width: 12px;
+  height: 12px;
+  background: var(--cq-brass);
+  box-shadow: 0 0 0 3px #33241a;
+  transform: rotate(45deg);
+}
+
+.intro {
+  max-width: 38rem;
+  margin: 0 auto;
+  color: var(--cq-cream);
+  font-size: 1.2rem;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+  text-wrap: pretty;
 }

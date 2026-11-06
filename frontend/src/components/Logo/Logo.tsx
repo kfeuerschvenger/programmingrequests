@@ -3,10 +3,14 @@ import mark from '../../assets/mark-color.svg';
 
 type LogoProps = {
   variant?: 'header' | 'footer';
+  /** The name is written next to the mark, so the image adds nothing for a screen reader. */
+  decorative?: boolean;
 };
 
-export function Logo({ variant = 'footer' }: LogoProps) {
-  const isHeader = variant === 'header';
+const SIZES = { header: 44, footer: 32 } as const;
 
-  return <Image src={mark} h={isHeader ? 28 : undefined} w={isHeader ? 28 : undefined} alt="Code Quests" />;
+export function Logo({ variant = 'footer', decorative = false }: LogoProps) {
+  const size = SIZES[variant];
+
+  return <Image src={mark} h={size} w={size} alt={decorative ? '' : 'Code Quests'} />;
 }

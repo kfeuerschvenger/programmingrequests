@@ -1,85 +1,44 @@
 import classes from './Header.module.css';
 
-import {
-  ActionIcon,
-  Box,
-  Burger,
-  Divider,
-  Drawer,
-  Group,
-  ScrollArea,
-  Tooltip,
-  useComputedColorScheme,
-  useMantineColorScheme,
-} from '@mantine/core';
-
-import { useDisclosure } from '@mantine/hooks';
+import { Tooltip, UnstyledButton, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 import { IconHelp, IconMoon, IconSun } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 
 import { Logo } from '@/components/Logo/Logo';
-import { showInfo, NavigationLinks } from './components';
+import { showInfo } from './components';
 
 export function Header() {
-  const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
-
-  const { toggleColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
-
-  const ThemeToggle = (
-    <Tooltip label="Toggle theme">
-      <ActionIcon onClick={toggleColorScheme} variant="default" size="xl" aria-label="Toggle color scheme">
-        <IconSun display={computedColorScheme === 'light' ? 'none' : 'block'} className="icon" stroke={1.5} />
-        <IconMoon display={computedColorScheme === 'dark' ? 'none' : 'block'} className="icon" stroke={1.5} />
-      </ActionIcon>
-    </Tooltip>
-  );
-
-  const InfoButton = (
-    <Tooltip label="Shows info about how the voting system works">
-      <ActionIcon onClick={showInfo} variant="default" size="xl" aria-label="Voting system info">
-        <IconHelp className="icon" stroke={1.5} />
-      </ActionIcon>
-    </Tooltip>
-  );
+  const { setColorScheme } = useMantineColorScheme();
+  const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
+  const nextScheme = scheme === 'light' ? 'dark' : 'light';
+  const themeLabel = `Switch to ${nextScheme} mode`;
 
   return (
-    <Box pb={60}>
-      <header className={classes.header}>
-        <Group justify="space-between" h="100%">
-          <Logo variant="header" />
+    <header className={classes.header}>
+      <div className={classes.inner}>
+        <Link to="/" className={classes.brand}>
+          <Logo variant="header" decorative />
+          <span className={classes.name}>Code Quests</span>
+        </Link>
 
-          <Group h="100%" gap={0} visibleFrom="sm">
-            <NavigationLinks className={classes.link} />
-          </Group>
-
-          <Group visibleFrom="sm">
-            {InfoButton}
-            {ThemeToggle}
-          </Group>
-
-          <Burger opened={drawerOpened} onClick={toggleDrawer} hiddenFrom="sm" />
-        </Group>
-      </header>
-
-      <Drawer
-        opened={drawerOpened}
-        onClose={closeDrawer}
-        size="100%"
-        padding="md"
-        title="Navigation"
-        hiddenFrom="sm"
-        zIndex={1000000}
-      >
-        <ScrollArea h="calc(100vh - 80px)" mx="-md">
-          <Divider my="sm" />
-          <NavigationLinks onClick={closeDrawer} />
-          <Divider my="sm" />
-          <Group justify="center" grow pb="xl" px="md">
-            {InfoButton}
-            {ThemeToggle}
-          </Group>
-        </ScrollArea>
-      </Drawer>
-    </Box>
+        <div className={classes.tools}>
+          <Tooltip label="How voting works">
+            <UnstyledButton className={classes.tool} onClick={showInfo} aria-label="Voting rules">
+              <IconHelp size={22} stroke={1.75} aria-hidden="true" />
+              <span className={classes.toolText}>Voting rules</span>
+            </UnstyledButton>
+          </Tooltip>
+          <Tooltip label={themeLabel}>
+            <UnstyledButton className={classes.tool} onClick={() => setColorScheme(nextScheme)} aria-label={themeLabel}>
+              {scheme === 'light' ? (
+                <IconMoon size={22} stroke={1.75} aria-hidden="true" />
+              ) : (
+                <IconSun size={22} stroke={1.75} aria-hidden="true" />
+              )}
+            </UnstyledButton>
+          </Tooltip>
+        </div>
+      </div>
+    </header>
   );
 }

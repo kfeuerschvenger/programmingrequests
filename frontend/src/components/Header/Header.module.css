@@ -1,50 +1,116 @@
+/* The header is a carved plank nailed across the top of the board. */
 .header {
-  height: 60px;
-  padding-left: var(--mantine-spacing-md);
-  padding-right: var(--mantine-spacing-md);
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  position: relative;
+  z-index: var(--cq-z-sticky);
+  border-bottom: 3px solid #140d08;
+  background-color: #3b2a1e;
+  background-image:
+    linear-gradient(rgb(255 226 170 / 0.16), transparent 18%, rgb(0 0 0 / 0.38) 100%),
+    url('../../assets/textures/leather.webp');
+  background-size:
+    100% 100%,
+    420px 420px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 226 170 / 0.3),
+    0 10px 22px rgb(0 0 0 / 0.55);
 }
 
-.link {
+/* Brass nails at both ends of the plank. */
+.header::before,
+.header::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-top: -0.35rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1c9 0 12%, #e9b15a 32%, #c8962e 62%, #7a5614 100%);
+  box-shadow:
+    0 2px 2px rgb(0 0 0 / 0.6),
+    inset 0 -1px 1px rgb(60 30 4 / 0.5);
+}
+
+.header::before {
+  left: 0.55rem;
+}
+
+.header::after {
+  right: 0.55rem;
+}
+
+.inner {
   display: flex;
   align-items: center;
-  height: 100%;
-  padding-left: var(--mantine-spacing-md);
-  padding-right: var(--mantine-spacing-md);
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 75rem;
+  min-height: 4.5rem;
+  margin-inline: auto;
+  padding: 0.5rem 1.6rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  color: var(--cq-cream);
   text-decoration: none;
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
-  font-weight: 500;
-  font-size: var(--mantine-font-size-sm);
+}
 
-  @media (max-width: $mantine-breakpoint-sm) {
-    height: 42px;
-    width: 100%;
-  }
+.name {
+  font-family: var(--cq-heading-font);
+  font-size: clamp(1.25rem, 4.6vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-shadow: 0 2px 2px rgb(0 0 0 / 0.7);
+  white-space: nowrap;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.7rem;
+  border: 1px solid rgb(0 0 0 / 0.55);
+  border-radius: 6px;
+  background-color: #2b1d13;
+  background-image: linear-gradient(rgb(255 226 170 / 0.12), rgb(0 0 0 / 0.22));
+  box-shadow:
+    inset 0 1px 0 rgb(255 226 170 / 0.2),
+    0 2px 0 rgb(0 0 0 / 0.5);
+  color: var(--cq-cream);
+  font-family: var(--cq-heading-font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 140ms cubic-bezier(0.22, 1, 0.36, 1);
 
   @mixin hover {
-    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    background-color: #3d2a1b;
+  }
+
+  &:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 1px 0 rgb(255 226 170 / 0.12);
   }
 }
 
-.subLink {
-  width: 100%;
-  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
-  border-radius: var(--mantine-radius-md);
-
-  @mixin hover {
-    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+.toolText {
+  @media (max-width: $mantine-breakpoint-xs) {
+    display: none;
   }
-}
-
-.dropdownFooter {
-  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
-  margin: calc(var(--mantine-spacing-md) * -1);
-  margin-top: var(--mantine-spacing-sm);
-  padding: var(--mantine-spacing-md) calc(var(--mantine-spacing-md) * 2);
-  padding-bottom: var(--mantine-spacing-xl);
-  border-top: 1px solid light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
-}
-
-.logo > Logo {
-  height: calc(1.75rem * var(--mantine-scale));
 }
