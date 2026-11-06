@@ -1,12 +1,21 @@
+import { mkdtempSync, rmSync } from 'node:fs';
 import os from 'node:os';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HtmlTagDescriptor, Plugin, ResolvedConfig } from 'vite';
 import { socialMeta, socialMetaTags } from './vite.social-meta.ts';
 
 const contentOf = (tags: HtmlTagDescriptor[], key: string) =>
   tags.find(t => t.attrs?.property === key || t.attrs?.name === key)?.attrs?.content;
 
-const config = { mode: 'test', root: os.tmpdir(), envDir: os.tmpdir() } as ResolvedConfig;
+// A fresh, empty directory per test: a stray .env in a shared temp directory cannot change the result.
+let envDir = '';
+let config: ResolvedConfig;
+
+beforeEach(() => {
+  envDir = mkdtempSync(path.join(os.tmpdir(), 'social-meta-'));
+  config = { mode: 'test', root: envDir, envDir } as ResolvedConfig;
+});
 
 /** Drives the plugin the way Vite does: configResolved once, then transformIndexHtml. */
 function runPlugin(siteUrl: string): { plugin: Plugin; resolve: () => void; tags: () => HtmlTagDescriptor[] } {
@@ -21,6 +30,7 @@ function runPlugin(siteUrl: string): { plugin: Plugin; resolve: () => void; tags
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  rmSync(envDir, { recursive: true, force: true });
 });
 
 describe('socialMetaTags', () => {

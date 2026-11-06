@@ -5,6 +5,7 @@ const SOCIAL_IMAGE_ALT = 'Code Quests: Post a quest. Let the hero code.';
 
 /**
  * Normalizes the public site URL into a base with no trailing slash: the origin plus any path prefix. Returns undefined when the value is blank.
+ * A path prefix is supported only for `og:url` and the image tags, which this plugin prefixes. The icons, the manifest and nginx stay root-absolute, so a prefix assumes a proxy in front that strips it before the request reaches the site.
  * Throws when the value is not an absolute http or https URL, or carries credentials, a query string or a hash, none of which belong in a base that paths are appended to.
  */
 export function resolveSiteBase(siteUrl: string | undefined): string | undefined {
