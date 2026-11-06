@@ -21,7 +21,7 @@ describe('useCreateIdea', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(client.getQueryState(ideasKeys.list('newest'))?.isInvalidated).toBe(true);
-    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Idea submitted!' }));
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Quest posted' }));
   });
 
   it('leaves field errors to the form', async () => {
@@ -47,7 +47,10 @@ describe('useCreateIdea', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(notifications.show).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Slow down', message: expect.stringContaining('30 seconds') as string }),
+      expect.objectContaining({
+        title: 'Easy there, adventurer',
+        message: expect.stringContaining('30 seconds') as string,
+      }),
     );
   });
 
@@ -63,8 +66,23 @@ describe('useCreateIdea', () => {
     expect(client.getQueryState(ideasKeys.list('newest'))?.isInvalidated).toBe(true);
     expect(notifications.show).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Idea may have been posted',
-        message: expect.stringContaining('Check the list before submitting it again') as string,
+        title: 'Quest may have been posted',
+        message: expect.stringContaining('Check the board before posting it again') as string,
+      }),
+    );
+  });
+
+  it('warns that the quest may be on the board after a network failure', async () => {
+    server.use(http.post('/api/ideas', () => HttpResponse.error()));
+
+    const { result } = renderHook(() => useCreateIdea(), { wrapper: createWrapper() });
+    act(() => result.current.mutate({ description: 'A long enough description' }));
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Quest may have been posted',
+        message: expect.stringContaining('check it before posting again') as string,
       }),
     );
   });
@@ -101,7 +119,7 @@ describe('useCreateIdea', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(notifications.show).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Idea not submitted', message: 'INTERNAL_ERROR detail' }),
+      expect.objectContaining({ title: 'Quest not posted', message: 'INTERNAL_ERROR detail' }),
     );
   });
 });

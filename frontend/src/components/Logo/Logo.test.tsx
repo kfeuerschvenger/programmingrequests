@@ -10,4 +10,11 @@ describe('Logo', () => {
     const logo = screen.getByRole('img', { name: 'Code Quests' });
     expect(logo.getAttribute('src')).toBeTruthy();
   });
+
+  it('is hidden from assistive technology when it is decorative', () => {
+    const { container } = renderWithProviders(<Logo variant="header" decorative />);
+
+    expect(screen.queryByRole('img', { name: 'Code Quests' })).not.toBeInTheDocument();
+    expect(container.querySelector('img')).toHaveAttribute('alt', '');
+  });
 });

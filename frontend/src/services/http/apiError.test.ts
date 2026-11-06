@@ -109,7 +109,7 @@ describe('normalizeError', () => {
     const error = normalizeError(responseError(502, '<html>bad gateway</html>'));
     expect(error.status).toBe(502);
     expect(error.code).toBeNull();
-    expect(error.message).toBe('Something went wrong. Please try again.');
+    expect(error.message).toBe('The quest board hit a snag. Please try again.');
     expect(error.fieldErrors).toEqual([]);
   });
 

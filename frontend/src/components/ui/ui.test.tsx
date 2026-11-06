@@ -36,7 +36,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
+    expect(screen.getByRole('alert')).toHaveTextContent('The tavern is on fire');
     expect(console.error).toHaveBeenCalledWith('Unhandled render error', expect.any(Error), expect.any(String));
     await user.click(screen.getByRole('button', { name: 'Reload page' }));
     expect(reload).toHaveBeenCalled();
@@ -75,6 +75,7 @@ describe('EmptyState', () => {
 describe('IdeaListSkeleton', () => {
   it('is a busy status region', () => {
     renderUi(<IdeaListSkeleton count={2} />);
-    expect(screen.getByRole('status', { name: 'Loading ideas' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('status', { name: 'Unrolling the scrolls' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 });

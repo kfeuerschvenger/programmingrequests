@@ -5,14 +5,25 @@ import { makeIdea, makePage, renderWithProviders } from '@/test/utils';
 import App from './App';
 
 describe('App', () => {
-  it('renders the home page with the form and the list, and no pixel art link', async () => {
+  it('renders the landmarks, the tagline, the form and the board', async () => {
     server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea({ description: 'Listed idea' })]))));
     renderWithProviders(<App />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Programming requests' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Post a quest. Let the hero code.' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Post the quest' })).toBeInTheDocument();
     expect(await screen.findByText('Listed idea')).toBeInTheDocument();
-    expect(screen.queryByText('Pixel Art')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Home' }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { level: 2, name: 'The Quest Board' })).toBeInTheDocument();
+  });
+
+  it('offers a skip link to the main landmark and a home link on the brand', () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([]))));
+    renderWithProviders(<App />);
+
+    expect(screen.getByRole('link', { name: 'Skip to the quest board' })).toHaveAttribute('href', '#main');
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
+    expect(screen.getByRole('link', { name: 'Code Quests' })).toHaveAttribute('href', '/');
   });
 });
