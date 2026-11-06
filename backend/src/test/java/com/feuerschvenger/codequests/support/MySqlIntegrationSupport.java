@@ -12,7 +12,7 @@ import org.testcontainers.mysql.MySQLContainer;
  */
 public abstract class MySqlIntegrationSupport {
 
-    private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4");
+    private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4.13");
 
     static {
         MYSQL.start();
