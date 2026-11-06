@@ -8,6 +8,10 @@ RUN npm ci
 
 COPY . .
 
+# The dev server reads it at start, so the variable stays in the image environment. Blank leaves the image tags out.
+ARG VITE_SITE_URL=
+ENV VITE_SITE_URL=${VITE_SITE_URL}
+
 EXPOSE 3000
 
 CMD ["npm", "run", "dev"]
