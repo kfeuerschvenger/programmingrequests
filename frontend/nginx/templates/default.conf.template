@@ -39,6 +39,12 @@ server {
 
     root /usr/share/nginx/html;
 
+    # The stock mime.types has no entry for .webmanifest. A types block in this server replaces the inherited table, so the stock one is included again before the addition.
+    include /etc/nginx/mime.types;
+    types {
+        application/manifest+json webmanifest;
+    }
+
     # The shell is never cached, so a deploy is picked up at once. The hashed files it points to are cached for good.
     location = /index.html {
         include /etc/nginx/security-headers.conf;
@@ -52,7 +58,7 @@ server {
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
-    # Any other file that exists (the favicon, the logo) is cached for 7 days; every other path is a client-side route.
+    # Any other file that exists (the icons, the web manifest, the social preview) is cached for 7 days; every other path is a client-side route.
     location / {
         try_files $uri @spa;
         include /etc/nginx/security-headers.conf;

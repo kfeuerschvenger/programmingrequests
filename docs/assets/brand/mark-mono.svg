@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor" role="img" aria-labelledby="cq-mono-title">
+  <title id="cq-mono-title">Code Quests</title>
+  <defs>
+    <mask id="cq-mono-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="#fff"/>
+      <g fill="none" stroke="#000" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 22 13 32l10 10"/>
+        <path d="m34.4 26.5-4.8 11"/>
+        <path d="m41 22 10 10-10 10"/>
+      </g>
+    </mask>
+  </defs>
+  <g mask="url(#cq-mono-cut)">
+    <circle cx="32" cy="32" r="26"/>
+    <circle cx="56" cy="32" r="6"/>
+    <circle cx="49" cy="49.5" r="6.5"/>
+    <circle cx="32" cy="57" r="6"/>
+    <circle cx="14.5" cy="49" r="6"/>
+    <circle cx="7" cy="32" r="6.5"/>
+    <circle cx="15" cy="14.5" r="6"/>
+    <circle cx="32" cy="7" r="6"/>
+    <circle cx="49.5" cy="14.5" r="6.5"/>
+  </g>
+</svg>

@@ -8,6 +8,10 @@ RUN npm ci
 
 COPY . .
 
+# Build-time only: Vite inlines the public origin into the Open Graph and Twitter image URLs. It is not set in the final nginx stage. Blank leaves those tags out.
+ARG VITE_SITE_URL=
+ENV VITE_SITE_URL=${VITE_SITE_URL}
+
 RUN npm run build
 
 FROM nginx:1.31.8-alpine3.24

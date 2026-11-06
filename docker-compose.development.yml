@@ -64,6 +64,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+      args:
+        # Optional: the public origin of the site, used for the Open Graph and Twitter image URLs. Blank leaves those tags out.
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
     restart: always
     ports:
       # Published by Docker, so every browser reaches the Vite dev server from the same address, Docker's gateway. The API therefore sees one identity for all browsers on this port, and the rate limits are shared between them.

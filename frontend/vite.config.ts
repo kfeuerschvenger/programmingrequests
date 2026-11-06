@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { socialMeta } from './vite.social-meta.ts';
 
 // The backend the dev server forwards /api to. Inside the dev compose network it is http://code-quests-api:8080, the API's alias on app_net.
 const apiProxyTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:8080';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), socialMeta()],
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),

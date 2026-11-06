@@ -56,7 +56,11 @@ services:
       start_period: 60s
 
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # Optional: the public origin of the site, baked into the Open Graph and Twitter image URLs at build time. Blank leaves those tags out.
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
     restart: always
     environment:
       # Optional: outer reverse proxies (addresses or CIDR ranges, comma or space separated) allowed to state the client address in X-Forwarded-For. Empty trusts nobody and the client address is the TCP peer.
