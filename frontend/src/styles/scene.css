@@ -7,7 +7,11 @@
   --img-beam: image-set(url('../assets/scene/frame-beam.webp') 1x, url('../assets/scene/frame-beam@2x.webp') 2x);
   --img-corner: image-set(url('../assets/scene/frame-corner.webp') 1x, url('../assets/scene/frame-corner@2x.webp') 2x);
   --img-chain: image-set(url('../assets/scene/chain.webp') 1x, url('../assets/scene/chain@2x.webp') 2x);
-  --img-sign: image-set(url('../assets/scene/sign-plank.webp') 1x, url('../assets/scene/sign-plank@2x.webp') 2x);
+  --img-sign: image-set(
+    url('../assets/scene/sign-plank.webp') 1x,
+    url('../assets/scene/sign-plank@2x.webp') 2x,
+    url('../assets/scene/sign-plank@3x.webp') 3x
+  );
   --img-wax-seal: image-set(url('../assets/scene/wax-seal.webp') 1x, url('../assets/scene/wax-seal@2x.webp') 2x);
   --img-flame: image-set(
     url('../assets/scene/flame-strip-screen.webp') 1x,

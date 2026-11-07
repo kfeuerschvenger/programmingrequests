@@ -3,33 +3,41 @@
   padding-bottom: 1.6rem;
 }
 
-/* The sign and what holds it up. The two chains and the rope are placed against this box, which is exactly as wide as the sign. */
+/*
+ * The sign and what holds it up. The two chains and the rope are placed against this box, which is exactly as wide as the sign, and it is a size container so that the title and the chains scale with the sign (cqw).
+ * The sign picture is 4118 x 1006, so its height is 100cqw / 4.0935.
+ */
 .hang {
+  --sign-ratio: 4.0935;
+
   position: relative;
-  width: min(35rem, 100%);
+  width: min(40rem, 100%);
   margin-inline: auto;
   padding-top: 3.6rem;
+  container-type: inline-size;
 }
 
-/* Each chain starts inside the top beam and ends at a ring of the sign. */
+/* Each chain runs from inside the top beam down to the top opening of a ring, which is 11.13% down the sign. The picture holds the first cut link, so the repeat is anchored at the bottom to meet it. */
 .chain {
   position: absolute;
   top: calc(var(--frame) * -0.55);
-  width: 20px;
-  height: calc(3.6rem + var(--frame) * 0.55 + 12px);
+  width: 3.4cqw;
+  height: calc(3.6rem + var(--frame) * 0.55 + 11.13cqw / var(--sign-ratio));
   background-image: var(--img-chain);
-  background-size: 20px auto;
+  background-size: 100% auto;
   background-repeat: repeat-y;
+  background-position: center bottom;
   filter: drop-shadow(3px 4px 3px rgb(0 0 0 / 0.55));
   pointer-events: none;
 }
 
+/* The centres of the ring holes, as a share of the sign width. */
 .chainLeft {
-  left: calc(24.4% - 10px);
+  left: calc(25.1% - 1.7cqw);
 }
 
 .chainRight {
-  left: calc(77.4% - 10px);
+  left: calc(73.83% - 1.7cqw);
 }
 
 .rope {
@@ -49,18 +57,22 @@
 
 /* The plank is a picture, the title on it is real text. */
 .sign {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 512 / 170;
-  padding: 0 10% 3.5%;
+  position: relative;
+  aspect-ratio: 4118 / 1006;
   background-image: var(--img-sign);
   background-size: 100% 100%;
   filter: drop-shadow(6px 9px 6px rgb(0 0 0 / 0.6));
 }
 
+/* The title fills the text-safe rectangle of the plank (x 9.5% to 90.5%, y 25% to 86%) and is centred in it. */
 .title {
+  position: absolute;
+  inset: 25% 9.5% 14%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
-  font-size: clamp(1.7rem, 8vw, 3.1rem);
+  font-size: 10.5cqw;
   line-height: 1;
   letter-spacing: 0.04em;
   text-align: center;
