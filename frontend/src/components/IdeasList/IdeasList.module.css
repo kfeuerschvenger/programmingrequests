@@ -8,30 +8,33 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem 1.5rem;
-  margin-bottom: 2.4rem;
+  /* Room above for the candle that stands on the sort control. */
+  margin: 2.6rem 0 1.4rem;
+
+  @media (max-width: 760px) {
+    row-gap: 3.6rem;
+  }
 }
 
 /* A plank carved with the section name. */
 .plank {
-  position: relative;
   margin: 0;
-  padding: 0.65rem 1.6rem;
-  border: 1px solid rgb(0 0 0 / 0.6);
-  border-radius: 6px;
-  background-color: #33241a;
-  background-image:
-    linear-gradient(var(--cq-plank-sheen), rgb(0 0 0 / 0.25)), url('../../assets/textures/leather.webp');
-  background-size:
-    100% 100%,
-    380px 380px;
-  box-shadow:
-    inset 0 1px 0 rgb(255 226 170 / 0.22),
-    inset 0 -2px 3px rgb(0 0 0 / 0.5),
-    0 8px 14px rgb(0 0 0 / 0.45);
+  padding: 0.35rem 0.55rem;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 15px 24px;
+  border-image-source: var(--img-button-wood);
+  border-image-slice: 36 56 36 56 fill;
+  border-image-width: 15px 24px;
   color: var(--cq-cream);
-  font-size: clamp(1.25rem, 3vw, 1.7rem);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
   letter-spacing: 0.05em;
-  text-shadow: 0 2px 2px rgb(0 0 0 / 0.7);
+  text-shadow: 0 2px 1px rgb(0 0 0 / 0.8);
+  filter: drop-shadow(2px 4px 3px rgb(0 0 0 / 0.55));
+}
+
+.sort {
+  position: relative;
 }
 
 .region {
@@ -43,18 +46,19 @@
   opacity: 0.6;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19.5rem), 1fr));
-  align-items: start;
-  gap: 2.4rem 1.9rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* A decorative paper in the masonry. It is a plain picture, not a card, so it fills only part of its column. */
+.decoration {
+  display: block;
+  width: 82%;
+  height: auto;
+  margin: 0.5rem auto 0;
+  filter: drop-shadow(var(--cq-shadow-x) var(--cq-shadow-y) 5px var(--cq-shadow-color));
+  pointer-events: none;
+  user-select: none;
 }
 
 .after {
   display: flex;
   justify-content: center;
-  margin-top: 2.8rem;
+  margin-top: 2.2rem;
 }

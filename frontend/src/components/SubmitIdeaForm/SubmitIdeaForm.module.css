@@ -1,5 +1,5 @@
-.sheet {
-  max-width: 46rem;
+.sheet.sheet[data-kind] {
+  width: min(46rem, 100% - 2 * var(--sheet-o));
   margin-inline: auto;
 }
 

@@ -1,23 +1,63 @@
 .item {
-  list-style: none;
   min-width: 0;
 }
 
+/*
+ * The visible text is capped at 14 lines, 9 on a two column board where the cards are wider and the screen shorter. With the rest of the card that keeps even a quest of the full 1000 characters under three quarters of the height it would take uncapped.
+ * Read more removes the cap.
+ */
 .body {
+  --lines: 14;
+
+  display: -webkit-box;
   margin: 0;
+  overflow: hidden;
   font-size: 1.15rem;
   line-height: 1.45;
   text-wrap: pretty;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines);
+  line-clamp: var(--lines);
+}
+
+:global([data-columns='2']) .body {
+  --lines: 9;
+}
+
+.body[data-expanded] {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+  margin: 0.3rem 0 0 -0.3rem;
+  padding: 0 0.3rem;
+  border: 0;
+  background: none;
+  color: var(--cq-wax-text);
+  font-family: var(--cq-heading-font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 /* A brass hairline with a diamond, the one ornament inside the card text area. */
 .rule {
   position: relative;
   height: 1px;
-  margin: 1.1rem 0 0.8rem;
-  background: linear-gradient(90deg, transparent, #9a6f1c 15%, #9a6f1c 85%, transparent);
+  margin: 0.9rem 0 0.7rem;
+  background: linear-gradient(90deg, transparent, #8a5f12 15%, #8a5f12 85%, transparent);
 }
 
 .rule::after {
@@ -27,7 +67,7 @@
   left: calc(50% - 4px);
   width: 8px;
   height: 8px;
-  background: #9a6f1c;
+  background: #8a5f12;
   transform: rotate(45deg);
 }
 
@@ -37,7 +77,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 0.15rem 0.75rem;
-  margin: 0 0 0.9rem;
+  margin: 0 0 0.7rem;
 }
 
 .author {
@@ -59,40 +99,53 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.1rem;
 }
 
+/*
+ * Two buttons, two materials. Back is dark wood with cream lettering, Reject is a scroll of parchment with wax red lettering. Both are nine-slice images, so the ends keep their shape at any width.
+ * A pressed button glows and is underlined, so the state does not depend on colour alone.
+ */
 .button {
-  --accent: var(--cq-guild-text);
-  --accent-fill: var(--cq-guild);
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  min-height: 2.75rem;
-  padding: 0.4rem 0.6rem;
-  border: 1.5px solid var(--accent);
-  border-radius: 4px;
-  background: rgb(251 244 224 / 0.7);
-  color: var(--accent);
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 2.9rem;
+  padding: 0;
+  border-style: solid;
+  border-color: transparent;
+  background: none;
   font-family: var(--cq-heading-font);
-  font-size: 0.95rem;
+  font-size: 0.86rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  filter: drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.5));
   transition:
     transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
-    color 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    filter 140ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &[data-kind='back'] {
+    border-width: 12px 15px;
+    border-image-source: var(--img-button-wood);
+    border-image-slice: 36 56 36 56 fill;
+    border-image-width: 12px 15px;
+    color: var(--cq-cream);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.8);
+  }
 
   &[data-kind='reject'] {
-    --accent: var(--cq-wax-text);
-    --accent-fill: var(--cq-wax);
+    border-width: 11px 15px;
+    border-image-source: var(--img-button-parchment);
+    border-image-slice: 40 104 40 104 fill;
+    border-image-width: 11px 17px;
+    color: var(--cq-wax-text);
   }
 
   @mixin hover {
-    background: rgb(255 250 236 / 0.95);
+    filter: drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.5)) brightness(1.12);
     transform: translateY(-1px);
   }
 
@@ -101,9 +154,9 @@
   }
 
   &[aria-pressed='true'] {
-    background: var(--accent-fill);
-    border-color: var(--accent-fill);
-    color: #fffaec;
+    filter: drop-shadow(0 0 5px var(--cq-brass-light)) drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.5)) saturate(1.3);
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   &[data-pending] {
@@ -111,4 +164,8 @@
     cursor: progress;
     transform: none;
   }
+}
+
+.button svg {
+  flex: none;
 }

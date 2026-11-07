@@ -1,0 +1,24 @@
+/* Every item is placed with a transform from the measured layout. The list takes the height of its tallest column, set inline. */
+.list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  min-width: 0;
+  /* The paper is drawn past the box that holds its text, so each cell keeps that much room on every side. */
+  padding: var(--card-ot) var(--card-or) var(--card-ob) var(--card-ol);
+  list-style: none;
+  /* Until the first measurement every item would sit at the top left, so the items stay transparent for that one frame. */
+  opacity: 0;
+}
+
+.list[data-ready] > .item {
+  opacity: 1;
+}

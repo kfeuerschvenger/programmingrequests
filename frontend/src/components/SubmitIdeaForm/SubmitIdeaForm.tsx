@@ -12,6 +12,9 @@ import classes from './SubmitIdeaForm.module.css';
 
 const FORM_FIELDS = ['author', 'description'] as const;
 
+/** The form paper is held by a nail at the top left and a dagger through the top right corner. */
+const FORM_FASTENERS = [{ kind: 'nail-flush', x: 9 }, { kind: 'dagger-stuck' }] as const;
+
 export function SubmitIdeaForm() {
   const { mutate, isPending } = useCreateIdea();
 
@@ -49,7 +52,14 @@ export function SubmitIdeaForm() {
   const length = form.values.description.trim().length;
 
   return (
-    <Parchment as="section" kind="sheet" seed={1} pinned aria-labelledby="post-quest-title" className={classes.sheet}>
+    <Parchment
+      as="section"
+      kind="sheet"
+      seed={1}
+      fasteners={FORM_FASTENERS}
+      aria-labelledby="post-quest-title"
+      className={classes.sheet}
+    >
       <form onSubmit={form.onSubmit(handleSubmit)} noValidate aria-busy={isPending} className={classes.form}>
         <div className={classes.heading}>
           <IconFeather size={30} stroke={1.5} aria-hidden="true" className={classes.icon} />

@@ -1,5 +1,4 @@
 import { Parchment } from '@/components/Parchment/Parchment';
-import grid from '@/components/IdeasList/IdeasList.module.css';
 import classes from './States.module.css';
 
 interface IdeaListSkeletonProps {
@@ -14,7 +13,7 @@ export function IdeaListSkeleton({ count = 3 }: IdeaListSkeletonProps) {
       aria-label="Unrolling the scrolls"
       role="status"
       data-testid="idea-list-skeleton"
-      className={grid.grid}
+      className={classes.skeletonGrid}
     >
       {Array.from({ length: count }, (_, index) => (
         <Parchment key={index} as="li" seed={index + 11} pinned className={classes.skeletonCard}>

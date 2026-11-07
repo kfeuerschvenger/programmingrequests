@@ -1,16 +1,51 @@
+import { useMemo } from 'react';
 import { Button, SegmentedControl } from '@mantine/core';
 import { useIdeas } from '@/hooks/useIdeas';
 import { useListQueryState } from '@/hooks/useListQueryState';
 import type { IdeaSort } from '@/types/ideas';
+import { art } from '@/components/Scene/assets';
 import { EmptyState, ErrorState, IdeaListSkeleton } from '@/components/ui';
 import IdeaItem from './components/IdeaItem';
 import classes from './IdeasList.module.css';
+import { Masonry, type MasonryItem } from './Masonry';
 
 const SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
   { value: 'newest', label: 'Newest' },
   { value: 'top', label: 'Most backed' },
   { value: 'oldest', label: 'Oldest' },
 ];
+
+/** Where the decorative papers join the list, counted from the start of the list. On three columns, 4 falls in the middle column and 8 in the right one. A paper joins only once the list has reached its place. */
+const DECORATIONS = [
+  { at: 4, key: 'decoration-sword-shield', image: art.paperSwordShield, tilt: -3 },
+  { at: 8, key: 'decoration-map', image: art.paperMap, tilt: 2.5 },
+] as const;
+
+/** Builds the masonry items: one per quest, with the decorative papers slipped in at their fixed places. */
+const withDecorations = (quests: MasonryItem[]): MasonryItem[] => {
+  const items = [...quests];
+  for (const { at, key, image, tilt } of DECORATIONS) {
+    if (quests.length <= at) continue;
+    items.splice(at, 0, {
+      key,
+      decoration: true,
+      node: (
+        <img
+          className={classes.decoration}
+          style={{ transform: `rotate(${tilt}deg)` }}
+          src={image.src}
+          srcSet={image.srcSet}
+          width={image.width}
+          height={image.height}
+          alt=""
+          data-cast=""
+          draggable={false}
+        />
+      ),
+    });
+  }
+  return items;
+};
 
 const IdeasList = () => {
   const { sort, setSort } = useListQueryState();
@@ -28,6 +63,11 @@ const IdeasList = () => {
     isPlaceholderData,
   } = useIdeas(sort);
 
+  const items = useMemo(
+    () => withDecorations(ideas.map(idea => ({ key: idea.id, node: <IdeaItem idea={idea} /> }))),
+    [ideas],
+  );
+
   let content;
   if (isPending) {
     content = <IdeaListSkeleton />;
@@ -40,11 +80,7 @@ const IdeasList = () => {
   } else {
     content = (
       <>
-        <ul className={classes.grid}>
-          {ideas.map(idea => (
-            <IdeaItem key={idea.id} idea={idea} />
-          ))}
-        </ul>
+        <Masonry items={items} />
         {isError && (
           // Retry what failed: the next page when that was the failed request, otherwise the list itself.
           <div className={classes.after}>
@@ -58,7 +94,7 @@ const IdeasList = () => {
         {/* While the previous sort is still shown as placeholder data, the next page would be fetched for the new sort. */}
         {hasNextPage && !isError && !isPlaceholderData && (
           <div className={classes.after}>
-            <Button loading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
+            <Button variant="wood" loading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
               Load more quests
             </Button>
           </div>
@@ -73,7 +109,9 @@ const IdeasList = () => {
         <h2 id="quest-board-title" className={classes.plank}>
           The Quest Board
         </h2>
-        <SegmentedControl aria-label="Sort quests" value={sort} onChange={setSort} data={SORT_OPTIONS} />
+        <div className={classes.sort}>
+          <SegmentedControl aria-label="Sort quests" value={sort} onChange={setSort} data={SORT_OPTIONS} />
+        </div>
       </div>
       <div
         role="region"

@@ -16,7 +16,7 @@
 }
 
 .icon {
-  color: #7a5614;
+  color: #6b4a10;
 }
 
 .alertIcon {
@@ -37,8 +37,18 @@
   text-wrap: pretty;
 }
 
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .skeletonCard {
   list-style: none;
+  margin: var(--card-ot) var(--card-or) var(--card-ob) var(--card-ol);
 }
 
 .bar {

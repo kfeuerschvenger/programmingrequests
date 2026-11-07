@@ -1,9 +1,11 @@
-/* The outlines and the wear overlays are generated SVG, stretched to the size of the element. Each look is a mask for the shape and an overlay for the burnt edges and the stains. */
+/*
+ * The paper is a nine-slice border image. The slice insets are the ones measured on the @2x files, and the widths are those insets at 1x, scaled by --paper-s so the torn edge shrinks on a phone.
+ * The image is drawn past the box (border-image-outset) so the text keeps a clear margin from the torn edge without the box growing: the box is the area for text, the outset is the paper around it.
+ */
 .root {
   position: relative;
-  isolation: isolate;
-  filter: var(--cq-paper-shadow);
   transform: rotate(var(--tilt, 0deg));
+  filter: drop-shadow(var(--cq-shadow-x) var(--cq-shadow-y) 5px var(--cq-shadow-color));
   transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -12,89 +14,89 @@
   transform: rotate(0deg) translateY(-4px);
 }
 
-.root[data-kind='card'][data-tear='0'] {
-  --mask: url('../../assets/paper/card-0-mask.svg');
-  --wear: url('../../assets/paper/card-0-wear.svg');
+.root[data-kind='card'] {
+  --paper: var(--img-parchment-tall);
+  --slice: 120 110 130 110;
+  --wt: calc(60px * var(--paper-s));
+  --wr: calc(55px * var(--paper-s));
+  --wb: calc(65px * var(--paper-s));
+  --wl: calc(55px * var(--paper-s));
+  --ot: var(--card-ot);
+  --or: var(--card-or);
+  --ob: var(--card-ob);
+  --ol: var(--card-ol);
 }
 
-.root[data-kind='card'][data-tear='1'] {
-  --mask: url('../../assets/paper/card-1-mask.svg');
-  --wear: url('../../assets/paper/card-1-wear.svg');
+.root[data-kind='sheet'] {
+  --paper: var(--img-parchment-wide);
+  --slice: 120 120 120 120;
+  --wt: calc(60px * var(--paper-s));
+  --wr: calc(60px * var(--paper-s));
+  --wb: calc(60px * var(--paper-s));
+  --wl: calc(60px * var(--paper-s));
+  --ot: var(--sheet-o);
+  --or: var(--sheet-o);
+  --ob: var(--sheet-o);
+  --ol: var(--sheet-o);
+
+  /* The paper is drawn outside the box, so the box keeps that much room around it. */
+  margin: var(--sheet-o);
 }
 
-.root[data-kind='card'][data-tear='2'] {
-  --mask: url('../../assets/paper/card-2-mask.svg');
-  --wear: url('../../assets/paper/card-2-wear.svg');
-}
-
-.root[data-kind='card'][data-tear='3'] {
-  --mask: url('../../assets/paper/card-3-mask.svg');
-  --wear: url('../../assets/paper/card-3-wear.svg');
-}
-
-.root[data-kind='card'][data-tear='4'] {
-  --mask: url('../../assets/paper/card-4-mask.svg');
-  --wear: url('../../assets/paper/card-4-wear.svg');
-}
-
-.root[data-kind='card'][data-tear='5'] {
-  --mask: url('../../assets/paper/card-5-mask.svg');
-  --wear: url('../../assets/paper/card-5-wear.svg');
-}
-
-.root[data-kind='sheet'][data-tear='0'] {
-  --mask: url('../../assets/paper/sheet-0-mask.svg');
-  --wear: url('../../assets/paper/sheet-0-wear.svg');
-}
-
-.root[data-kind='sheet'][data-tear='1'] {
-  --mask: url('../../assets/paper/sheet-1-mask.svg');
-  --wear: url('../../assets/paper/sheet-1-wear.svg');
-}
-
-/* Text stays inside the padding, clear of the torn edge, and is never touched by the mask: it only clips the paper behind it. */
 .sheet {
-  position: relative;
   box-sizing: border-box;
   height: 100%;
-  padding: 2.1rem 1.9rem 1.7rem;
+  padding: calc(8px * var(--paper-s));
+  border: calc(12px * var(--paper-s)) solid transparent;
+  border-image-source: var(--paper);
+  border-image-slice: var(--slice) fill;
+  border-image-width: var(--wt) var(--wr) var(--wb) var(--wl);
+  border-image-outset: var(--ot) var(--or) var(--ob) var(--ol);
+  border-image-repeat: stretch;
   color: var(--cq-ink);
-  background-color: var(--cq-parchment);
-  background-image:
-    linear-gradient(var(--cq-paper-dim), var(--cq-paper-dim)), var(--wear), url('../../assets/textures/parchment.webp');
-  background-size:
-    100% 100%,
-    100% 100%,
-    320px 320px;
-  background-position:
-    0 0,
-    0 0,
-    var(--tx, 0) var(--ty, 0);
-  -webkit-mask-image: var(--mask);
-  mask-image: var(--mask);
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
 }
 
 .root[data-kind='sheet'] > .sheet {
-  padding: 2.6rem clamp(1.6rem, 5vw, 3.2rem) 2.2rem;
+  padding: calc(14px * var(--paper-s)) calc(clamp(0.5rem, 3vw, 2.2rem) * var(--paper-s));
 }
 
-/* A brass pin, outside the masked sheet so the tear does not clip it. */
-.pin {
+/* Fasteners sit in the top margin of the paper, at the edge. Their own shadows are small and fixed: the paper's shadow does the work. */
+.fastener {
   position: absolute;
-  top: 0.45rem;
-  left: var(--pin-x, 50%);
-  z-index: 1;
-  width: 1rem;
-  height: 1rem;
-  margin-left: -0.5rem;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff1c9 0 12%, #e9b15a 32%, #c8962e 62%, #7a5614 100%);
-  box-shadow:
-    0 2px 2px rgb(24 12 4 / 0.55),
-    inset 0 -1px 1px rgb(60 30 4 / 0.5);
+  top: calc(var(--ot) * -1 + 6px);
+  left: var(--x, 50%);
+  height: auto;
+  transform: translateX(-50%);
+  filter: drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.55));
   pointer-events: none;
+  user-select: none;
+}
+
+.fastener[data-fastener='nail-flush'] {
+  width: calc(30px * var(--paper-s));
+}
+
+.fastener[data-fastener='pin-brass'] {
+  width: calc(30px * var(--paper-s));
+}
+
+.fastener[data-fastener='nail-half'],
+.fastener[data-fastener='nail-bent'] {
+  top: calc(var(--ot) * -1 - 6px);
+  width: calc(15px * var(--paper-s));
+}
+
+.fastener[data-fastener='nail-angled'] {
+  top: calc(var(--ot) * -1 - 6px);
+  width: calc(18px * var(--paper-s));
+}
+
+/* The dagger is stuck through the top right corner, point first, with its handle over the edge. */
+.fastener[data-fastener='dagger-stuck'] {
+  top: calc(var(--ot) * -1 - 26px);
+  right: calc(var(--or) * -1 - 22px);
+  left: auto;
+  width: calc(84px * var(--paper-s));
+  transform: none;
+  filter: drop-shadow(3px 4px 3px rgb(20 8 0 / 0.6));
 }
