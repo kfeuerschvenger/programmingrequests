@@ -89,34 +89,36 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
           {dayjs(idea.createdAt).fromNow()}
         </time>
       </p>
-      <div className={classes.vote}>
-        <button
-          type="button"
-          className={classes.button}
-          data-kind="back"
-          data-pending={isPending || undefined}
-          aria-label="Back this quest"
-          aria-pressed={idea.myVote === 1}
-          aria-disabled={isPending}
-          onClick={() => handleVote(1)}
-        >
-          <IconShieldCheck size={18} stroke={2} aria-hidden="true" />
-          Back
-        </button>
-        <WaxSeal value={idea.score} testId="score" />
-        <button
-          type="button"
-          className={classes.button}
-          data-kind="reject"
-          data-pending={isPending || undefined}
-          aria-label="Reject this quest"
-          aria-pressed={idea.myVote === -1}
-          aria-disabled={isPending}
-          onClick={() => handleVote(-1)}
-        >
-          <IconShieldX size={18} stroke={2} aria-hidden="true" />
-          Reject
-        </button>
+      <div className={classes.voteBox}>
+        <div className={classes.vote}>
+          <button
+            type="button"
+            className={classes.button}
+            data-kind="back"
+            data-pending={isPending || undefined}
+            aria-label="Back this quest"
+            aria-pressed={idea.myVote === 1}
+            aria-disabled={isPending}
+            onClick={() => handleVote(1)}
+          >
+            <IconShieldCheck size={18} stroke={2} aria-hidden="true" />
+            Back
+          </button>
+          <WaxSeal value={idea.score} testId="score" />
+          <button
+            type="button"
+            className={classes.button}
+            data-kind="reject"
+            data-pending={isPending || undefined}
+            aria-label="Reject this quest"
+            aria-pressed={idea.myVote === -1}
+            aria-disabled={isPending}
+            onClick={() => handleVote(-1)}
+          >
+            <IconShieldX size={18} stroke={2} aria-hidden="true" />
+            Reject
+          </button>
+        </div>
       </div>
     </Parchment>
   );

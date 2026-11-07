@@ -95,11 +95,64 @@
   font-size: 0.95rem;
 }
 
+/*
+ * The row answers to its own width, not the window's, because the same card is a third of the board on a wide screen and the whole board on a phone.
+ * The label is never cut: the buttons can not shrink below their text, and as the row narrows the buttons first give up padding and border, then their icon, then the row stacks with the seal on top.
+ */
+.voteBox {
+  container-type: inline-size;
+}
+
 .vote {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 0.1rem;
+}
+
+.vote > :nth-child(2) {
+  justify-self: center;
+}
+
+@container (max-width: 20rem) {
+  .button {
+    gap: 0.15rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
+
+    &[data-kind='back'] {
+      border-width: 10px 9px;
+      border-image-width: 10px 9px;
+    }
+
+    &[data-kind='reject'] {
+      border-width: 10px 9px;
+      border-image-width: 10px 11px;
+    }
+  }
+
+  .button svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@container (max-width: 16.5rem) {
+  .button svg {
+    display: none;
+  }
+}
+
+@container (max-width: 13rem) {
+  .vote {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.2rem 0.1rem;
+  }
+
+  .vote > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
 }
 
 /*
@@ -111,8 +164,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  min-width: 0;
+  min-width: min-content;
   min-height: 2.9rem;
+  white-space: nowrap;
   padding: 0;
   border-style: solid;
   border-color: transparent;
