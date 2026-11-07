@@ -1,6 +1,9 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { art } from './assets';
+import { Lights } from './Lights';
+import { Props } from './Props';
 import classes from './Scene.module.css';
+import { useIsDark } from './useIsDark';
 
 interface SceneProps {
   /** The page: header and main. They sit on the board. */
@@ -24,9 +27,13 @@ const MARKS = [
  * Everything here is decoration, hidden from the accessibility tree. The page content is stacked above the planks and below the light.
  */
 export function Scene({ children, footer }: SceneProps) {
+  // A state, not a ref object: the lights measure the board, and a layout effect in a child runs before the parent's ref is attached.
+  const [board, setBoard] = useState<HTMLDivElement | null>(null);
+  const dark = useIsDark();
+
   return (
     <div className={classes.wall} data-testid="scene">
-      <div className={classes.board}>
+      <div ref={setBoard} className={classes.board}>
         <div className={classes.frame} aria-hidden="true">
           <span className={`${classes.beamSide} ${classes.left}`}>
             <span className={classes.beamStrip} />
@@ -57,7 +64,9 @@ export function Scene({ children, footer }: SceneProps) {
             />
           ))}
         </div>
+        {dark && <Props />}
         <div className={classes.content}>{children}</div>
+        <Lights board={board} dark={dark} />
       </div>
       {footer}
     </div>

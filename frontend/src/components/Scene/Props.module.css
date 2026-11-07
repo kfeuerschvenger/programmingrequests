@@ -1,0 +1,65 @@
+/* The torch and lantern need the side gutters, so they are drawn on wide screens only. The light pools stay on every screen. */
+.props {
+  display: none;
+
+  @media (min-width: 1100px) {
+    display: block;
+  }
+}
+
+.torch {
+  position: absolute;
+  top: 22rem;
+  left: calc(var(--frame) - 0.9rem);
+  z-index: 3;
+  width: 54px;
+  height: 180px;
+}
+
+/* The shadow is on the picture, never on a wrapper: a filter makes its own stacking context, and the flame beside the picture must blend with the board, not with its wrapper. */
+.torch img {
+  display: block;
+  filter: drop-shadow(5px 6px 5px rgb(0 0 0 / 0.6));
+}
+
+/* The head of the torch is the top of the image; the flame stands on it. */
+.torchFlame {
+  left: 50%;
+  bottom: 100%;
+  margin: 0 0 -26px -33px;
+}
+
+.lantern {
+  position: absolute;
+  top: 0;
+  right: calc(var(--frame) + 1.1rem);
+  z-index: 3;
+  width: 82px;
+}
+
+/* The chain runs from the top beam to the ring of the lantern. */
+.lanternChain {
+  display: block;
+  width: 20px;
+  height: 25rem;
+  margin: 0 auto -6px;
+  background-image: var(--img-chain);
+  background-size: 20px auto;
+  background-repeat: repeat-y;
+  filter: drop-shadow(3px 3px 2px rgb(0 0 0 / 0.55));
+}
+
+.lanternBody {
+  position: relative;
+}
+
+.lanternBody img {
+  display: block;
+  filter: drop-shadow(5px 6px 5px rgb(0 0 0 / 0.6));
+}
+
+.lanternFlame {
+  left: 50%;
+  top: 56px;
+  margin-left: -17px;
+}

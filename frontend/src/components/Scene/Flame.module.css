@@ -1,0 +1,76 @@
+/*
+ * The strips are 8 frames side by side. `steps(8, jump-none)` shows eight distinct positions, 0% through 100%, which are exactly the eight frames. The candle strip's last frame is shorter and pops, so only its first seven are played.
+ */
+.anchor {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.sprite {
+  display: block;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background-repeat: no-repeat;
+  background-size: 800% 100%;
+  animation: play 0.72s steps(8, jump-none) infinite;
+}
+
+.torch {
+  width: 74px;
+  height: 102px;
+}
+
+.lantern {
+  width: 34px;
+  height: 47px;
+}
+
+.candle {
+  width: 26px;
+  height: 48px;
+}
+
+.sprite.torch,
+.sprite.lantern {
+  background-image: var(--img-flame);
+}
+
+.sprite.lantern {
+  animation-duration: 0.84s;
+}
+
+.sprite.candle {
+  background-image: var(--img-candle-flame);
+  animation-name: play-candle;
+  animation-duration: 0.9s;
+  animation-timing-function: steps(7, jump-none);
+}
+
+@keyframes play {
+  from {
+    background-position-x: 0%;
+  }
+
+  to {
+    background-position-x: 100%;
+  }
+}
+
+@keyframes play-candle {
+  from {
+    background-position-x: 0%;
+  }
+
+  to {
+    background-position-x: 85.714%;
+  }
+}
+
+/* Reduced motion freezes the fire on its first frame. */
+@media (prefers-reduced-motion: reduce) {
+  .sprite {
+    animation: none !important;
+    background-position-x: 0%;
+  }
+}

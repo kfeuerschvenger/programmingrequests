@@ -4,6 +4,7 @@ import { useIdeas } from '@/hooks/useIdeas';
 import { useListQueryState } from '@/hooks/useListQueryState';
 import type { IdeaSort } from '@/types/ideas';
 import { art } from '@/components/Scene/assets';
+import { Candle } from '@/components/Scene/Candle';
 import { EmptyState, ErrorState, IdeaListSkeleton } from '@/components/ui';
 import IdeaItem from './components/IdeaItem';
 import classes from './IdeasList.module.css';
@@ -110,6 +111,7 @@ const IdeasList = () => {
           The Quest Board
         </h2>
         <div className={classes.sort}>
+          <Candle />
           <SegmentedControl aria-label="Sort quests" value={sort} onChange={setSort} data={SORT_OPTIONS} />
         </div>
       </div>

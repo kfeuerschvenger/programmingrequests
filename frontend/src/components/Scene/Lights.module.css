@@ -1,0 +1,152 @@
+/*
+ * The two wrappers draw no box. A box with a z-index would be its own stacking context, and a blend mode only sees what is painted in its own stacking context: inside a wrapper, the layers would blend with nothing. The wrappers exist to carry the custom properties down to their children.
+ * Layers below the content sit at z-index 1 and above it at 6, matching the board content at z-index 2.
+ */
+.under,
+.over {
+  display: contents;
+}
+
+/* Night, on the bare wood: a deep blue that the fire pools then lift. */
+.nightWood {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background: rgb(92 106 160);
+  mix-blend-mode: multiply;
+}
+
+/* Night, over the parchment: only a cool tint and a little dimming, because ink on parchment must stay far above 4.5:1. */
+.nightPaper {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  pointer-events: none;
+  background: rgb(214 210 232);
+  mix-blend-mode: multiply;
+}
+
+/*
+ * One pool per fire. Position comes from --x and --y, set in pixels from the measured flame. Brightness and breadth come from --i and --r, which the flicker loop rewrites about twenty times a second.
+ * Only opacity and transform change, so each pool is a compositor layer and nothing is repainted.
+ */
+.pool {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  border-radius: 50%;
+  opacity: var(--i, 1);
+  transform: scale(var(--r, 1));
+  will-change: opacity, transform;
+}
+
+.torch {
+  --x: var(--torch-x, 0);
+  --y: var(--torch-y, 0);
+  --i: var(--torch-i, 1);
+  --r: var(--torch-r, 1);
+  --size: 1100px;
+}
+
+.lantern {
+  --x: var(--lantern-x, 0);
+  --y: var(--lantern-y, 0);
+  --i: var(--lantern-i, 1);
+  --r: var(--lantern-r, 1);
+  --size: 980px;
+}
+
+.candle {
+  --x: var(--candle-x, 0);
+  --y: var(--candle-y, 0);
+  --i: var(--candle-i, 1);
+  --r: var(--candle-r, 1);
+  --size: 820px;
+}
+
+/* Added to the wood, below the content: an orange glow that falls off to nothing. */
+.glow {
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    circle closest-side,
+    rgb(255 150 58 / 0.8) 0%,
+    rgb(240 110 36 / 0.5) 28%,
+    rgb(190 70 24 / 0.2) 58%,
+    transparent 100%
+  );
+}
+
+/* Above the content: soft-light keeps dark ink dark and lifts the paper, so the quests are lit without losing contrast. */
+.soft {
+  z-index: 6;
+  mix-blend-mode: soft-light;
+  background: radial-gradient(
+    circle closest-side,
+    rgb(255 214 150 / 0.95) 0%,
+    rgb(255 190 110 / 0.6) 34%,
+    rgb(255 160 80 / 0.22) 66%,
+    transparent 100%
+  );
+}
+
+/* Day. The sun enters at the top left of the board and reaches about two screens down. The layers are absolute, not fixed: a fixed layer is composited apart from the page and its blend mode does nothing. */
+.sun {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  inset: 0 0 auto 0;
+  height: min(100%, 1500px);
+  mix-blend-mode: soft-light;
+  background: radial-gradient(
+    ellipse 1150px 1000px at 0% 0%,
+    rgb(255 244 205) 0%,
+    rgb(255 232 170 / 0.7) 34%,
+    rgb(255 220 150 / 0.22) 62%,
+    transparent 82%
+  );
+}
+
+/* Two soft bands of light, as if through a window with a mullion. */
+.shaft {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  inset: 0 0 auto 0;
+  height: min(100%, 1500px);
+  mix-blend-mode: soft-light;
+  background: linear-gradient(
+    118deg,
+    transparent 4%,
+    rgb(255 246 214 / 0.55) 14%,
+    transparent 26%,
+    rgb(255 246 214 / 0.35) 31%,
+    transparent 42%
+  );
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 0% 0%, #000, transparent 85%);
+  mask-image: radial-gradient(ellipse 80% 80% at 0% 0%, #000, transparent 85%);
+}
+
+/* The far side of the board, away from the window, falls into shade. */
+.shade {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  inset: 0;
+  mix-blend-mode: multiply;
+  background: linear-gradient(135deg, transparent 40%, rgb(150 118 96 / 0.55) 100%);
+}
+
+/* The flame sprites sit above the night layers, so they are never dimmed, and are centred on the measured flame. */
+.slot {
+  position: absolute;
+  z-index: 7;
+  left: var(--x);
+  top: var(--y);
+  translate: -50% -50%;
+}
