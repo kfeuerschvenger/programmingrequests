@@ -1,58 +1,28 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 4rem;
+  gap: 2.4rem;
   width: 100%;
-  max-width: 75rem;
-  margin-inline: auto;
-  padding: 3.2rem 1rem 0;
-
-  @media (min-width: $mantine-breakpoint-sm) {
-    padding-inline: 1.6rem;
-  }
+  padding-bottom: 3.4rem;
 }
 
-.hero {
-  max-width: 48rem;
-  margin-inline: auto;
-  text-align: center;
-}
-
-.title {
-  margin: 0;
-  color: var(--cq-cream);
-  text-shadow:
-    0 2px 0 rgb(0 0 0 / 0.65),
-    0 6px 18px rgb(0 0 0 / 0.55);
-  text-wrap: balance;
-}
-
-/* A brass line with a diamond, drawn once, under the title. */
-.rule {
-  position: relative;
-  width: min(100%, 22rem);
-  height: 2px;
-  margin: 1.4rem auto;
-  background: linear-gradient(90deg, transparent, var(--cq-brass) 18%, var(--cq-brass) 82%, transparent);
-}
-
-.rule::after {
-  content: '';
-  position: absolute;
-  top: -5px;
-  left: calc(50% - 6px);
-  width: 12px;
-  height: 12px;
-  background: var(--cq-brass);
-  box-shadow: 0 0 0 3px #33241a;
-  transform: rotate(45deg);
-}
-
+/* The line under the tagline sits straight on the planks, so a soft dark pool behind it keeps the cream text clear of the sunlit wood. */
 .intro {
+  position: relative;
   max-width: 38rem;
   margin: 0 auto;
+  padding: 0.4rem 0.5rem;
   color: var(--cq-cream);
   font-size: 1.2rem;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+  text-align: center;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
   text-wrap: pretty;
+}
+
+.intro::before {
+  content: '';
+  position: absolute;
+  inset: -0.6rem -2.5rem;
+  z-index: -1;
+  background: radial-gradient(ellipse closest-side, rgb(18 9 3 / 0.62), transparent);
 }

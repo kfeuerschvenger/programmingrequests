@@ -1,16 +1,15 @@
+/* A plank carved with the credits, hanging below the board. */
 .footer {
   position: relative;
-  margin-top: 5rem;
-  border-top: 3px solid #140d08;
-  background-color: #33241a;
-  background-image:
-    linear-gradient(rgb(255 226 170 / 0.12), rgb(0 0 0 / 0.4)), url('../../assets/textures/leather.webp');
-  background-size:
-    100% 100%,
-    420px 420px;
-  box-shadow:
-    inset 0 1px 0 rgb(255 226 170 / 0.22),
-    0 -10px 22px rgb(0 0 0 / 0.45);
+  width: min(100% - 0.75rem, 72rem);
+  margin: 1.8rem auto 0;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 18px 28px;
+  border-image-source: var(--img-button-wood);
+  border-image-slice: 36 56 36 56 fill;
+  border-image-width: 18px 28px;
+  filter: drop-shadow(0 8px 8px rgb(0 0 0 / 0.6));
 }
 
 .inner {
@@ -19,9 +18,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem 2rem;
-  max-width: 75rem;
-  margin-inline: auto;
-  padding: 2rem 1.6rem;
+  padding: 1.4rem 1rem;
 }
 
 .about {
@@ -65,10 +62,10 @@
   gap: 0.45rem;
   min-height: 2.75rem;
   padding: 0 0.9rem;
-  border: 1px solid rgb(0 0 0 / 0.55);
+  border: 1px solid rgb(0 0 0 / 0.65);
   border-radius: 6px;
-  background-color: #2b1d13;
-  background-image: linear-gradient(rgb(255 226 170 / 0.12), rgb(0 0 0 / 0.22));
+  background-color: #1d1511;
+  background-image: linear-gradient(rgb(255 226 170 / 0.12), rgb(0 0 0 / 0.25));
   box-shadow:
     inset 0 1px 0 rgb(255 226 170 / 0.2),
     0 2px 0 rgb(0 0 0 / 0.5);
@@ -81,6 +78,6 @@
   transition: background-color 140ms cubic-bezier(0.22, 1, 0.36, 1);
 
   @mixin hover {
-    background-color: #3d2a1b;
+    background-color: #33241a;
   }
 }

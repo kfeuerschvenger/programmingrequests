@@ -1,0 +1,39 @@
+/*
+ * The scene images, declared once. Each custom property holds a ready-to-use image value, so a component stylesheet never repeats a file path.
+ * Vite rewrites every url() below to its hashed, immutable asset URL. The nine-slice images list only the @2x file: border-image-slice counts pixels of the file it is given, so the slice insets are written in @2x pixels.
+ */
+:root {
+  --img-board: image-set(url('../assets/scene/board-planks.webp') 1x, url('../assets/scene/board-planks@2x.webp') 2x);
+  --img-beam: image-set(url('../assets/scene/frame-beam.webp') 1x, url('../assets/scene/frame-beam@2x.webp') 2x);
+  --img-corner: image-set(url('../assets/scene/frame-corner.webp') 1x, url('../assets/scene/frame-corner@2x.webp') 2x);
+  --img-chain: image-set(url('../assets/scene/chain.webp') 1x, url('../assets/scene/chain@2x.webp') 2x);
+  --img-sign: image-set(url('../assets/scene/sign-plank.webp') 1x, url('../assets/scene/sign-plank@2x.webp') 2x);
+  --img-wax-seal: image-set(url('../assets/scene/wax-seal.webp') 1x, url('../assets/scene/wax-seal@2x.webp') 2x);
+  --img-flame: image-set(
+    url('../assets/scene/flame-strip-screen.webp') 1x,
+    url('../assets/scene/flame-strip-screen@2x.webp') 2x
+  );
+  --img-candle-flame: image-set(
+    url('../assets/scene/candle-flame-strip-screen.webp') 1x,
+    url('../assets/scene/candle-flame-strip-screen@2x.webp') 2x
+  );
+  /* How far the paper is drawn past the box that holds its text, and the scale of the torn edges. */
+  --paper-s: 0.72;
+  --card-ot: calc(24px * var(--paper-s));
+  --card-or: calc(20px * var(--paper-s));
+  --card-ob: calc(28px * var(--paper-s));
+  --card-ol: calc(20px * var(--paper-s));
+  --sheet-o: calc(26px * var(--paper-s));
+
+  --img-parchment-tall: url('../assets/scene/parchment-tall@2x.webp');
+  --img-parchment-wide: url('../assets/scene/parchment-wide@2x.webp');
+  --img-button-wood: url('../assets/scene/button-wood@2x.webp');
+  --img-button-parchment: url('../assets/scene/button-parchment@2x.webp');
+  --img-button-brass: url('../assets/scene/button-brass@2x.webp');
+}
+
+@media (min-width: 640px) {
+  :root {
+    --paper-s: 1;
+  }
+}

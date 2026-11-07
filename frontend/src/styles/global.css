@@ -1,13 +1,13 @@
 /*
  * Quest board tokens. Surfaces come in two kinds: wood (the board, the planks) carries cream text, and parchment (cards, the form, the modal) carries ink.
- * Both kinds keep that pairing in light and dark mode, so contrast never depends on the scheme. The scheme changes the light in the room: daylight on the board, or candles.
+ * Both kinds keep that pairing in light and dark mode, so contrast never depends on the scheme. The scheme changes the light in the room: sunlight from the top left by day, a torch, a lantern and a candle by night.
  */
 :root {
   --cq-wood: #3b2a1e;
   --cq-wood-deep: #241811;
   --cq-parchment: #f3e6c8;
-  --cq-cream: #f3e6c8;
-  --cq-cream-soft: #d9c9a6;
+  --cq-cream: #f6ead0;
+  --cq-cream-soft: #e4d5b2;
   --cq-ink: #2b2622;
   --cq-ink-soft: #4a3c30;
   --cq-wax: #9e2b25;
@@ -20,59 +20,40 @@
   --cq-guild-text: #32552e;
   --cq-heading-font: 'Cinzel', 'Trajan Pro', Georgia, 'Times New Roman', serif;
   --cq-z-sticky: 20;
-
-  /* Light: parchment by day. */
-  --cq-board-lift: rgb(255 226 170 / 0.1);
-  --cq-board-glow: radial-gradient(ellipse 70% 45% at 50% 0%, rgb(255 222 160 / 0.22), transparent 70%);
-  --cq-board-vignette: radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgb(24 12 4 / 0.5) 100%);
-  --cq-paper-dim: transparent;
-  --cq-paper-shadow: drop-shadow(0 6px 5px rgb(24 12 4 / 0.42)) drop-shadow(0 1px 1px rgb(24 12 4 / 0.5));
-  --cq-plank-sheen: rgb(255 226 170 / 0.14);
   --cq-field-bg: #fbf4e0;
+
+  /* The wall around the board, in shadow. */
+  --cq-wall: #17100c;
+  --cq-wall-shade: rgb(8 5 3 / 0.86);
+
+  /* Where a card's shadow falls: down and to the right, away from the sun in the top left. Night overrides these per element. */
+  --cq-shadow-x: 5px;
+  --cq-shadow-y: 8px;
+  --cq-shadow-color: rgb(24 12 4 / 0.55);
 }
 
 [data-mantine-color-scheme='dark'] {
-  /* Dark: the same room lit by candles. */
-  --cq-board-lift: rgb(0 0 0 / 0.38);
-  --cq-board-glow:
-    radial-gradient(ellipse 36% 40% at 12% 8%, rgb(255 170 70 / 0.26), transparent 70%),
-    radial-gradient(ellipse 36% 40% at 88% 6%, rgb(255 160 60 / 0.2), transparent 70%);
-  --cq-board-vignette: radial-gradient(ellipse 110% 85% at 50% 30%, transparent 35%, rgb(4 2 0 / 0.78) 100%);
-  --cq-paper-dim: rgb(40 20 6 / 0.2);
-  --cq-paper-shadow: drop-shadow(0 8px 7px rgb(0 0 0 / 0.6)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.6));
-  --cq-plank-sheen: rgb(255 190 110 / 0.08);
+  --cq-wall: #070a10;
+  --cq-wall-shade: rgb(3 5 10 / 0.88);
+  --cq-shadow-color: rgb(0 0 0 / 0.7);
 }
 
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  background-color: var(--cq-wall);
 }
 
 body {
   min-height: 100dvh;
   margin: 0;
-  background-color: var(--cq-wood);
-  background-image:
-    linear-gradient(var(--cq-board-lift), var(--cq-board-lift)), url('../assets/textures/wood-dark.webp');
-  background-size:
-    auto,
-    512px 512px;
+  background-color: var(--cq-wall);
   color: var(--cq-cream);
   font-family: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-/* Candle or daylight and the dark corners, painted once on a fixed layer so scrolling never repaints it. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: var(--cq-board-glow), var(--cq-board-vignette);
 }
 
 h1,
@@ -83,26 +64,12 @@ h4 {
   font-weight: 700;
 }
 
-h1 {
-  font-size: clamp(1.8rem, 5.2vw, 3rem);
-  line-height: 1.08;
-  letter-spacing: 0.02em;
-}
-
 #root {
   position: relative;
-  z-index: 1;
-  display: flex;
   min-height: 100dvh;
-  flex-direction: column;
 }
 
-.main {
-  flex: 1 0 auto;
-  padding-bottom: 1rem;
-}
-
-.main:focus {
+main:focus {
   outline: none;
   box-shadow: none;
 }

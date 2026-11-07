@@ -1,0 +1,241 @@
+/* The wall is the dark room around the board: the same planks as the board, in shadow. */
+.wall {
+  min-height: 100dvh;
+  padding: 0.75rem 0 2.5rem;
+  background-color: var(--cq-wall);
+  background-image: linear-gradient(var(--cq-wall-shade), var(--cq-wall-shade)), var(--img-board);
+  background-size:
+    auto,
+    512px 512px;
+  /* The fire pools reach past the board onto the wall. `clip` cuts them at the page edge without making a scroll container. */
+  overflow-x: clip;
+}
+
+/*
+ * The board hangs from the top. --frame is the thickness of the wooden frame and --corner the size of an iron bracket; the content sits inside the frame, and on wide screens inside a gutter that leaves room for the torch and lantern.
+ * No z-index here: the board must not be a stacking context, so the blend layers of the lights see the wall as well as the planks.
+ */
+.board {
+  --frame: 22px;
+  --corner: 54px;
+  --gutter: 0px;
+
+  position: relative;
+  width: min(100% - 0.75rem, 80rem);
+  margin-inline: auto;
+  padding: var(--frame);
+  background-color: #4a3322;
+  background-image: var(--img-board);
+  background-size: 512px 512px;
+  box-shadow:
+    0 28px 60px rgb(0 0 0 / 0.65),
+    0 0 0 1px rgb(0 0 0 / 0.7);
+
+  @media (min-width: 640px) {
+    --frame: 34px;
+    --corner: 74px;
+  }
+
+  @media (min-width: 1100px) {
+    --frame: 44px;
+    --corner: 96px;
+    --gutter: 5.5rem;
+  }
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  padding-inline: var(--gutter);
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* The top and bottom beams repeat sideways. */
+.beam {
+  position: absolute;
+  inset-inline: 0;
+  height: var(--frame);
+  background-image: var(--img-beam);
+  background-size: auto var(--frame);
+  background-repeat: repeat-x;
+}
+
+.top {
+  top: 0;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.55);
+}
+
+.bottom {
+  bottom: 0;
+  box-shadow: 0 -4px 8px rgb(0 0 0 / 0.45);
+}
+
+/* The side beams are the same strip turned on its side. The strip is far taller than any page, and the clipped box shows as much as the board needs. */
+.beamSide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--frame);
+  overflow: hidden;
+}
+
+.left {
+  left: 0;
+  box-shadow: 4px 0 8px rgb(0 0 0 / 0.5);
+}
+
+.right {
+  right: 0;
+  box-shadow: -4px 0 8px rgb(0 0 0 / 0.5);
+}
+
+.beamStrip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24000px;
+  height: var(--frame);
+  background-image: var(--img-beam);
+  background-size: auto var(--frame);
+  background-repeat: repeat-x;
+  transform: translateX(var(--frame)) rotate(90deg);
+  transform-origin: 0 0;
+}
+
+.corner {
+  position: absolute;
+  width: var(--corner);
+  height: var(--corner);
+  background-image: var(--img-corner);
+  background-size: 100% 100%;
+  filter: drop-shadow(2px 3px 3px rgb(0 0 0 / 0.55));
+}
+
+.cornerTl {
+  top: 0;
+  left: 0;
+}
+
+.cornerTr {
+  top: 0;
+  right: 0;
+  transform: rotate(90deg);
+}
+
+.cornerBr {
+  right: 0;
+  bottom: 0;
+  transform: rotate(180deg);
+}
+
+.cornerBl {
+  bottom: 0;
+  left: 0;
+  transform: rotate(270deg);
+}
+
+/* The planks sink a little where the frame overlaps them. */
+.rim {
+  position: absolute;
+  inset: var(--frame);
+  box-shadow:
+    inset 0 0 38px 8px rgb(8 4 0 / 0.55),
+    inset 0 0 90px 10px rgb(8 4 0 / 0.25);
+}
+
+/* Scratches and ink: low opacity, below the content, and placed where no text is. */
+.marks {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.mark {
+  position: absolute;
+  height: auto;
+  opacity: 0.4;
+}
+
+.scratchA {
+  top: 4.5rem;
+  left: calc(var(--frame) + 0.5rem);
+  width: 3.6rem;
+  transform: rotate(-12deg);
+}
+
+.scratchB {
+  top: 3rem;
+  right: calc(var(--frame) + 0.75rem);
+  width: 3.4rem;
+  transform: rotate(18deg) scaleX(-1);
+}
+
+.scratchC {
+  bottom: calc(var(--frame) + 0.4rem);
+  left: 18%;
+  width: 4rem;
+  transform: rotate(80deg);
+}
+
+.blotA {
+  bottom: calc(var(--frame) + 0.2rem);
+  right: 14%;
+  width: 3.2rem;
+  opacity: 0.55;
+}
+
+.blotB {
+  display: none;
+  top: 40rem;
+  right: calc(var(--frame) + 0.6rem);
+  width: 4.2rem;
+  opacity: 0.55;
+}
+
+.blotC {
+  display: none;
+  top: 60rem;
+  left: calc(var(--frame) + 0.4rem);
+  width: 4.4rem;
+  opacity: 0.55;
+}
+
+@media (min-width: 1100px) {
+  .scratchA {
+    top: 30rem;
+    left: calc(var(--frame) + 1rem);
+    width: 4.6rem;
+  }
+
+  .scratchB {
+    top: 62rem;
+    right: calc(var(--frame) + 1rem);
+    width: 4.8rem;
+  }
+
+  .scratchC {
+    bottom: auto;
+    top: 90rem;
+    left: calc(var(--frame) + 1rem);
+    width: 4.6rem;
+  }
+
+  .blotA {
+    top: 20rem;
+    right: calc(var(--frame) + 1.2rem);
+    bottom: auto;
+    width: 4rem;
+  }
+
+  .blotB,
+  .blotC {
+    display: block;
+  }
+}
