@@ -1,6 +1,6 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeIdea, renderWithProviders } from '@/test/utils';
 import IdeaItem from './IdeaItem';
 
@@ -57,6 +57,71 @@ describe('IdeaItem read more', () => {
     await user.keyboard(' ');
     expect(toggle).toHaveFocus();
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
+describe('IdeaItem read more re-measures', () => {
+  const originalObserver = window.ResizeObserver;
+  const fonts = document.fonts as unknown as { ready?: Promise<unknown> };
+  const observers: { callback: () => void; targets: Element[] }[] = [];
+
+  class CapturingObserver {
+    private readonly entry: { callback: () => void; targets: Element[] };
+    constructor(callback: () => void) {
+      this.entry = { callback, targets: [] };
+      observers.push(this.entry);
+    }
+    observe(target: Element) {
+      this.entry.targets.push(target);
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+
+  beforeEach(() => {
+    observers.length = 0;
+    window.ResizeObserver = CapturingObserver as unknown as typeof ResizeObserver;
+  });
+
+  afterEach(() => {
+    window.ResizeObserver = originalObserver;
+    delete fonts.ready;
+    vi.restoreAllMocks();
+  });
+
+  it('offers Read more when the text only grows past the clamp once the fonts are ready', async () => {
+    // Before the web font arrives the text fits; afterwards it wraps to more lines than the clamp allows, while the clamped box keeps its height.
+    let cut = false;
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => (cut ? 400 : 100));
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(() => 100);
+    let loaded: () => void = () => undefined;
+    fonts.ready = new Promise<void>(resolve => {
+      loaded = resolve;
+    });
+
+    renderWithProviders(<IdeaItem idea={makeIdea({ description: 'A long quest. '.repeat(60) })} />);
+    expect(screen.queryByRole('button', { name: 'Read more' })).not.toBeInTheDocument();
+
+    cut = true;
+    loaded();
+    expect(await screen.findByRole('button', { name: 'Read more' })).toBeInTheDocument();
+  });
+
+  it('re-measures when the card around the text changes width, not only when the text box does', async () => {
+    let cut = false;
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => (cut ? 400 : 100));
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(() => 100);
+
+    renderWithProviders(<IdeaItem idea={makeIdea({ description: 'A long quest. '.repeat(60) })} />);
+    expect(screen.queryByRole('button', { name: 'Read more' })).not.toBeInTheDocument();
+
+    const text = document.querySelector('p[id]');
+    const observer = observers.find(entry => entry.targets.includes(text as Element));
+    expect(observer?.targets).toContain(text?.parentElement);
+
+    cut = true;
+    act(() => observer?.callback());
+    expect(await screen.findByRole('button', { name: 'Read more' })).toBeInTheDocument();
   });
 });
 

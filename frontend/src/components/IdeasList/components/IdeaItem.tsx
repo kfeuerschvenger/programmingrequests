@@ -30,15 +30,26 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
   const [expanded, setExpanded] = useState(false);
   const [overflowing, setOverflowing] = useState(false);
 
-  // A quest that fits in the visible lines gets no toggle. The text is clamped by CSS, so whether it is cut is read from the element, and again whenever its width changes.
+  // A quest that fits in the visible lines gets no toggle. The text is clamped by CSS, so whether it is cut is read from the rendered element (scrollHeight against clientHeight).
+  // The clamp pins the box height, so a change in how the text wraps (a web font arriving, a wider or narrower column) can leave the box the same size while its content grows. A ResizeObserver on the box alone would miss that, so the check also runs when the fonts are ready and when the card around the text changes width.
   useLayoutEffect(() => {
     const element = body.current;
     if (!element || expanded) return;
-    const measure = () => setOverflowing(element.scrollHeight > element.clientHeight + 1);
+    let active = true;
+    const measure = () => {
+      if (active) setOverflowing(element.scrollHeight > element.clientHeight + 1);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
-    return () => observer.disconnect();
+    if (element.parentElement) observer.observe(element.parentElement);
+    void document.fonts?.ready?.then(measure);
+    document.fonts?.addEventListener?.('loadingdone', measure);
+    return () => {
+      active = false;
+      observer.disconnect();
+      document.fonts?.removeEventListener?.('loadingdone', measure);
+    };
   }, [expanded, idea.description]);
 
   // Pressing the button that is already active withdraws the vote; the other one switches it.
