@@ -113,7 +113,11 @@ export const theme = createTheme({
     TextInput: TextInput.extend({ classNames: inputClasses }),
     Textarea: Textarea.extend({ classNames: inputClasses }),
     Modal: Modal.extend({ classNames: modalClasses, defaultProps: { centered: true, zIndex: 400 } }),
-    Notification: Notification.extend({ classNames: notificationClasses }),
+    // The close button is an icon alone, so it needs a name for a screen reader.
+    Notification: Notification.extend({
+      classNames: notificationClasses,
+      defaultProps: { closeButtonProps: { 'aria-label': 'Dismiss notification' } },
+    }),
     SegmentedControl: SegmentedControl.extend({ classNames: segmentedClasses }),
     Tooltip: Tooltip.extend({ classNames: tooltipClasses, defaultProps: { withArrow: true } }),
   },
