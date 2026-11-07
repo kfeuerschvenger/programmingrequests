@@ -12,7 +12,9 @@ describe('App', () => {
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: 'Post a quest. Let the hero code.' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Code Quests' })).toBeInTheDocument();
+    expect(screen.getByText('Post a quest.')).toBeInTheDocument();
+    expect(screen.getByText('Let the hero code.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Post the quest' })).toBeInTheDocument();
     expect(await screen.findByText('Listed idea')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'The Quest Board' })).toBeInTheDocument();

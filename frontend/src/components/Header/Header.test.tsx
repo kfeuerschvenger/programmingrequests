@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ModalsProvider } from '@mantine/modals';
 import { describe, expect, it } from 'vitest';
@@ -13,12 +13,35 @@ const renderHeader = () =>
   );
 
 describe('Header', () => {
-  it('names the product in a link home, with a decorative mark', () => {
+  it('names the product in the one h1, a link home, as real text on the sign', () => {
     renderHeader();
 
-    const brand = screen.getByRole('link', { name: 'Code Quests' });
-    expect(brand).toHaveAttribute('href', '/');
-    expect(brand.querySelector('img')).toHaveAttribute('alt', '');
+    const title = screen.getByRole('heading', { level: 1, name: 'Code Quests' });
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(within(title).getByRole('link', { name: 'Code Quests' })).toHaveAttribute('href', '/');
+  });
+
+  it('writes the tagline on two lines, one sentence each', () => {
+    renderHeader();
+
+    const lines = screen.getByText('Post a quest.').parentElement;
+    expect(lines).toBe(screen.getByText('Let the hero code.').parentElement);
+    const spans = [...(lines?.children ?? [])];
+    expect(spans.map(span => span.textContent)).toEqual(['Post a quest.', 'Let the hero code.']);
+    // Each sentence is its own element, and the stylesheet makes every one a block, so the break does not depend on the viewport.
+    expect(spans.every(span => span.tagName === 'SPAN')).toBe(true);
+  });
+
+  it('keeps the two controls out of the sign and the decorations out of the accessibility tree', () => {
+    const { container } = renderHeader();
+
+    const title = screen.getByRole('heading', { level: 1 });
+    const sign = title.parentElement as HTMLElement;
+    expect(within(sign).queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Voting rules' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeInTheDocument();
+    for (const decoration of container.querySelectorAll('img'))
+      expect(decoration).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('opens the voting rules on a sheet of parchment and closes them with the button', async () => {

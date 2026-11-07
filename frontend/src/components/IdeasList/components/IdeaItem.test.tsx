@@ -1,0 +1,82 @@
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { makeIdea, renderWithProviders } from '@/test/utils';
+import IdeaItem from './IdeaItem';
+
+/** happy-dom does no layout, so the measurements the clamp check reads are stubbed: text taller than its box counts as cut. */
+const stubCut = (cut: boolean) => {
+  vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => (cut ? 400 : 100));
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(() => 100);
+};
+
+describe('IdeaItem read more', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('offers no toggle when the text fits in the visible lines', () => {
+    stubCut(false);
+    renderWithProviders(<IdeaItem idea={makeIdea({ description: 'A short quest.' })} />);
+
+    expect(screen.queryByRole('button', { name: /read more|show less/i })).not.toBeInTheDocument();
+  });
+
+  it('offers Read more when the text is cut, and expands and collapses it', async () => {
+    stubCut(true);
+    const user = userEvent.setup();
+    renderWithProviders(<IdeaItem idea={makeIdea({ description: 'A long quest. '.repeat(60) })} />);
+
+    const toggle = screen.getByRole('button', { name: 'Read more' });
+    const text = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(text).toHaveTextContent('A long quest.');
+    expect(text).not.toHaveAttribute('data-expanded');
+
+    await user.click(toggle);
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
+    expect(text).toHaveAttribute('data-expanded');
+
+    await user.click(screen.getByRole('button', { name: 'Show less' }));
+    expect(screen.getByRole('button', { name: 'Read more' })).toHaveAttribute('aria-expanded', 'false');
+    expect(text).not.toHaveAttribute('data-expanded');
+  });
+
+  it('is reachable and operable with the keyboard, and keeps the focus on the same button', async () => {
+    stubCut(true);
+    const user = userEvent.setup();
+    renderWithProviders(<IdeaItem idea={makeIdea({ description: 'A long quest. '.repeat(60) })} />);
+
+    const toggle = screen.getByRole('button', { name: 'Read more' });
+    await user.tab();
+    expect(toggle).toHaveFocus();
+
+    await user.keyboard('{Enter}');
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveTextContent('Show less');
+
+    await user.keyboard(' ');
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
+describe('IdeaItem vote buttons', () => {
+  it('draws Back on wood and Reject on parchment, each with its label and its icon', () => {
+    renderWithProviders(<IdeaItem idea={makeIdea({ score: 7 })} />);
+
+    const back = screen.getByRole('button', { name: 'Back this quest' });
+    const reject = screen.getByRole('button', { name: 'Reject this quest' });
+    expect(back).toHaveAttribute('data-kind', 'back');
+    expect(reject).toHaveAttribute('data-kind', 'reject');
+    expect(back.querySelector('svg')).not.toBeNull();
+    expect(reject.querySelector('svg')).not.toBeNull();
+    expect(screen.getByTestId('score')).toHaveTextContent('Score: 7');
+  });
+
+  it('shows the pressed state of the vote the caller already cast', () => {
+    renderWithProviders(<IdeaItem idea={makeIdea({ myVote: -1 })} />);
+
+    expect(screen.getByRole('button', { name: 'Back this quest' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Reject this quest' })).toHaveAttribute('aria-pressed', 'true');
+  });
+});
