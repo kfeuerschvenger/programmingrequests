@@ -6,23 +6,21 @@
   padding-bottom: 3.4rem;
 }
 
-/* The line under the tagline sits straight on the planks, so a soft dark pool behind it keeps the cream text clear of the sunlit wood. */
+/* The line under the tagline is carved on a plank of dark wood, so its cream lettering keeps its contrast whatever light falls on the board. */
 .intro {
-  position: relative;
-  max-width: 38rem;
+  max-width: 40rem;
   margin: 0 auto;
-  padding: 0.4rem 0.5rem;
+  padding: 0.2rem 0.4rem;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 16px 26px;
+  border-image-source: var(--img-button-wood);
+  border-image-slice: 36 56 36 56 fill;
+  border-image-width: 16px 26px;
   color: var(--cq-cream);
   font-size: 1.2rem;
   text-align: center;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
   text-wrap: pretty;
-}
-
-.intro::before {
-  content: '';
-  position: absolute;
-  inset: -0.6rem -2.5rem;
-  z-index: -1;
-  background: radial-gradient(ellipse closest-side, rgb(18 9 3 / 0.62), transparent);
+  filter: drop-shadow(3px 5px 4px rgb(0 0 0 / 0.55));
 }

@@ -12,8 +12,8 @@ export const announceLayout = () => window.dispatchEvent(new Event(LAYOUT_EVENT)
 
 /** Where a source shines from when its prop is hidden (the torch and lantern are not drawn on narrow screens): the board edge it hangs on. */
 const FALLBACKS: Record<LightId, (board: DOMRect) => Point> = {
-  torch: board => ({ x: board.left + 16, y: board.top + 430 }),
-  lantern: board => ({ x: board.right - 16, y: board.top + 470 }),
+  torch: board => ({ x: board.left + 16, y: board.top + 760 }),
+  lantern: board => ({ x: board.right - 16, y: board.top + 900 }),
   candle: board => ({ x: board.right - 120, y: board.top + 520 }),
 };
 

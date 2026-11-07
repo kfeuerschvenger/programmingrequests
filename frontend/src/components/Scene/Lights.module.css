@@ -23,7 +23,7 @@
   z-index: 6;
   inset: 0;
   pointer-events: none;
-  background: rgb(214 210 232);
+  background: rgb(226 222 240);
   mix-blend-mode: multiply;
 }
 
@@ -68,6 +68,27 @@
   --i: var(--candle-i, 1);
   --r: var(--candle-r, 1);
   --size: 820px;
+}
+
+/* Without the torch and lantern on screen the pools sit on the board edges, smaller so that they do not wash over the header. */
+@media (max-width: 1099px) {
+  .torch {
+    --size: 760px;
+  }
+
+  .lantern {
+    --size: 700px;
+  }
+
+  .candle {
+    --size: 680px;
+  }
+
+  /* The torch and the lantern are not drawn here, so their flames are not either: only their light stays. */
+  .slot.torch,
+  .slot.lantern {
+    display: none;
+  }
 }
 
 /* Added to the wood, below the content: an orange glow that falls off to nothing. */
