@@ -122,20 +122,23 @@ const IdeasList = () => {
   }
 
   return (
-    // The section is the one landmark of the board. It carries aria-busy while a new sort is loading.
-    <section aria-labelledby="quest-board-title" aria-busy={isPlaceholderData} className={classes.board}>
+    <>
+      {/* A sibling of the board, not a child: assistive technology defers what is inside an aria-busy subtree, and a vote cast while the board re-sorts must still be announced. */}
       <LiveAnnouncer />
-      <div className={classes.head}>
-        <h2 id="quest-board-title" className={classes.plank}>
-          The Quest Board
-        </h2>
-        <div className={classes.sort}>
-          <Candle />
-          <SegmentedControl aria-label="Sort quests" value={sort} onChange={setSort} data={SORT_OPTIONS} />
+      {/* The section is the one landmark of the board. It carries aria-busy while a new sort is loading. */}
+      <section aria-labelledby="quest-board-title" aria-busy={isPlaceholderData} className={classes.board}>
+        <div className={classes.head}>
+          <h2 id="quest-board-title" className={classes.plank}>
+            The Quest Board
+          </h2>
+          <div className={classes.sort}>
+            <Candle />
+            <SegmentedControl aria-label="Sort quests" value={sort} onChange={setSort} data={SORT_OPTIONS} />
+          </div>
         </div>
-      </div>
-      <div className={`${classes.region} ${isPlaceholderData ? classes.stale : ''}`.trim()}>{content}</div>
-    </section>
+        <div className={`${classes.region} ${isPlaceholderData ? classes.stale : ''}`.trim()}>{content}</div>
+      </section>
+    </>
   );
 };
 

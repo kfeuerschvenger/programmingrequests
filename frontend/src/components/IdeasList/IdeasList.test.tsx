@@ -273,6 +273,18 @@ describe('IdeasList', () => {
     expect(screen.getAllByRole('status').filter(node => node.getAttribute('aria-live') === 'polite')).toHaveLength(1);
   });
 
+  it('keeps the announcer outside the busy board, so announcements are not deferred during a re-sort', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea()]))));
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText(makeIdea().description);
+
+    const board = screen.getByRole('region', { name: 'The Quest Board' });
+    expect(within(board).queryByTestId('announcer')).not.toBeInTheDocument();
+    expect(board.closest('[aria-busy]')).toBe(board);
+    expect(screen.getByTestId('announcer').closest('[aria-busy]')).toBeNull();
+  });
+
   it('shows Anonymous adventurer for an idea without an author', async () => {
     server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea({ author: null })]))));
     renderWithProviders(<IdeasList />);
