@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { notifications } from '@mantine/notifications';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from './server';
 
@@ -33,7 +33,10 @@ Object.defineProperty(document, 'fonts', {
 
 window.HTMLElement.prototype.scrollIntoView = () => undefined;
 
-beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
+// A request answered by MSW crosses a simulated socket; the default 1000 ms wait is shorter than that on a busy machine.
+configure({ asyncUtilTimeout: 5000 });
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error', onUnhandledFrame: 'error' }));
 afterEach(() => {
   cleanup();
   // The notification store is module-level, so a notification shown by one test would appear in the next one that mounts <Notifications />.

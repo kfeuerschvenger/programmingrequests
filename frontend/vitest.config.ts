@@ -7,6 +7,9 @@ export default mergeConfig(
     test: {
       environment: 'happy-dom',
       globals: true,
+      // Every file gets its own worker and loads happy-dom, React and Mantine: unbounded, 26 of them starve each other and a request answered by MSW takes longer than the default waits.
+      maxWorkers: 4,
+      testTimeout: 15_000,
       setupFiles: ['./src/test/setup.ts'],
       css: { modules: { classNameStrategy: 'non-scoped' } },
       coverage: {
