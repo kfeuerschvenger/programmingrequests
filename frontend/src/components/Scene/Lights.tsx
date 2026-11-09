@@ -25,7 +25,9 @@ export function Lights({ scene, dark, wide }: LightsProps) {
   const targets = useMemo(() => [under, over], []);
   const sources = useMemo(() => LIGHT_SOURCES.filter(source => wide || source.id === 'candle'), [wide]);
 
-  useLightFlicker(targets, dark, scene);
+  const drawn = useMemo(() => sources.map(source => source.id), [sources]);
+
+  useLightFlicker(targets, dark, scene, drawn);
 
   useLayoutEffect(() => {
     const element = scene;

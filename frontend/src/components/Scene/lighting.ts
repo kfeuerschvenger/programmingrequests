@@ -17,6 +17,16 @@ export const LIGHT_SOURCES: readonly LightSource[] = [
   { id: 'candle', phase: 17.3, speed: 1.1, floor: 0.7 },
 ];
 
+/** Half the width, in pixels, of each light pool at its widest (see `--size` in Lights.module.css). The candle's pool is smaller below 1100 px, so this is the upper bound. */
+export const POOL_RADIUS: Record<LightId, number> = { torch: 550, lantern: 490, candle: 410 };
+
+/** The pool breathes up to this much wider than its nominal size (see `lightAt`). */
+const POOL_BREATH = 1.03;
+
+/** How far, in pixels, a flame can be off screen and still light something that is on screen: the largest pool radius of the sources that are drawn, breathing included. */
+export const glowReach = (drawn: readonly LightId[]): number =>
+  Math.ceil(Math.max(0, ...drawn.map(id => POOL_RADIUS[id])) * POOL_BREATH);
+
 /** Updates per second. Fast enough to read as fire, slow enough to leave the main thread idle between them. */
 export const FLICKER_HZ = 20;
 

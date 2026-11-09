@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { announceLayout } from './lightLayout';
-import { FLICKER_HZ, LOW_FLICKER_HZ } from './lighting';
+import { FLICKER_HZ, LOW_FLICKER_HZ, POOL_RADIUS } from './lighting';
 import { useLightFlicker } from './useLightFlicker';
 
 type Listener = () => void;
@@ -9,7 +9,10 @@ type Listener = () => void;
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
   observed = new Set<Element>();
-  constructor(private readonly callback: (entries: Partial<IntersectionObserverEntry>[]) => void) {
+  constructor(
+    private readonly callback: (entries: Partial<IntersectionObserverEntry>[]) => void,
+    readonly options: IntersectionObserverInit = {},
+  ) {
     FakeIntersectionObserver.instances.push(this);
   }
   observe(element: Element) {
@@ -171,6 +174,25 @@ describe('useLightFlicker', () => {
     expect(element.style.getPropertyValue('--candle-play')).toBe('running');
   });
 
+  it('keeps the moving light when the tab is shown again, and snaps to the still moment only under reduced motion', () => {
+    renderHook(() => useLightFlicker(targets, true));
+    vi.advanceTimersByTime(5000);
+    hidden = true;
+    document.dispatchEvent(new Event('visibilitychange'));
+    const before = torchIntensity();
+    const setProperty = vi.spyOn(element.style, 'setProperty');
+
+    hidden = false;
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(setProperty).not.toHaveBeenCalledWith('--torch-i', expect.anything());
+    expect(torchIntensity()).toBe(before);
+
+    reduced = true;
+    listeners.reduced.forEach(listener => listener());
+    expect(setProperty).toHaveBeenCalledWith('--torch-i', expect.anything());
+  });
+
   it('does not start when the tab is already hidden', () => {
     hidden = true;
     renderHook(() => useLightFlicker(targets, true));
@@ -264,6 +286,106 @@ describe('useLightFlicker', () => {
 
       expect(observer().observed.has(lantern)).toBe(true);
       expect(observer().observed.has(torch)).toBe(false);
+    });
+
+    it('looks as far past the viewport as the largest pool it draws', () => {
+      renderHook(() => useLightFlicker(targets, true, scene, ['torch', 'lantern', 'candle']));
+      const wide = parseInt(observer().options.rootMargin ?? '0', 10);
+      expect(wide).toBeGreaterThanOrEqual(POOL_RADIUS.torch);
+
+      renderHook(() => useLightFlicker(targets, true, scene, ['candle']));
+      const candleOnly = parseInt(FakeIntersectionObserver.instances[1]?.options.rootMargin ?? '0', 10);
+      expect(candleOnly).toBeGreaterThanOrEqual(POOL_RADIUS.candle);
+      expect(candleOnly).toBeLessThan(wide);
+    });
+
+    it('watches only the flames that are drawn: on a narrow screen the candle alone keeps the loop', () => {
+      renderHook(() => useLightFlicker(targets, true, scene, ['candle']));
+
+      expect([...observer().observed]).toEqual([candle]);
+
+      act(() => observer().report(torch, false));
+      expect(vi.getTimerCount()).toBe(1);
+      expect(element.style.getPropertyValue('--candle-play')).toBe('running');
+    });
+
+    it('does not let a flame that is not drawn stop the loop while the candle is in view', () => {
+      renderHook(() => useLightFlicker(targets, true, scene, ['candle']));
+
+      act(() => observer().report(candle, true));
+
+      expect(vi.getTimerCount()).toBe(1);
+    });
+
+    it('forgets an unmounted flame, so the candle is not frozen by it', () => {
+      renderHook(() => useLightFlicker(targets, true, scene));
+      act(() => observer().report(torch, false));
+      act(() => observer().report(candle, false));
+      expect(vi.getTimerCount()).toBe(0);
+
+      const lantern = document.createElement('span');
+      lantern.dataset.lightSource = 'lantern';
+      scene.append(lantern);
+      candle.remove();
+      torch.remove();
+      act(() => {
+        announceLayout();
+      });
+
+      expect(observer().observed.has(candle)).toBe(false);
+      expect(vi.getTimerCount()).toBe(1);
+    });
+
+    it('counts a candle that mounts after the loop started as on screen until it is reported', () => {
+      candle.remove();
+      renderHook(() => useLightFlicker(targets, true, scene));
+      act(() => observer().report(torch, false));
+      expect(vi.getTimerCount()).toBe(0);
+
+      scene.append(candle);
+      act(() => {
+        announceLayout();
+      });
+
+      expect(observer().observed.has(candle)).toBe(true);
+      expect(vi.getTimerCount()).toBe(1);
+      expect(element.style.getPropertyValue('--candle-play')).toBe('running');
+
+      act(() => observer().report(candle, false));
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('prunes a flame that disappeared when the observer reports, even without a layout event', () => {
+      renderHook(() => useLightFlicker(targets, true, scene));
+      act(() => observer().report(torch, false));
+      candle.remove();
+
+      act(() => observer().report(torch, false));
+
+      expect(observer().observed.has(candle)).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('starts from a clean slate after a theme switch', () => {
+      const { rerender } = renderHook(({ active }) => useLightFlicker(targets, active, scene), {
+        initialProps: { active: true },
+      });
+      act(() => {
+        observer().report(torch, false);
+        observer().report(candle, false);
+      });
+      expect(vi.getTimerCount()).toBe(0);
+
+      rerender({ active: false });
+      expect(vi.getTimerCount()).toBe(0);
+      rerender({ active: true });
+
+      expect(FakeIntersectionObserver.instances).toHaveLength(2);
+      expect(vi.getTimerCount()).toBe(1);
+      expect([...(FakeIntersectionObserver.instances[1] as FakeIntersectionObserver).observed]).toEqual([
+        torch,
+        candle,
+      ]);
     });
   });
 });
