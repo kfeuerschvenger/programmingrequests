@@ -58,3 +58,15 @@ jobs:
         run: npm run build
       - name: Audit dependencies
         run: npm audit --audit-level=low
+
+  # The captures themselves never run in CI: they need a stack and a browser. This only checks that the scripts parse.
+  showcase:
+    name: showcase scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check script syntax
+        run: node --check e2e/showcase/capture.mjs && node --check e2e/showcase/gif.mjs

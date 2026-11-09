@@ -1,0 +1,20 @@
+{
+  "name": "code-quests-showcase",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Screenshot and hero animation pipeline for Code Quests, driven against a stack started with the demo profile",
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  },
+  "scripts": {
+    "install:browsers": "playwright install chromium",
+    "capture": "node capture.mjs",
+    "hero": "node capture.mjs hero",
+    "gif": "node gif.mjs",
+    "check": "node --check capture.mjs && node --check gif.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.0"
+  }
+}

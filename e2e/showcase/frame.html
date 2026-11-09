@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Browser frame</title>
+    <style>
+      /*
+       * The window a raw screenshot is placed in. The capture script loads this
+       * page, calls window.placeShot(...) with the screenshot as a data URL, and
+       * screenshots the #stage element. Nothing here reads the network.
+       *
+       * Three looks: a light browser window for the day shots, a dark one for the
+       * night shots, and a phone for the mobile shots. The colors are the site's:
+       * dark wood, brass and parchment.
+       */
+      :root {
+        --pad: 88px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        background: #3b2a1e;
+      }
+
+      .stage {
+        position: relative;
+        display: inline-block;
+        padding: var(--pad);
+        overflow: hidden;
+        background:
+          radial-gradient(1100px 700px at 12% 8%, rgb(242 196 107 / 0.55), transparent 60%),
+          radial-gradient(900px 600px at 95% 100%, rgb(158 43 37 / 0.35), transparent 65%),
+          linear-gradient(135deg, #7a5a3c 0%, #4d3624 52%, #2a1c13 100%);
+      }
+
+      .stage[data-scheme='dark'] {
+        background:
+          radial-gradient(1000px 650px at 10% 6%, rgb(242 196 107 / 0.28), transparent 60%),
+          radial-gradient(900px 600px at 96% 100%, rgb(70 90 140 / 0.35), transparent 65%),
+          linear-gradient(135deg, #1b2233 0%, #0e131e 55%, #05070b 100%);
+      }
+
+      .window {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        background: #f3e6c8;
+        box-shadow:
+          0 0 0 1px rgb(0 0 0 / 0.35),
+          0 2px 6px rgb(0 0 0 / 0.25),
+          0 30px 60px -18px rgb(0 0 0 / 0.6),
+          0 60px 120px -30px rgb(0 0 0 / 0.5);
+      }
+
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        height: 46px;
+        padding: 0 18px;
+        background: linear-gradient(#f6efe0, #ebe1ca);
+        border-bottom: 1px solid rgb(59 42 30 / 0.18);
+      }
+
+      .stage[data-scheme='dark'] .bar {
+        background: linear-gradient(#262a33, #1c1f27);
+        border-bottom-color: rgb(255 255 255 / 0.08);
+      }
+
+      .dots {
+        display: flex;
+        gap: 9px;
+      }
+
+      .dots i {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15);
+      }
+
+      .dots i:nth-child(1) {
+        background: #ff5f57;
+      }
+
+      .dots i:nth-child(2) {
+        background: #febc2e;
+      }
+
+      .dots i:nth-child(3) {
+        background: #28c840;
+      }
+
+      .title {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        /* The same width as the dots, so the address sits in the middle of the bar. */
+        margin-right: 61px;
+      }
+
+      .title span {
+        min-width: 280px;
+        max-width: 520px;
+        padding: 5px 16px;
+        overflow: hidden;
+        border-radius: 8px;
+        background: rgb(59 42 30 / 0.08);
+        color: #5b4a3a;
+        font: 500 13px/1.3 'Segoe UI', system-ui, sans-serif;
+        letter-spacing: 0.01em;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .stage[data-scheme='dark'] .title span {
+        background: rgb(255 255 255 / 0.08);
+        color: #b9c0cf;
+      }
+
+      .window img {
+        display: block;
+        width: var(--shot-width, 1600px);
+        height: auto;
+      }
+
+      /* The phone: a bezel around the page, a speaker slot instead of the window bar. */
+      .stage[data-device='phone'] {
+        --pad: 72px;
+      }
+
+      .stage[data-device='phone'] .window {
+        padding: 14px;
+        border-radius: 52px;
+        background: #0c0c0e;
+        box-shadow:
+          0 0 0 2px #2c2c30,
+          0 0 0 3px #000,
+          0 30px 60px -18px rgb(0 0 0 / 0.6),
+          0 60px 120px -30px rgb(0 0 0 / 0.5);
+      }
+
+      .stage[data-device='phone'] .bar {
+        display: none;
+      }
+
+      .stage[data-device='phone'] .window img {
+        border-radius: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage" id="stage" data-scheme="light" data-device="desktop">
+      <div class="window">
+        <div class="bar">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="title"><span id="title">code-quests.local</span></div>
+        </div>
+        <img id="shot" alt="" />
+      </div>
+    </div>
+    <script>
+      /**
+       * Puts a screenshot in the window.
+       *
+       * @param {{ src: string, width: number, title?: string, scheme?: 'light' | 'dark', device?: 'desktop' | 'phone' }} shot The image as a data URL, the width in CSS pixels it was taken at, the address to show, and the look of the frame.
+       */
+      window.placeShot = async ({ src, width, title, scheme = 'light', device = 'desktop' }) => {
+        const stage = document.getElementById('stage');
+        stage.dataset.scheme = scheme;
+        stage.dataset.device = device;
+        document.documentElement.style.setProperty('--shot-width', `${width}px`);
+        document.getElementById('title').textContent = title || 'code-quests.local';
+
+        const image = document.getElementById('shot');
+        image.src = src;
+        await image.decode();
+      };
+
+      /**
+       * Re-encodes an image as WebP with the browser's own encoder.
+       *
+       * @param {string} src The image as a data URL.
+       * @param {number} quality The WebP quality from 0 to 1.
+       * @returns {Promise<string>} The WebP as a data URL.
+       */
+      window.toWebp = async (src, quality) => {
+        const image = new Image();
+        image.src = src;
+        await image.decode();
+
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        canvas.getContext('2d').drawImage(image, 0, 0);
+
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+      };
+    </script>
+  </body>
+</html>
