@@ -13,7 +13,7 @@ export function Footer() {
     <footer className={classes.footer}>
       <div className={classes.inner}>
         <div className={classes.about}>
-          <Logo variant="footer" decorative />
+          <Logo decorative />
           <p className={classes.credit}>
             Forged with care by <span className={classes.author}>Kevin Feuerschvenger</span>
           </p>
