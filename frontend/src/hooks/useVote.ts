@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, type InfiniteData, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
+import { announce, firstWords } from '@/lib/announcer';
 import { castVote, withdrawVote } from '@/services/ideas.service';
 import { isConflict, isRateLimited, type ApiError } from '@/services/http/apiError';
 import type { Idea, IdeaPage, MyVote, VoteValue } from '@/types/ideas';
@@ -36,6 +37,13 @@ const findIdea = (cache: ListCache | undefined, id: number): Idea | undefined =>
     if (found) return found;
   }
   return undefined;
+};
+
+/** What the live region says once a vote is saved: what the user did, to which quest, and where its score stands. */
+export const voteAnnouncement = (idea: Idea): string => {
+  const quest = firstWords(idea.description);
+  const did = idea.myVote === 1 ? 'You backed' : idea.myVote === -1 ? 'You rejected' : 'You withdrew your vote on';
+  return `${did}: ${quest}. Score ${idea.score}.`;
 };
 
 /** A timeout, a network error or an unreadable answer arrive after the request left, so the server may have stored the vote. */
@@ -128,6 +136,7 @@ export const useVote = (ideaId: number) => {
       queryClient.setQueriesData<ListCache>({ queryKey: ideasKeys.lists() }, cache =>
         patchIdea(cache, updated.id, () => updated),
       );
+      announce(voteAnnouncement(updated));
       notifications.show({
         color: 'green',
         title: updated.myVote === 0 ? 'Vote withdrawn' : 'Vote sealed',

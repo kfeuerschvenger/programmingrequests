@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { notifications } from '@mantine/notifications';
 import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
+import { clearAnnouncement } from '../lib/announcer';
 import { server } from './server';
 
 // Mantine reads the color scheme and measures elements, neither of which happy-dom provides.
@@ -41,6 +42,7 @@ afterEach(() => {
   cleanup();
   // The notification store is module-level, so a notification shown by one test would appear in the next one that mounts <Notifications />.
   notifications.clean();
+  clearAnnouncement();
   server.resetHandlers();
 });
 afterAll(() => server.close());

@@ -4,6 +4,7 @@ import { useIdeas } from '@/hooks/useIdeas';
 import { useListQueryState } from '@/hooks/useListQueryState';
 import type { IdeaSort } from '@/types/ideas';
 import { art } from '@/components/Scene/assets';
+import { LiveAnnouncer } from '@/components/LiveAnnouncer/LiveAnnouncer';
 import { Candle } from '@/components/Scene/Candle';
 import { EmptyState, ErrorState, IdeaListSkeleton } from '@/components/ui';
 import IdeaItem from './components/IdeaItem';
@@ -121,7 +122,9 @@ const IdeasList = () => {
   }
 
   return (
-    <section aria-labelledby="quest-board-title" className={classes.board}>
+    // The section is the one landmark of the board. It carries aria-busy while a new sort is loading.
+    <section aria-labelledby="quest-board-title" aria-busy={isPlaceholderData} className={classes.board}>
+      <LiveAnnouncer />
       <div className={classes.head}>
         <h2 id="quest-board-title" className={classes.plank}>
           The Quest Board
@@ -131,14 +134,7 @@ const IdeasList = () => {
           <SegmentedControl aria-label="Sort quests" value={sort} onChange={setSort} data={SORT_OPTIONS} />
         </div>
       </div>
-      <div
-        role="region"
-        aria-label="Quests"
-        aria-busy={isPlaceholderData}
-        className={`${classes.region} ${isPlaceholderData ? classes.stale : ''}`.trim()}
-      >
-        {content}
-      </div>
+      <div className={`${classes.region} ${isPlaceholderData ? classes.stale : ''}`.trim()}>{content}</div>
     </section>
   );
 };

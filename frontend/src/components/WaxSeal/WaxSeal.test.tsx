@@ -19,16 +19,16 @@ describe('sealText', () => {
 });
 
 describe('WaxSeal', () => {
-  it('is a polite live region that announces the score', () => {
+  it('is static text that reads "Score: N" and announces nothing by itself', () => {
     renderWithProviders(<WaxSeal value={7} testId="seal" />);
 
-    const live = screen.getByTestId('seal');
-    expect(live).toHaveAttribute('role', 'status');
-    expect(live).toHaveAttribute('aria-live', 'polite');
-    expect(live).toHaveTextContent('Score: 7');
+    const seal = screen.getByTestId('seal');
+    expect(seal).not.toHaveAttribute('role');
+    expect(seal).not.toHaveAttribute('aria-live');
+    expect(seal).toHaveTextContent('Score: 7');
   });
 
-  it('is stamped again only when the score changes, and keeps the same live region', () => {
+  it('is stamped again only when the score changes, and keeps the same element', () => {
     const { rerender } = renderWithProviders(<WaxSeal value={7} testId="seal" />);
     const live = screen.getByTestId('seal');
     expect(live.querySelector('[data-stamped]')).toBeNull();

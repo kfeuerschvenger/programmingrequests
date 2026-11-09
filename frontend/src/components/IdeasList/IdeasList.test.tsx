@@ -1,6 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { firstWords } from '@/lib/announcer';
 import { server } from '@/test/server';
 import { makeIdea, makePage, problem, renderWithProviders } from '@/test/utils';
 import IdeasList from './IdeasList';
@@ -170,9 +171,9 @@ describe('IdeasList', () => {
 
     expect(screen.queryByTestId('idea-list-skeleton')).not.toBeInTheDocument();
     expect(screen.getByText('Newest idea')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Quests' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('region', { name: 'The Quest Board' })).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByText('Oldest idea')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Quests' })).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByRole('region', { name: 'The Quest Board' })).toHaveAttribute('aria-busy', 'false');
   });
 
   it('is not busy once the first load has finished', async () => {
@@ -180,7 +181,15 @@ describe('IdeasList', () => {
     renderWithProviders(<IdeasList />);
 
     await screen.findByText(makeIdea().description);
-    expect(screen.getByRole('region', { name: 'Quests' })).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByRole('region', { name: 'The Quest Board' })).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('exposes a single landmark for the board', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea()]))));
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText(makeIdea().description);
+    expect(screen.getAllByRole('region')).toHaveLength(1);
   });
 
   it('keeps the arrows disabled for an idea whose vote is in flight after the item remounts', async () => {
@@ -253,9 +262,15 @@ describe('IdeasList', () => {
 
     await waitFor(() => expect(screen.getByTestId('score')).toHaveTextContent('4'));
     expect(screen.getByTestId('score')).toHaveTextContent('Score: 4');
-    expect(screen.getByTestId('score')).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByTestId('score')).not.toHaveAttribute('aria-live');
+    expect(screen.getByTestId('score')).not.toHaveAttribute('role');
     expect(screen.getByRole('button', { name: 'Back this quest' })).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByText('Vote sealed')).toBeInTheDocument();
+    // One shared live region names the quest the vote went to.
+    const announcer = screen.getByTestId('announcer');
+    expect(announcer).toHaveAttribute('aria-live', 'polite');
+    expect(announcer).toHaveTextContent(`You backed: ${firstWords(idea.description)}. Score 4.`);
+    expect(screen.getAllByRole('status').filter(node => node.getAttribute('aria-live') === 'polite')).toHaveLength(1);
   });
 
   it('shows Anonymous adventurer for an idea without an author', async () => {
