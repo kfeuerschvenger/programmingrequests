@@ -120,4 +120,68 @@ describe('light layout', () => {
     expect(card.style.getPropertyValue('--cq-shadow-x')).toBe('');
     expect(card.style.getPropertyValue('--cq-shadow-y')).toBe('');
   });
+
+  it('measures every card before it writes any, so no read follows a write', () => {
+    addFlame('torch', rect(100, 400, 20, 20));
+    const events: string[] = [];
+    for (const top of [300, 700, 1100]) {
+      const card = addCard(rect(300, top, 200, 100));
+      const measure = card.getBoundingClientRect;
+      card.getBoundingClientRect = () => {
+        events.push('read');
+        return measure.call(card);
+      };
+      const setProperty = card.style.setProperty.bind(card.style);
+      card.style.setProperty = (name: string, value: string | null) => {
+        events.push('write');
+        setProperty(name, value);
+      };
+    }
+
+    castShadows(board, true);
+
+    expect(events.indexOf('write')).toBe(events.lastIndexOf('read') + 1);
+  });
+
+  it('does not write a shadow that has not changed', () => {
+    addFlame('torch', rect(100, 400, 20, 20));
+    const card = addCard(rect(300, 400, 200, 100));
+    castShadows(board, true);
+    let writes = 0;
+    const setProperty = card.style.setProperty.bind(card.style);
+    card.style.setProperty = (name: string, value: string | null) => {
+      writes += 1;
+      setProperty(name, value);
+    };
+
+    castShadows(board, true);
+    expect(writes).toBe(0);
+
+    place(card, rect(300, 900, 200, 100));
+    castShadows(board, true);
+    expect(writes).toBe(2);
+  });
+
+  it('shadows the cards of the scene and of an open dialog, and leaves any other card alone', () => {
+    addFlame('torch', rect(100, 400, 20, 20));
+    const inScene = addCard(rect(300, 400, 200, 100));
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    const inDialog = document.createElement('div');
+    inDialog.dataset.cast = '';
+    place(inDialog, rect(600, 400, 200, 100));
+    dialog.append(inDialog);
+    const elsewhere = document.createElement('div');
+    elsewhere.dataset.cast = '';
+    place(elsewhere, rect(600, 900, 200, 100));
+    document.body.append(dialog, elsewhere);
+
+    castShadows(board, true);
+
+    expect(inScene.style.getPropertyValue('--cq-shadow-x')).not.toBe('');
+    expect(inDialog.style.getPropertyValue('--cq-shadow-x')).not.toBe('');
+    expect(elsewhere.style.getPropertyValue('--cq-shadow-x')).toBe('');
+    dialog.remove();
+    elsewhere.remove();
+  });
 });

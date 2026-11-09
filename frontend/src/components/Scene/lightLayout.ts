@@ -59,29 +59,47 @@ export function placePools(
 /** How far a shadow reaches from its object, in pixels. */
 const SHADOW_REACH = 9;
 
+/** The shadow written on each element the last time, as `x|y`, or `null` once it was cleared. An unchanged value is not written again, so a pass that moves nothing dirties no style. */
+const written = new WeakMap<HTMLElement, string | null>();
+
+/** Every shadow caster of the scene, plus those of an open dialog: Mantine portals the modal to the body, outside the scene. */
+const casters = (scene: HTMLElement): HTMLElement[] => {
+  const found = new Set<HTMLElement>(scene.querySelectorAll<HTMLElement>('[data-cast]'));
+  document.querySelectorAll<HTMLElement>('[role="dialog"] [data-cast]').forEach(item => found.add(item));
+  return [...found];
+};
+
 /**
  * Points the shadow of every element marked `data-cast` away from the nearest source. By day the element's own shadow variables are cleared, so the stylesheet default applies: down and to the right, away from the sun in the top left.
  * Only the direction is set here. The flicker never touches a shadow, so no card is repainted by it.
+ * Every measurement is taken before the first write: a read that follows a write forces a layout, so interleaving them would cost one layout per card.
  */
 export function castShadows(scene: HTMLElement, dark: boolean, ids: readonly LightId[] = ALL_SOURCES): void {
-  const items = document.querySelectorAll<HTMLElement>('[data-cast]');
+  const items = casters(scene);
   if (!dark) {
-    items.forEach(item => {
+    for (const item of items) {
+      if (written.get(item) == null) continue;
       item.style.removeProperty('--cq-shadow-x');
       item.style.removeProperty('--cq-shadow-y');
-    });
+      written.set(item, null);
+    }
     return;
   }
   const sources = Object.values(measureSources(scene, ids));
   if (sources.length === 0) return;
-  items.forEach(item => {
-    const at = centre(item.getBoundingClientRect());
+  const centres = items.map(item => centre(item.getBoundingClientRect()));
+  items.forEach((item, index) => {
+    const at = centres[index] as Point;
     const distance = (source: Point) => Math.hypot(source.x - at.x, source.y - at.y);
     const nearest = sources.reduce((best, source) => (distance(source) < distance(best) ? source : best));
     const dx = at.x - nearest.x;
     const dy = at.y - nearest.y;
     const length = Math.hypot(dx, dy) || 1;
-    item.style.setProperty('--cq-shadow-x', `${((dx / length) * SHADOW_REACH).toFixed(1)}px`);
-    item.style.setProperty('--cq-shadow-y', `${((dy / length) * SHADOW_REACH).toFixed(1)}px`);
+    const x = `${((dx / length) * SHADOW_REACH).toFixed(1)}px`;
+    const y = `${((dy / length) * SHADOW_REACH).toFixed(1)}px`;
+    if (written.get(item) === `${x}|${y}`) return;
+    item.style.setProperty('--cq-shadow-x', x);
+    item.style.setProperty('--cq-shadow-y', y);
+    written.set(item, `${x}|${y}`);
   });
 }
