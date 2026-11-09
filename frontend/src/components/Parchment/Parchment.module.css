@@ -37,11 +37,12 @@
 
 .root[data-kind='card'] {
   --paper: var(--img-parchment-tall);
-  --slice: 120 110 130 110;
+  /* A card is about as wide as its picture, so it is cut in three bands, not nine: no corner pieces, and so no vertical join in the torn top and bottom edges for a seam to open on. The sides stretch sideways by a few percent, which the torn edge hides. */
+  --slice: 120 0 130 0;
   --wt: calc(60px * var(--paper-s));
-  --wr: calc(55px * var(--paper-s));
+  --wr: 0px;
   --wb: calc(65px * var(--paper-s));
-  --wl: calc(55px * var(--paper-s));
+  --wl: 0px;
   --ot: var(--card-ot);
   --or: var(--card-or);
   --ob: var(--card-ob);
