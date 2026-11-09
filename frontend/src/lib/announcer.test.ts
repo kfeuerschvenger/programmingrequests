@@ -27,9 +27,7 @@ describe('voteAnnouncement', () => {
 
   it('names the quest and the score for each result', () => {
     expect(voteAnnouncement({ ...idea, myVote: 1 })).toBe('You backed: Build a tiny dungeon crawler in. Score 13.');
-    expect(voteAnnouncement({ ...idea, myVote: -1 })).toBe(
-      'You rejected: Build a tiny dungeon crawler in. Score 13.',
-    );
+    expect(voteAnnouncement({ ...idea, myVote: -1 })).toBe('You rejected: Build a tiny dungeon crawler in. Score 13.');
     expect(voteAnnouncement({ ...idea, myVote: 0 })).toBe(
       'You withdrew your vote on: Build a tiny dungeon crawler in. Score 13.',
     );
