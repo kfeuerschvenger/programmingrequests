@@ -1,8 +1,17 @@
-/* A plank carved with the credits, hanging below the board. */
+/*
+ * A plank carved with the credits, hanging below the board. It takes part in the night lighting like the board does: the plank is painted below the night layers (the wood is dimmed and lit by the pools) and the text above the dimming layer and below the tint, which is what keeps cream on dark wood at AA.
+ * That is why the footer itself has no filter, opacity or z-index: any of them would make it one stacking context and the text could no longer sit above the layers while the plank sits below.
+ */
 .footer {
   position: relative;
   width: min(100% - 0.75rem, 72rem);
   margin: 1.8rem auto 0;
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   border-style: solid;
   border-color: transparent;
   border-width: 18px 28px;
@@ -10,15 +19,18 @@
   border-image-slice: 36 56 36 56 fill;
   border-image-width: 18px 28px;
   filter: drop-shadow(0 8px 8px rgb(0 0 0 / 0.6));
+  pointer-events: none;
 }
 
 .inner {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem 2rem;
-  padding: 1.4rem 1rem;
+  padding: calc(1.4rem + 18px) calc(1rem + 28px);
 }
 
 .about {
