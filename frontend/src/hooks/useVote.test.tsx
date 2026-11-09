@@ -85,7 +85,7 @@ describe('useVote', () => {
 
     release();
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote submitted!' }));
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote sealed' }));
   });
 
   it('switching a vote moves the score by two', async () => {
@@ -121,7 +121,7 @@ describe('useVote', () => {
     expect(notifications.show).toHaveBeenCalledWith(
       expect.objectContaining({
         color: 'red',
-        title: 'Too many votes',
+        title: 'Easy there, adventurer',
         message: expect.stringContaining('9 seconds') as string,
       }),
     );
@@ -141,7 +141,10 @@ describe('useVote', () => {
 
     expect(cached(client)[0]).toMatchObject({ score: 3, myVote: 0 });
     expect(notifications.show).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Too many votes', message: expect.stringContaining('12 seconds') as string }),
+      expect.objectContaining({
+        title: 'Easy there, adventurer',
+        message: expect.stringContaining('12 seconds') as string,
+      }),
     );
   });
 
@@ -157,11 +160,13 @@ describe('useVote', () => {
     );
   });
 
-  it('uses a neutral title for a network error and rolls back', async () => {
+  it('says the vote may not have been saved after a network error, and rolls back', async () => {
     const { client } = await failingVote(() => HttpResponse.error());
 
     expect(cached(client)[0]).toMatchObject({ score: 3, myVote: 0 });
-    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red', title: 'Vote not saved' }));
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ color: 'red', title: 'Vote may not have been saved' }),
+    );
   });
 
   it('uses a neutral title for a server error', async () => {
@@ -192,10 +197,30 @@ describe('useVote', () => {
     );
   });
 
-  it('uses the neutral title for a response that cannot be read', async () => {
+  it('says the vote may not have been saved for a response that cannot be read', async () => {
     await failingVote(() => HttpResponse.json({ ok: true }));
 
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote may not have been saved' }));
+  });
+
+  it('keeps the plain title when the server refused the vote', async () => {
+    await failingVote(() => problem(500, 'INTERNAL_ERROR'));
+
     expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: 'Vote not saved' }));
+  });
+
+  it('invalidates the lists without cancelling a fetch already in flight', async () => {
+    const target = makeIdea({ id: 1, score: 3, myVote: 0 });
+    const client = seed([[target]]);
+    const spy = vi.spyOn(client, 'invalidateQueries');
+    server.use(http.put('/api/ideas/1/vote', () => HttpResponse.json({ ...target, score: 4, myVote: 1 })));
+
+    const { result } = renderHook(() => useVote(1), { wrapper: createWrapper({ client }) });
+    act(() => result.current.mutate({ idea: target, value: 1 }));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+    expect(spy).toHaveBeenCalledWith(expect.anything(), { cancelRefetch: false });
   });
 
   it('explains a rate limit without a wait time', async () => {
@@ -287,7 +312,7 @@ describe('useVote', () => {
     act(() => result.current.mutate({ idea: target, value: 1 }));
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ideasKeys.lists() });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ideasKeys.lists() }, { cancelRefetch: false });
   });
 
   it('does not refetch while another vote is still in flight', async () => {

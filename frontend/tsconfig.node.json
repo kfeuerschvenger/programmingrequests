@@ -26,6 +26,8 @@
   "include": [
     "vite.config.ts",
     "vitest.config.ts",
+    "vite.preload-fonts.ts",
+    "vite.preload-fonts.test.ts",
     "vite.social-meta.ts",
     "vite.social-meta.test.ts",
     "social-preview.test.ts"

@@ -1,8 +1,80 @@
+.board {
+  width: 100%;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  /* Room above for the candle that stands on the sort control. */
+  margin: 2.6rem 0 1.4rem;
+
+  @media (max-width: 760px) {
+    row-gap: 3.6rem;
+  }
+}
+
+/* A plank carved with the section name. */
+.plank {
+  margin: 0;
+  padding: 0.35rem 0.55rem;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 15px 24px;
+  border-image-source: var(--img-button-wood);
+  border-image-slice: 36 56 36 56 fill;
+  border-image-width: 15px 24px;
+  color: var(--cq-cream);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 1px rgb(0 0 0 / 0.8);
+  filter: drop-shadow(2px 4px 3px rgb(0 0 0 / 0.55));
+}
+
+.sort {
+  position: relative;
+}
+
 .region {
-  transition: opacity 150ms ease;
+  transition: opacity 150ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* The previous sort is still on screen while the new one loads, so it is dimmed to read as out of date. */
 .stale {
   opacity: 0.6;
+}
+
+/* A decorative paper in the masonry, nailed to the board. It is a plain picture, not a card, so it fills only part of its column. */
+.decoration {
+  position: relative;
+  width: 82%;
+  margin: 0.5rem auto 0;
+  filter: drop-shadow(var(--cq-shadow-x) var(--cq-shadow-y) 5px var(--cq-shadow-color));
+  pointer-events: none;
+  user-select: none;
+}
+
+.paper {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The nail goes through the top edge, a little right of the middle. */
+.nail {
+  position: absolute;
+  top: 1.5%;
+  left: 52%;
+  width: 11%;
+  height: auto;
+  transform: translateX(-50%);
+  filter: drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.55));
+}
+
+.after {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.2rem;
 }

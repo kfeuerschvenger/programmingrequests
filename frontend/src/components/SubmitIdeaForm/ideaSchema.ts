@@ -3,12 +3,18 @@ import { AUTHOR_MAX_LENGTH, DESCRIPTION_MAX_LENGTH, DESCRIPTION_MIN_LENGTH } fro
 
 /** Mirrors the API validation of a new idea. An empty author means anonymous. */
 export const ideaSchema = z.object({
-  author: z.string().trim().max(AUTHOR_MAX_LENGTH, 'Even a mastermind needs a shorter name (60 characters at most)'),
+  author: z
+    .string()
+    .trim()
+    .max(AUTHOR_MAX_LENGTH, `That name will not fit on the guild roll: ${AUTHOR_MAX_LENGTH} characters at most.`),
   description: z
     .string()
     .trim()
-    .min(DESCRIPTION_MIN_LENGTH, "Hey! I can't read minds, you know... (10 characters at least)")
-    .max(DESCRIPTION_MAX_LENGTH, 'Even legends fit in 1000 characters'),
+    .min(
+      DESCRIPTION_MIN_LENGTH,
+      `Give the heroes more to go on: ${DESCRIPTION_MIN_LENGTH} characters at least. Even a rumour has more words.`,
+    )
+    .max(DESCRIPTION_MAX_LENGTH, `Even legends fit in ${DESCRIPTION_MAX_LENGTH} characters. Trim the tale.`),
 });
 
 export type IdeaFormValues = z.infer<typeof ideaSchema>;

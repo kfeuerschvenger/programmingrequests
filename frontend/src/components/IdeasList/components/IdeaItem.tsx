@@ -2,12 +2,13 @@ import classes from './IdeaItem.module.css';
 
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 
-import { ActionIcon, Avatar, Grid, Group, Paper, Text, VisuallyHidden } from '@mantine/core';
-import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
-
+import { IconChevronDown, IconChevronUp, IconShieldCheck, IconShieldX } from '@tabler/icons-react';
 import { useIsMutating } from '@tanstack/react-query';
 
+import { Parchment } from '@/components/Parchment/Parchment';
+import { WaxSeal } from '@/components/WaxSeal/WaxSeal';
 import { useVote, voteMutationKey } from '@/hooks/useVote';
 import type { Idea, VoteValue } from '@/types/ideas';
 
@@ -17,88 +18,122 @@ interface IdeaItemProps {
   idea: Idea;
 }
 
-const ANONYMOUS = 'Anonymous';
+export const ANONYMOUS = 'Anonymous adventurer';
 
 const IdeaItem = ({ idea }: IdeaItemProps) => {
   const { mutate } = useVote(idea.id);
-  // Read from the mutation cache rather than from this instance, so a remount in the middle of a vote keeps the arrows disabled.
+  // Read from the mutation cache rather than from this instance, so a remount in the middle of a vote keeps the buttons disabled.
   const isPending = useIsMutating({ mutationKey: voteMutationKey(idea.id) }) > 0;
 
-  // Pressing the arrow that is already active withdraws the vote; the other arrow switches it.
-  // While a vote on this idea is in flight the arrows are aria-disabled and dimmed, and clicks are ignored.
+  const bodyId = useId();
+  const body = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+
+  // A quest that fits in the visible lines gets no toggle. The text is clamped by CSS, so whether it is cut is read from the rendered element (scrollHeight against clientHeight).
+  // The clamp pins the box height, so a change in how the text wraps (a web font arriving, a wider or narrower column) can leave the box the same size while its content grows. A ResizeObserver on the box alone would miss that, so the check also runs when the fonts are ready and when the card around the text changes width.
+  useLayoutEffect(() => {
+    const element = body.current;
+    if (!element || expanded) return;
+    let active = true;
+    const measure = () => {
+      if (active) setOverflowing(element.scrollHeight > element.clientHeight + 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    if (element.parentElement) observer.observe(element.parentElement);
+    void document.fonts?.ready?.then(measure);
+    document.fonts?.addEventListener?.('loadingdone', measure);
+    return () => {
+      active = false;
+      observer.disconnect();
+      document.fonts?.removeEventListener?.('loadingdone', measure);
+    };
+  }, [expanded, idea.description]);
+
+  // A long quest that is collapsed from far down its text leaves the card's top above the viewport. The card is brought back only as far as needed, so a card that is still in view does not move.
+  const collapsedByUser = useRef(false);
+  useLayoutEffect(() => {
+    if (expanded || !collapsedByUser.current) return;
+    collapsedByUser.current = false;
+    body.current?.closest<HTMLElement>('[data-cast]')?.scrollIntoView({ block: 'nearest' });
+  }, [expanded]);
+
+  const toggleExpanded = () => {
+    collapsedByUser.current = expanded;
+    setExpanded(open => !open);
+  };
+
+  // Pressing the button that is already active withdraws the vote; the other one switches it.
+  // While a vote on this quest is in flight the buttons are aria-disabled and dimmed, and clicks are ignored.
   const handleVote = (value: VoteValue) => {
     if (isPending) return;
     mutate({ idea, value });
   };
 
-  const pendingStyle = { outline: 'none', opacity: isPending ? 0.5 : 1 };
-
   const author = idea.author ?? ANONYMOUS;
 
   return (
-    <Paper withBorder radius="md" className={classes.comment}>
-      <Grid>
-        <Grid.Col span={11}>
-          <Group>
-            <Avatar name={author} color="initials" />
-            <div>
-              <Text fz="sm">{author}</Text>
-              <Text fz="xs" c="dimmed">
-                {dayjs(idea.createdAt).fromNow()}
-              </Text>
-            </div>
-          </Group>
-          <Text className={classes.body} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-            {idea.description}
-          </Text>
-        </Grid.Col>
-        <Grid.Col span={1}>
-          <ActionIcon.Group orientation="vertical">
-            <ActionIcon
-              variant={idea.myVote === 1 ? 'light' : 'transparent'}
-              color="teal"
-              size="md"
-              radius="md"
-              aria-label="Vote up"
-              aria-pressed={idea.myVote === 1}
-              aria-disabled={isPending}
-              onClick={() => handleVote(1)}
-              style={pendingStyle}
-            >
-              <IconChevronUp color="var(--mantine-color-teal-text)" />
-            </ActionIcon>
-            <ActionIcon
-              component="div"
-              variant="transparent"
-              color="dark.4"
-              size="md"
-              radius="md"
-              role="status"
-              aria-live="polite"
-              data-testid="score"
-            >
-              <VisuallyHidden>Score: </VisuallyHidden>
-              <Text fw={700} c="var(--mantine-color-text)">
-                {idea.score}
-              </Text>
-            </ActionIcon>
-            <ActionIcon
-              variant={idea.myVote === -1 ? 'light' : 'transparent'}
-              color="red"
-              size="md"
-              radius="md"
-              aria-label="Vote down"
-              aria-pressed={idea.myVote === -1}
-              aria-disabled={isPending}
-              onClick={() => handleVote(-1)}
-              style={pendingStyle}
-            >
-              <IconChevronDown color="var(--mantine-color-red-text)" />
-            </ActionIcon>
-          </ActionIcon.Group>
-        </Grid.Col>
-      </Grid>
-    </Paper>
+    <Parchment seed={idea.id} pinned stained lifts className={classes.item}>
+      <p ref={body} id={bodyId} className={classes.body} data-expanded={expanded || undefined}>
+        {idea.description}
+      </p>
+      {(overflowing || expanded) && (
+        <button
+          type="button"
+          className={classes.more}
+          aria-expanded={expanded}
+          aria-controls={bodyId}
+          onClick={toggleExpanded}
+        >
+          {expanded ? 'Show less' : 'Read more'}
+          {expanded ? (
+            <IconChevronUp size={16} stroke={2.25} aria-hidden="true" />
+          ) : (
+            <IconChevronDown size={16} stroke={2.25} aria-hidden="true" />
+          )}
+        </button>
+      )}
+      <div className={classes.rule} aria-hidden="true" />
+      <p className={classes.byline}>
+        <span className={classes.author}>{author}</span>
+        <time className={classes.time} dateTime={idea.createdAt}>
+          {dayjs(idea.createdAt).fromNow()}
+        </time>
+      </p>
+      <div className={classes.voteBox}>
+        <div className={classes.vote}>
+          <button
+            type="button"
+            className={classes.button}
+            data-kind="back"
+            data-pending={isPending || undefined}
+            aria-label="Back this quest"
+            aria-pressed={idea.myVote === 1}
+            aria-disabled={isPending}
+            onClick={() => handleVote(1)}
+          >
+            <IconShieldCheck size={18} stroke={2} aria-hidden="true" />
+            Back
+          </button>
+          <WaxSeal value={idea.score} testId="score" />
+          <button
+            type="button"
+            className={classes.button}
+            data-kind="reject"
+            data-pending={isPending || undefined}
+            aria-label="Reject this quest"
+            aria-pressed={idea.myVote === -1}
+            aria-disabled={isPending}
+            onClick={() => handleVote(-1)}
+          >
+            <IconShieldX size={18} stroke={2} aria-hidden="true" />
+            Reject
+          </button>
+        </div>
+      </div>
+    </Parchment>
   );
 };
 

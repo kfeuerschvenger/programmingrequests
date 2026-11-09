@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Flyway upgrade from V1 on populated data")
 class FlywayUpgradeFromV1IntegrationTest {
 
-    private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4");
+    private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4.13");
 
     private static JdbcTemplate jdbc;
     private static Flyway flyway;

@@ -1,25 +1,29 @@
-import { Group, Paper, Skeleton, Stack } from '@mantine/core';
+import { Parchment } from '@/components/Parchment/Parchment';
+import classes from './States.module.css';
 
 interface IdeaListSkeletonProps {
   count?: number;
 }
 
+/** Blank notices with shimmering lines where the text will be, shaped like the cards that replace them. */
 export function IdeaListSkeleton({ count = 3 }: IdeaListSkeletonProps) {
   return (
-    <Stack aria-busy="true" aria-label="Loading ideas" role="status" data-testid="idea-list-skeleton">
+    <ul
+      aria-busy="true"
+      aria-label="Unrolling the scrolls"
+      role="status"
+      data-testid="idea-list-skeleton"
+      className={classes.skeletonGrid}
+    >
       {Array.from({ length: count }, (_, index) => (
-        <Paper key={index} withBorder radius="md" p="lg">
-          <Group>
-            <Skeleton circle height={38} />
-            <Stack gap={6}>
-              <Skeleton height={10} width={120} />
-              <Skeleton height={8} width={70} />
-            </Stack>
-          </Group>
-          <Skeleton height={10} mt="md" />
-          <Skeleton height={10} mt={6} width="80%" />
-        </Paper>
+        <Parchment key={index} as="li" seed={index + 11} pinned className={classes.skeletonCard}>
+          <span className={classes.bar} />
+          <span className={classes.bar} />
+          <span className={`${classes.bar} ${classes.barShort}`} />
+          <span className={`${classes.bar} ${classes.barByline}`} />
+          <span className={`${classes.bar} ${classes.barVote}`} />
+        </Parchment>
       ))}
-    </Stack>
+    </ul>
   );
 }

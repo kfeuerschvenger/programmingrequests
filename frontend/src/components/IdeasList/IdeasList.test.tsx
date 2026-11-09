@@ -1,6 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { firstWords } from '@/lib/announcer';
 import { server } from '@/test/server';
 import { makeIdea, makePage, problem, renderWithProviders } from '@/test/utils';
 import IdeasList from './IdeasList';
@@ -15,14 +16,15 @@ describe('IdeasList', () => {
     expect(screen.getByTestId('idea-list-skeleton')).toBeInTheDocument();
     expect(await screen.findByText('First idea text')).toBeInTheDocument();
     expect(screen.queryByTestId('idea-list-skeleton')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more quests' })).not.toBeInTheDocument();
   });
 
   it('shows the empty state', async () => {
     server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([]))));
     renderWithProviders(<IdeasList />);
 
-    expect(await screen.findByText('No previous ideas where found')).toBeInTheDocument();
+    expect(await screen.findByText('The board is bare')).toBeInTheDocument();
+    expect(screen.getByText(/No quests are pinned yet/)).toBeInTheDocument();
   });
 
   it('shows a status error with a retry that recovers', async () => {
@@ -63,11 +65,11 @@ describe('IdeasList', () => {
     renderWithProviders(<IdeasList />);
 
     await screen.findByText('Idea on page one');
-    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    await user.click(screen.getByRole('button', { name: 'Load more quests' }));
 
     expect(await screen.findByText('Idea on page two')).toBeInTheDocument();
     expect(screen.getByText('Idea on page one')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more quests' })).not.toBeInTheDocument();
   });
 
   it('keeps the loaded ideas and offers a retry when the next page fails', async () => {
@@ -84,11 +86,11 @@ describe('IdeasList', () => {
     renderWithProviders(<IdeasList />);
 
     await screen.findByText('Idea on page one');
-    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    await user.click(screen.getByRole('button', { name: 'Load more quests' }));
 
     expect(await screen.findByText('VALIDATION_FAILED detail')).toBeInTheDocument();
     expect(screen.getByText('Idea on page one')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more quests' })).not.toBeInTheDocument();
   });
 
   it('retries only the next page when that is what failed', async () => {
@@ -114,7 +116,7 @@ describe('IdeasList', () => {
     renderWithProviders(<IdeasList />);
 
     await screen.findByText('Idea on page one');
-    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    await user.click(screen.getByRole('button', { name: 'Load more quests' }));
     await screen.findByText('VALIDATION_FAILED detail');
 
     failNext = false;
@@ -142,13 +144,13 @@ describe('IdeasList', () => {
     await screen.findByText('Idea on page one');
     await act(() => client.invalidateQueries());
     await screen.findByText('VALIDATION_FAILED detail');
-    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more quests' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
     await waitFor(() => expect(screen.queryByText('VALIDATION_FAILED detail')).not.toBeInTheDocument());
     expect(calls).toBe(3);
-    expect(screen.getByRole('button', { name: 'Load more' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Load more quests' })).toBeInTheDocument();
   });
 
   it('keeps the current ideas on screen while a new sort loads', async () => {
@@ -169,9 +171,9 @@ describe('IdeasList', () => {
 
     expect(screen.queryByTestId('idea-list-skeleton')).not.toBeInTheDocument();
     expect(screen.getByText('Newest idea')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Ideas' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('region', { name: 'The Quest Board' })).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByText('Oldest idea')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Ideas' })).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByRole('region', { name: 'The Quest Board' })).toHaveAttribute('aria-busy', 'false');
   });
 
   it('is not busy once the first load has finished', async () => {
@@ -179,7 +181,15 @@ describe('IdeasList', () => {
     renderWithProviders(<IdeasList />);
 
     await screen.findByText(makeIdea().description);
-    expect(screen.getByRole('region', { name: 'Ideas' })).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByRole('region', { name: 'The Quest Board' })).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('exposes a single landmark for the board', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea()]))));
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText(makeIdea().description);
+    expect(screen.getAllByRole('region')).toHaveLength(1);
   });
 
   it('keeps the arrows disabled for an idea whose vote is in flight after the item remounts', async () => {
@@ -199,19 +209,19 @@ describe('IdeasList', () => {
     const { client, rerender } = renderWithProviders(<IdeasList key="first" />);
 
     await screen.findByText(idea.description);
-    await user.click(screen.getByRole('button', { name: 'Vote up' }));
+    await user.click(screen.getByRole('button', { name: 'Back this quest' }));
     await waitFor(() => expect(votes).toHaveLength(1));
 
     // A different key remounts the whole list, and with it every item and its hook instance.
     rerender(<IdeasList key="second" />);
-    const arrow = await screen.findByRole('button', { name: 'Vote up' });
+    const arrow = await screen.findByRole('button', { name: 'Back this quest' });
     expect(client.isMutating()).toBe(1);
     expect(arrow).toHaveAttribute('aria-disabled', 'true');
 
     await user.click(arrow);
     release();
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Vote up' })).toHaveAttribute('aria-disabled', 'false'),
+      expect(screen.getByRole('button', { name: 'Back this quest' })).toHaveAttribute('aria-disabled', 'false'),
     );
     expect(votes).toHaveLength(1);
   });
@@ -248,19 +258,137 @@ describe('IdeasList', () => {
     renderWithProviders(<IdeasList />, { withNotifications: true });
 
     await screen.findByText(idea.description);
-    await user.click(screen.getByRole('button', { name: 'Vote up' }));
+    await user.click(screen.getByRole('button', { name: 'Back this quest' }));
 
     await waitFor(() => expect(screen.getByTestId('score')).toHaveTextContent('4'));
     expect(screen.getByTestId('score')).toHaveTextContent('Score: 4');
-    expect(screen.getByTestId('score')).toHaveAttribute('aria-live', 'polite');
-    expect(screen.getByRole('button', { name: 'Vote up' })).toHaveAttribute('aria-pressed', 'true');
-    expect(await screen.findByText('Vote submitted!')).toBeInTheDocument();
+    expect(screen.getByTestId('score')).not.toHaveAttribute('aria-live');
+    expect(screen.getByTestId('score')).not.toHaveAttribute('role');
+    expect(screen.getByRole('button', { name: 'Back this quest' })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByText('Vote sealed')).toBeInTheDocument();
+    // One shared live region names the quest the vote went to.
+    const announcer = screen.getByTestId('announcer');
+    expect(announcer).toHaveAttribute('aria-live', 'polite');
+    expect(announcer).toHaveTextContent(`You backed: ${firstWords(idea.description)}. Score 4.`);
+    expect(screen.getAllByRole('status').filter(node => node.getAttribute('aria-live') === 'polite')).toHaveLength(1);
   });
 
-  it('shows Anonymous for an idea without an author', async () => {
+  it('keeps the announcer outside the busy board, so announcements are not deferred during a re-sort', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea()]))));
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText(makeIdea().description);
+
+    const board = screen.getByRole('region', { name: 'The Quest Board' });
+    expect(within(board).queryByTestId('announcer')).not.toBeInTheDocument();
+    expect(board.closest('[aria-busy]')).toBe(board);
+    expect(screen.getByTestId('announcer').closest('[aria-busy]')).toBeNull();
+  });
+
+  it('shows Anonymous adventurer for an idea without an author', async () => {
     server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea({ author: null })]))));
     renderWithProviders(<IdeasList />);
 
-    expect(await screen.findByText('Anonymous')).toBeInTheDocument();
+    expect(await screen.findByText('Anonymous adventurer')).toBeInTheDocument();
+  });
+
+  it('writes a negative score with a minus sign on the seal', async () => {
+    server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea({ score: -3 })]))));
+    renderWithProviders(<IdeasList />);
+
+    expect(await screen.findByTestId('score')).toHaveTextContent('Score: −3');
+  });
+
+  it('lists the quests as list items and marks the rejected one as pressed', async () => {
+    server.use(
+      http.get('/api/ideas', () => HttpResponse.json(makePage([makeIdea({ id: 1, myVote: -1 }), makeIdea({ id: 2 })]))),
+    );
+    renderWithProviders(<IdeasList />);
+
+    await screen.findAllByRole('button', { name: 'Back this quest' });
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Reject this quest' })[0]).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('hides Load more while the previous sort is still shown as placeholder data', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/ideas', async ({ request }) => {
+        const sort = new URL(request.url).searchParams.get('sort');
+        if (sort === 'oldest') await new Promise(resolve => setTimeout(resolve, 150));
+        return HttpResponse.json(makePage([makeIdea({ id: 1, description: `Idea by ${sort}` })], { totalPages: 2 }));
+      }),
+    );
+    renderWithProviders(<IdeasList />);
+
+    await screen.findByText('Idea by newest');
+    expect(screen.getByRole('button', { name: 'Load more quests' })).toBeInTheDocument();
+    await user.click(screen.getByText('Oldest'));
+
+    expect(screen.getByText('Idea by newest')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load more quests' })).not.toBeInTheDocument();
+    expect(await screen.findByText('Idea by oldest')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Load more quests' })).toBeInTheDocument();
+  });
+
+  describe('with the decorative papers', () => {
+    beforeEach(() => {
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => 1000);
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(() => 100);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const quest = (id: number) => makeIdea({ id, description: `Quest number ${id}` });
+    /** The column of every cell, in list order, and the quest (or the paper) it holds. */
+    const board = () =>
+      screen.getAllByRole('listitem', { hidden: true }).map(item => ({
+        what: /Quest number \d+/.exec(item.textContent ?? '')?.[0] ?? 'paper',
+        column: item.getAttribute('data-column'),
+        transform: item.style.transform,
+      }));
+
+    it('keeps every quest already placed in its column and order when the next page arrives', async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get('/api/ideas', ({ request }) =>
+          new URL(request.url).searchParams.get('page') === '0'
+            ? HttpResponse.json(makePage([1, 2, 3, 4, 5, 6].map(quest), { page: 0, totalPages: 3 }))
+            : new URL(request.url).searchParams.get('page') === '1'
+              ? HttpResponse.json(makePage([7, 8, 9, 10, 11, 12].map(quest), { page: 1, totalPages: 3 }))
+              : HttpResponse.json(makePage([13, 14].map(quest), { page: 2, totalPages: 3 })),
+        ),
+      );
+      renderWithProviders(<IdeasList />);
+
+      await screen.findByText('Quest number 6');
+      const first = board();
+      expect(first.filter(cell => cell.what === 'paper')).toHaveLength(1);
+
+      await user.click(screen.getByRole('button', { name: 'Load more quests' }));
+      await screen.findByText('Quest number 12');
+      const second = board();
+      expect(second.filter(cell => cell.what === 'paper')).toHaveLength(2);
+      expect(second.slice(0, first.length)).toEqual(first);
+
+      await user.click(screen.getByRole('button', { name: 'Load more quests' }));
+      await screen.findByText('Quest number 14');
+      expect(board().slice(0, second.length)).toEqual(second);
+    });
+
+    it('places the papers at the fourth and the eighth position of the list', async () => {
+      server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([1, 2, 3, 4, 5, 6, 7, 8, 9].map(quest)))));
+      renderWithProviders(<IdeasList />);
+
+      await screen.findByText('Quest number 9');
+
+      const cells = board();
+      expect(cells.map(cell => cell.what).indexOf('paper')).toBe(4);
+      expect(cells.map(cell => cell.what).lastIndexOf('paper')).toBe(8);
+      expect(cells[4]?.column).toBe('1');
+      expect(cells[8]?.column).toBe('2');
+    });
   });
 });

@@ -1,16 +1,233 @@
-.comment {
-  padding: var(--mantine-spacing-lg) var(--mantine-spacing-xl);
-  margin-bottom: var(--mantine-spacing-lg);
+.item {
+  min-width: 0;
 }
 
+/*
+ * The visible text is capped at 14 lines, 9 on a two column board where the cards are wider and the screen shorter. With the rest of the card that keeps even a quest of the full 1000 characters under three quarters of the height it would take uncapped.
+ * Read more removes the cap.
+ */
 .body {
-  padding-left: 54px;
-  padding-top: var(--mantine-spacing-sm);
-  font-size: var(--mantine-font-size-sm);
+  --lines: 14;
+
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.15rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines);
+  line-clamp: var(--lines);
 }
 
-.content {
-  & > p:last-child {
-    margin-bottom: 0;
+:global([data-columns='2']) .body {
+  --lines: 9;
+}
+
+.body[data-expanded] {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+  margin: 0.3rem 0 0 -0.3rem;
+  padding: 0 0.3rem;
+  border: 0;
+  background: none;
+  color: var(--cq-wax-text);
+  font-family: var(--cq-heading-font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* A brass hairline with a diamond, the one ornament inside the card text area. */
+.rule {
+  position: relative;
+  height: 1px;
+  margin: 0.9rem 0 0.7rem;
+  background: linear-gradient(90deg, transparent, #8a5f12 15%, #8a5f12 85%, transparent);
+}
+
+.rule::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  background: #8a5f12;
+  transform: rotate(45deg);
+}
+
+.byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 0.75rem;
+  margin: 0 0 0.7rem;
+}
+
+.author {
+  min-width: 0;
+  color: var(--cq-wax-text);
+  font-family: var(--cq-heading-font);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
+
+.time {
+  color: var(--cq-ink-soft);
+  font-size: 0.95rem;
+}
+
+/*
+ * The row answers to its own width, not the window's, because the same card is a third of the board on a wide screen and the whole board on a phone.
+ * The label and the icon are never cut: the buttons can not shrink below their content, and as the row narrows the buttons first give up padding and border, then shrink icon and label, then the row stacks with the seal on top.
+ */
+.voteBox {
+  container-type: inline-size;
+}
+
+.vote {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.vote > :nth-child(2) {
+  justify-self: center;
+}
+
+@container (max-width: 20rem) {
+  .button {
+    gap: 0.15rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
+
+    &[data-kind='back'] {
+      border-width: 10px 9px;
+      border-image-width: 10px 9px;
+    }
+
+    &[data-kind='reject'] {
+      border-width: 10px 9px;
+      border-image-width: 10px 11px;
+    }
   }
+
+  .button svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* The icon is never dropped: it tells backing from rejecting at a glance. Short on room, the label and the icon get smaller instead. */
+@container (max-width: 16.5rem) {
+  .button {
+    gap: 0.1rem;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+  }
+
+  .button svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+@container (max-width: 13rem) {
+  .vote {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.2rem 0.1rem;
+  }
+
+  .vote > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+/*
+ * Two buttons, two materials. Back is dark wood with cream lettering, Reject is a scroll of parchment with wax red lettering. Both are nine-slice images, so the ends keep their shape at any width.
+ * A pressed button glows and is underlined, so the state does not depend on colour alone.
+ */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: min-content;
+  min-height: 2.9rem;
+  white-space: nowrap;
+  padding: 0;
+  border-style: solid;
+  border-color: transparent;
+  background: none;
+  font-family: var(--cq-heading-font);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  filter: drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.5));
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 140ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &[data-kind='back'] {
+    border-width: 12px 15px;
+    border-image-source: var(--img-button-wood);
+    border-image-slice: 36 56 36 56 fill;
+    border-image-width: 12px 15px;
+    color: var(--cq-cream);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.8);
+  }
+
+  &[data-kind='reject'] {
+    border-width: 11px 15px;
+    border-image-source: var(--img-button-parchment);
+    border-image-slice: 40 104 40 104 fill;
+    border-image-width: 11px 17px;
+    color: var(--cq-wax-text);
+  }
+
+  @mixin hover {
+    filter: drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.5)) brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &[aria-pressed='true'] {
+    filter: drop-shadow(0 0 5px var(--cq-brass-light)) drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.5)) saturate(1.3);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &[data-pending] {
+    opacity: 0.55;
+    cursor: progress;
+    transform: none;
+  }
+}
+
+.button svg {
+  flex: none;
 }

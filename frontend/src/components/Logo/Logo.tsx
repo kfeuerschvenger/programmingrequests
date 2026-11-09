@@ -2,11 +2,12 @@ import { Image } from '@mantine/core';
 import mark from '../../assets/mark-color.svg';
 
 type LogoProps = {
-  variant?: 'header' | 'footer';
+  /** The name is written next to the mark, so the image adds nothing for a screen reader. */
+  decorative?: boolean;
 };
 
-export function Logo({ variant = 'footer' }: LogoProps) {
-  const isHeader = variant === 'header';
+const SIZE = 32;
 
-  return <Image src={mark} h={isHeader ? 28 : undefined} w={isHeader ? 28 : undefined} alt="Code Quests" />;
+export function Logo({ decorative = false }: LogoProps) {
+  return <Image src={mark} h={SIZE} w={SIZE} alt={decorative ? '' : 'Code Quests'} />;
 }

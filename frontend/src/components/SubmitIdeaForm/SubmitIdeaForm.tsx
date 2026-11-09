@@ -1,12 +1,19 @@
-import { Button, Group, Space, Textarea, TextInput, Title } from '@mantine/core';
+import { Button, Textarea, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
+import { IconFeather } from '@tabler/icons-react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 
+import { Parchment } from '@/components/Parchment/Parchment';
+import { DESCRIPTION_MAX_LENGTH, DESCRIPTION_MIN_LENGTH } from '@/config/constants';
 import { useCreateIdea } from '@/hooks/useCreateIdea';
 import { ideaSchema, type IdeaFormValues } from './ideaSchema';
+import classes from './SubmitIdeaForm.module.css';
 
 const FORM_FIELDS = ['author', 'description'] as const;
+
+/** The form paper is held by a nail at the top left and a dagger through the top right corner. */
+const FORM_FASTENERS = [{ kind: 'nail-flush', x: 9 }, { kind: 'dagger-stuck' }] as const;
 
 export function SubmitIdeaForm() {
   const { mutate, isPending } = useCreateIdea();
@@ -35,39 +42,62 @@ export function SubmitIdeaForm() {
           form.setErrors(errors);
           // An error that belongs to no input would otherwise vanish, leaving a rejected submit with no explanation.
           if (unmapped.length > 0) {
-            notifications.show({ title: 'Idea not submitted', message: unmapped.join(' '), color: 'red' });
+            notifications.show({ title: 'Quest not posted', message: unmapped.join(' '), color: 'red' });
           }
         },
       },
     );
   };
 
+  const length = form.values.description.trim().length;
+
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)} noValidate aria-busy={isPending}>
-      <Title order={3}>Submit your idea</Title>
-      <Space h="xl" />
-      <Group align="flex-start">
+    <Parchment
+      as="section"
+      kind="sheet"
+      seed={1}
+      fasteners={FORM_FASTENERS}
+      aria-labelledby="post-quest-title"
+      className={classes.sheet}
+    >
+      <form onSubmit={form.onSubmit(handleSubmit)} noValidate aria-busy={isPending} className={classes.form}>
+        <div className={classes.heading}>
+          <IconFeather size={30} stroke={1.5} aria-hidden="true" className={classes.icon} />
+          <div>
+            <h2 id="post-quest-title" className={classes.title}>
+              Post a quest
+            </h2>
+            <p className={classes.lede}>Describe the project you want built. The guild will do the judging.</p>
+          </div>
+        </div>
         <TextInput
-          label="Author"
-          placeholder="Author (optional)"
+          label="Your name"
+          description="Optional. Leave it blank and you ride as an Anonymous adventurer."
+          placeholder="Mira, keeper of merge conflicts"
           type="text"
+          autoComplete="nickname"
           readOnly={isPending}
           {...form.getInputProps('author')}
         />
-        <Button type="submit" loading={isPending}>
-          Submit
-        </Button>
-      </Group>
-      <Space h="xl" />
-      <Textarea
-        label="Description"
-        placeholder="Write your idea here"
-        readOnly={isPending}
-        autosize
-        minRows={3}
-        maxRows={8}
-        {...form.getInputProps('description')}
-      />
-    </form>
+        <Textarea
+          label="The quest"
+          description={`What should the hero build? ${DESCRIPTION_MIN_LENGTH} to ${DESCRIPTION_MAX_LENGTH} characters.`}
+          placeholder="A dragon-proof password vault. A kanban board for tavern staff. Whatever you can dream up."
+          readOnly={isPending}
+          autosize
+          minRows={4}
+          maxRows={10}
+          {...form.getInputProps('description')}
+        />
+        <div className={classes.actions}>
+          <span className={classes.count} aria-hidden="true">
+            {length} / {DESCRIPTION_MAX_LENGTH}
+          </span>
+          <Button type="submit" loading={isPending}>
+            Post the quest
+          </Button>
+        </div>
+      </form>
+    </Parchment>
   );
 }

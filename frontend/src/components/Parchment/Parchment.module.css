@@ -1,0 +1,169 @@
+/*
+ * The paper is a nine-slice border image. The slice insets are the ones measured on the @2x files, and the widths are those insets at 1x, scaled by --paper-s so the torn edge shrinks on a phone.
+ * The image is drawn past the box (border-image-outset) so the text keeps a clear margin from the torn edge without the box growing: the box is the area for text, the outset is the paper around it.
+ */
+.root {
+  position: relative;
+  transform: rotate(var(--tilt, 0deg));
+  filter: drop-shadow(var(--cq-shadow-x) var(--cq-shadow-y) 5px var(--cq-shadow-color));
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /*
+   * The paper is nine pieces. Drawn under a rotation, every piece gets its own antialiased edge, and along each seam the two half covered edges let the dark board show through as a hairline, at the left and right joins on every card and worst at fractional zoom or device scales.
+   * A promoted layer is painted straight, pixel snapped and seamless, and only then turned as one texture by the compositor, so the pieces are never rotated one by one.
+   */
+  will-change: transform;
+}
+
+/*
+ * Behind the nine pieces sits the same picture stretched whole, cut back to the solid middle of the paper so its torn edge never shows. If a seam still opens between two pieces at some zoom or device scale, it opens onto paper and not onto the dark board.
+ * Below the sheet (z-index -1 inside the root's own stacking context), so it never covers a piece.
+ */
+.root::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: calc(var(--ot) * -1) calc(var(--or) * -1) calc(var(--ob) * -1) calc(var(--ol) * -1);
+  background-image: var(--paper);
+  background-size: 100% 100%;
+  clip-path: inset(calc(40px * var(--paper-s)));
+  pointer-events: none;
+}
+
+.root[data-lifts]:hover,
+.root[data-lifts]:focus-within {
+  transform: rotate(0deg) translateY(-4px);
+}
+
+.root[data-kind='card'] {
+  --paper: var(--img-parchment-tall);
+  /* A card is about as wide as its picture, so it is cut in three bands, not nine: no corner pieces, and so no vertical join in the torn top and bottom edges for a seam to open on. The sides stretch sideways by a few percent, which the torn edge hides. */
+  --slice: 120 0 130 0;
+  --wt: calc(60px * var(--paper-s));
+  --wr: 0px;
+  --wb: calc(65px * var(--paper-s));
+  --wl: 0px;
+  --ot: var(--card-ot);
+  --or: var(--card-or);
+  --ob: var(--card-ob);
+  --ol: var(--card-ol);
+}
+
+.root[data-kind='sheet'] {
+  --paper: var(--img-parchment-wide);
+  --slice: 120 120 120 120;
+  --wt: calc(60px * var(--paper-s));
+  --wr: calc(60px * var(--paper-s));
+  --wb: calc(60px * var(--paper-s));
+  --wl: calc(60px * var(--paper-s));
+  --ot: var(--sheet-o);
+  --or: var(--sheet-o);
+  --ob: var(--sheet-o);
+  --ol: var(--sheet-o);
+
+  /* The paper is drawn outside the box, so the box keeps that much room around it. */
+  margin: var(--sheet-o);
+}
+
+.sheet {
+  box-sizing: border-box;
+  height: 100%;
+  padding: calc(8px * var(--paper-s));
+  border: calc(12px * var(--paper-s)) solid transparent;
+  border-image-source: var(--paper);
+  border-image-slice: var(--slice) fill;
+  border-image-width: var(--wt) var(--wr) var(--wb) var(--wl);
+  border-image-outset: var(--ot) var(--or) var(--ob) var(--ol);
+  border-image-repeat: stretch;
+  color: var(--cq-ink);
+}
+
+.root[data-kind='sheet'] > .sheet {
+  padding: calc(14px * var(--paper-s)) calc(clamp(0.5rem, 3vw, 2.2rem) * var(--paper-s));
+}
+
+/* Fasteners sit in the top margin of the paper, at the edge. Their own shadows are small and fixed: the paper's shadow does the work. */
+.fastener {
+  position: absolute;
+  top: calc(var(--ot) * -1 + 6px);
+  left: var(--x, 50%);
+  height: auto;
+  transform: translateX(-50%);
+  filter: drop-shadow(1px 2px 1.5px rgb(20 8 0 / 0.55));
+  pointer-events: none;
+  user-select: none;
+}
+
+.fastener[data-fastener='nail-flush'] {
+  width: calc(30px * var(--paper-s));
+}
+
+.fastener[data-fastener='pin-brass'] {
+  width: calc(30px * var(--paper-s));
+}
+
+.fastener[data-fastener='nail-half'],
+.fastener[data-fastener='nail-bent'] {
+  top: calc(var(--ot) * -1 - 6px);
+  width: calc(15px * var(--paper-s));
+}
+
+.fastener[data-fastener='nail-angled'] {
+  top: calc(var(--ot) * -1 - 6px);
+  width: calc(18px * var(--paper-s));
+}
+
+/*
+ * An ink stain, multiplied into the paper so it reads as soaked in. It sits over a corner or the middle of a side, with about a quarter of it past the torn edge, and is small enough to stay inside the margin that the text keeps from the edge.
+ * --z is the size, the base of 36px scaled by the card's own factor and by the seeded --grow.
+ */
+.stain {
+  --z: calc(36px * var(--paper-s) * var(--grow, 1));
+
+  position: absolute;
+  width: var(--z);
+  height: auto;
+  mix-blend-mode: multiply;
+  opacity: 0.88;
+  rotate: var(--turn, 0deg);
+  pointer-events: none;
+  user-select: none;
+}
+
+.stain[data-stain='top-left'],
+.stain[data-stain='top-right'] {
+  top: calc(var(--ot) * -1 - var(--z) * 0.25);
+}
+
+.stain[data-stain='bottom-left'],
+.stain[data-stain='bottom-right'] {
+  bottom: calc(var(--ob) * -1 - var(--z) * 0.25);
+}
+
+.stain[data-stain='top-left'],
+.stain[data-stain='bottom-left'],
+.stain[data-stain='left'] {
+  left: calc(var(--ol) * -1 - var(--z) * 0.25);
+}
+
+.stain[data-stain='top-right'],
+.stain[data-stain='bottom-right'],
+.stain[data-stain='right'] {
+  right: calc(var(--or) * -1 - var(--z) * 0.25);
+}
+
+.stain[data-stain='left'],
+.stain[data-stain='right'] {
+  top: var(--at, 50%);
+  translate: 0 -50%;
+}
+
+/* The dagger is stuck through the top right corner, point first, with its handle over the edge. */
+.fastener[data-fastener='dagger-stuck'] {
+  top: calc(var(--ot) * -1 - 26px);
+  right: calc(var(--or) * -1 - 22px);
+  left: auto;
+  width: calc(84px * var(--paper-s));
+  transform: none;
+  filter: drop-shadow(3px 4px 3px rgb(20 8 0 / 0.6));
+}

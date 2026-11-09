@@ -1,0 +1,120 @@
+/*
+ * Quest board tokens. Surfaces come in two kinds: wood (the board, the planks) carries cream text, and parchment (cards, the form, the modal) carries ink.
+ * Both kinds keep that pairing in light and dark mode, so contrast never depends on the scheme. The scheme changes the light in the room: sunlight from the top left by day, a torch, a lantern and a candle by night.
+ */
+:root {
+  --cq-wood: #3b2a1e;
+  --cq-wood-deep: #241811;
+  --cq-parchment: #f3e6c8;
+  --cq-cream: #f6ead0;
+  --cq-cream-soft: #e4d5b2;
+  --cq-ink: #2b2622;
+  --cq-ink-soft: #3a2f26;
+  --cq-wax: #9e2b25;
+  --cq-wax-text: #7c211d;
+  --cq-wax-deep: #6e1b17;
+  --cq-brass: #c8962e;
+  --cq-brass-light: #f2c46b;
+  --cq-glyph: #fbe6b4;
+  --cq-guild: #3f6b3a;
+  --cq-guild-text: #32552e;
+  --cq-heading-font: 'Cinzel', 'Trajan Pro', Georgia, 'Times New Roman', serif;
+  --cq-z-sticky: 20;
+  --cq-field-bg: #fbf4e0;
+
+  /* The wall around the board, in shadow. */
+  --cq-wall: #17100c;
+  --cq-wall-shade: rgb(8 5 3 / 0.86);
+
+  /* Where a card's shadow falls: down and to the right, away from the sun in the top left. Night overrides these per element. */
+  --cq-shadow-x: 5px;
+  --cq-shadow-y: 8px;
+  --cq-shadow-color: rgb(24 12 4 / 0.55);
+}
+
+[data-mantine-color-scheme='dark'] {
+  --cq-wall: #070a10;
+  --cq-wall-shade: rgb(3 5 10 / 0.88);
+  --cq-shadow-color: rgb(0 0 0 / 0.7);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  background-color: var(--cq-wall);
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background-color: var(--cq-wall);
+  color: var(--cq-cream);
+  font-family: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--cq-heading-font);
+  font-weight: 700;
+}
+
+#root {
+  position: relative;
+  min-height: 100dvh;
+}
+
+main:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+::selection {
+  background: var(--cq-brass-light);
+  color: var(--cq-ink);
+}
+
+/* Two rings, ink inside and brass outside, so a focused control stands out on both wood and parchment. */
+:focus-visible,
+.mantine-focus-auto:focus-visible,
+.mantine-focus-always:focus {
+  outline: 2px solid var(--cq-ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--cq-brass-light);
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background: var(--cq-parchment);
+  color: var(--cq-ink);
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

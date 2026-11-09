@@ -1,29 +1,26 @@
-.maincontainer {
-  position: relative;
-  min-height: 100%;
-  padding-bottom: 60px;
-  box-sizing: border-box;
-  -webkit-box-sizing: border-box;
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2.4rem;
+  width: 100%;
+  padding-bottom: 3.4rem;
 }
 
-.icon {
-  width: 22px;
-  height: 22px;
-}
-
-.title {
-  font-family:
-    Greycliff CF,
-    var(--mantine-font-family);
-  font-size: 62px;
-  font-weight: 900;
-  line-height: 1.1;
-  margin: 0;
-  padding: 0;
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
-
-  @media (max-width: $mantine-breakpoint-sm) {
-    font-size: 42px;
-    line-height: 1.2;
-  }
+/* The line under the tagline is carved on a plank of dark wood, so its cream lettering keeps its contrast whatever light falls on the board. */
+.intro {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0.2rem 0.4rem;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 16px 26px;
+  border-image-source: var(--img-button-wood);
+  border-image-slice: 36 56 36 56 fill;
+  border-image-width: 16px 26px;
+  color: var(--cq-cream);
+  font-size: 1.2rem;
+  text-align: center;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
+  text-wrap: pretty;
+  filter: drop-shadow(3px 5px 4px rgb(0 0 0 / 0.55));
 }
