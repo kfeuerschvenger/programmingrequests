@@ -97,7 +97,7 @@
 
 /*
  * The row answers to its own width, not the window's, because the same card is a third of the board on a wide screen and the whole board on a phone.
- * The label is never cut: the buttons can not shrink below their text, and as the row narrows the buttons first give up padding and border, then their icon, then the row stacks with the seal on top.
+ * The label and the icon are never cut: the buttons can not shrink below their content, and as the row narrows the buttons first give up padding and border, then shrink icon and label, then the row stacks with the seal on top.
  */
 .voteBox {
   container-type: inline-size;
@@ -137,9 +137,17 @@
   }
 }
 
+/* The icon is never dropped: it tells backing from rejecting at a glance. Short on room, the label and the icon get smaller instead. */
 @container (max-width: 16.5rem) {
+  .button {
+    gap: 0.1rem;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+  }
+
   .button svg {
-    display: none;
+    width: 13px;
+    height: 13px;
   }
 }
 
