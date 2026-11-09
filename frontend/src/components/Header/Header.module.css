@@ -17,12 +17,12 @@
   container-type: inline-size;
 }
 
-/* Each chain runs from inside the top beam down to the top opening of a ring, which is 11.13% down the sign. The picture holds the first cut link, so the repeat is anchored at the bottom to meet it. */
+/* Each chain runs from the very top of the page, over the wall and the top beam, down to the top opening of a ring, which is 11.13% down the sign. The picture holds the first cut link, so the repeat is anchored at the bottom to meet it. */
 .chain {
   position: absolute;
-  top: calc(var(--frame) * -0.55);
+  top: calc((var(--frame) + var(--wall-pad)) * -1);
   width: 3.4cqw;
-  height: calc(3.6rem + var(--frame) * 0.55 + 11.13cqw / var(--sign-ratio));
+  height: calc(3.6rem + var(--frame) + var(--wall-pad) + 11.13cqw / var(--sign-ratio));
   background-image: var(--img-chain);
   background-size: 100% auto;
   background-repeat: repeat-y;

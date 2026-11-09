@@ -31,17 +31,17 @@
 
 .lantern {
   position: absolute;
-  top: 0;
+  top: calc(var(--wall-pad) * -1);
   right: calc(var(--frame) + 1.1rem);
   z-index: 3;
   width: 82px;
 }
 
-/* The chain runs from the top beam to the ring of the lantern. */
+/* The chain runs from the very top of the page, over the top beam, to the ring of the lantern. The lantern box starts at the top of the page too, so its body stays where it was. */
 .lanternChain {
   display: block;
   width: 20px;
-  height: 25rem;
+  height: calc(25rem + var(--wall-pad));
   margin: 0 auto -6px;
   background-image: var(--img-chain);
   background-size: 20px auto;

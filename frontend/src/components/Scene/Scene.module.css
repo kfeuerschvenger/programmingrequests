@@ -1,7 +1,12 @@
 /* The wall is the dark room around the board: the same planks as the board, in shadow. */
 .wall {
+  /* The gap above the board. The chains that hang from the top of the page cross it on their way down. */
+  --wall-pad: 0.75rem;
+
+  /* Not a stacking context: the lights are children of the wall, and their blend layers must see the wall, the board and the footer alike. */
+  position: relative;
   min-height: 100dvh;
-  padding: 0.75rem 0 2.5rem;
+  padding: var(--wall-pad) 0 2.5rem;
   background-color: var(--cq-wall);
   background-image: linear-gradient(var(--cq-wall-shade), var(--cq-wall-shade)), var(--img-board);
   background-size:
