@@ -2,10 +2,10 @@ import { art } from './assets';
 import { FlameAnchor } from './Flame';
 import classes from './Props.module.css';
 
-/** The torch on the left frame and the lantern hanging on the right, lit only at night. The candle stands further down the page, next to the sort control. */
+/** The torch on the left frame and the lantern hanging on the right, lit only at night and drawn only where the side gutters leave room for them. The candle stands further down the page, next to the sort control. */
 export function Props() {
   return (
-    <div className={classes.props} aria-hidden="true">
+    <div aria-hidden="true">
       <div className={classes.torch}>
         <FlameAnchor source="torch" className={classes.torchFlame} />
         <img src={art.torch.src} srcSet={art.torch.srcSet} width={art.torch.width} height={art.torch.height} alt="" />

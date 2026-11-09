@@ -41,8 +41,31 @@ describe('light layout', () => {
     const sources = measureSources(board);
 
     expect(sources.torch).toEqual({ x: 185, y: 350 });
-    expect(sources.lantern.x).toBeGreaterThan(1000);
-    expect(sources.candle.y).toBeGreaterThan(0);
+    expect(sources.lantern?.x).toBeGreaterThan(1000);
+    expect(sources.candle?.y).toBeGreaterThan(0);
+  });
+
+  it('measures and places only the sources it is asked for', () => {
+    addFlame('torch', rect(150, 300, 70, 100));
+    const layer = document.createElement('div');
+
+    expect(Object.keys(measureSources(board, ['candle']))).toEqual(['candle']);
+    placePools(board, [layer], ['candle']);
+
+    expect(layer.style.getPropertyValue('--candle-x')).not.toBe('');
+    expect(layer.style.getPropertyValue('--torch-x')).toBe('');
+    expect(layer.style.getPropertyValue('--lantern-x')).toBe('');
+  });
+
+  it('casts shadows away from the sources that are drawn, and ignores a source that is not', () => {
+    addFlame('torch', rect(100, 400, 20, 20));
+    addFlame('candle', rect(900, 400, 20, 20));
+    const card = addCard(rect(300, 400, 200, 100));
+
+    castShadows(board, true, ['candle']);
+
+    // The torch is nearer, but only the candle is lit: the shadow falls to the left, away from it.
+    expect(parseFloat(card.style.getPropertyValue('--cq-shadow-x'))).toBeLessThan(-5);
   });
 
   it('writes the position of each pool relative to the board', () => {

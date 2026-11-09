@@ -1,8 +1,35 @@
 import { MantineProvider } from '@mantine/core';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { readCss } from '@/test/css';
 import { Candle } from './Candle';
 import { Scene } from './Scene';
+
+const sceneCss = readCss('./Scene.module.css', import.meta.url);
+const propsCss = readCss('./Props.module.css', import.meta.url);
+const headerCss = readCss('../Header/Header.module.css', import.meta.url);
+
+const originalMatchMedia = window.matchMedia.bind(window);
+
+/** happy-dom has no layout: the width query that decides which sources are drawn is answered by hand. */
+const setWide = (wide: boolean) => {
+  window.matchMedia = ((query: string) => ({
+    matches: wide && query.includes('min-width'),
+    media: query,
+    onchange: null,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+};
+
+afterEach(() => {
+  window.matchMedia = originalMatchMedia;
+});
+
+/** The source of every light pool, in document order. */
+const pools = (container: HTMLElement) =>
+  [...container.querySelectorAll<HTMLElement>('[data-light-pool]')].map(element => element.dataset.lightPool);
 
 const renderScene = (scheme: 'light' | 'dark') =>
   render(
@@ -41,7 +68,8 @@ describe('Scene', () => {
     expect(container.querySelector('[data-light-source]')).toBeNull();
   });
 
-  it('is lit by a torch and a lantern at night, each with its own flame and light pool', () => {
+  it('is lit by a torch and a lantern at night on a wide screen, each with its own flame and light pool', () => {
+    setWide(true);
     const { container } = renderScene('dark');
 
     expect(container.querySelector('img[src*="torch-unlit"]')).not.toBeNull();
@@ -50,6 +78,33 @@ describe('Scene', () => {
       element => element.dataset.lightSource,
     );
     expect(sources).toEqual(['torch', 'lantern']);
+    expect(pools(container)).toEqual(['torch', 'lantern', 'candle', 'torch', 'lantern', 'candle']);
+  });
+
+  it('draws one pool for the one source it shows on a narrow screen: the candle', () => {
+    setWide(false);
+    const { container } = renderScene('dark');
+
+    expect(container.querySelector('img[src*="torch-unlit"]')).toBeNull();
+    expect(container.querySelector('img[src*="lantern-unlit"]')).toBeNull();
+    expect(container.querySelector('[data-light-source]')).toBeNull();
+    // One pool on the wood and one over the paper, both for the candle.
+    expect(pools(container)).toEqual(['candle', 'candle']);
+  });
+
+  it('puts the footer under the night layers, so it is lit like the board', () => {
+    const { container } = renderScene('dark');
+
+    const wall = container.querySelector('[data-testid="scene"]');
+    expect(wall?.querySelector('footer')).not.toBeNull();
+    expect(wall?.querySelector('[data-light-pool]')).not.toBeNull();
+  });
+
+  it('hangs the chains from the top of the page, over the frame', () => {
+    expect(sceneCss).toMatch(/--wall-pad:/);
+    // Each sign chain starts a frame and the gap above the board up from its sign, which is the top of the page.
+    expect(headerCss).toMatch(/\.chain \{[^}]*top: calc\(\(var\(--frame\) \+ var\(--wall-pad\)\) \* -1\)/);
+    expect(propsCss).toMatch(/\.lantern \{[^}]*top: calc\(var\(--wall-pad\) \* -1\)/);
   });
 });
 

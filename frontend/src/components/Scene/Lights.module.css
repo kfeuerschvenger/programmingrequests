@@ -7,7 +7,7 @@
   display: contents;
 }
 
-/* Night, on the bare wood: a deep blue that the fire pools then lift. */
+/* Night, on the bare wood: a deep blue that the fire pools then lift. It covers the whole wall, so the footer plank is dark wood at night like the board. */
 .nightWood {
   position: absolute;
   z-index: 1;
@@ -70,24 +70,10 @@
   --size: 820px;
 }
 
-/* Without the torch and lantern on screen the pools sit on the board edges, smaller so that they do not wash over the header. */
+/* Without the torch and lantern on screen the candle is the only source, and its pool is smaller so that it does not wash over the header. The other pools are not rendered at all. */
 @media (max-width: 1099px) {
-  .torch {
-    --size: 760px;
-  }
-
-  .lantern {
-    --size: 700px;
-  }
-
   .candle {
     --size: 680px;
-  }
-
-  /* The torch and the lantern are not drawn here, so their flames are not either: only their light stays. */
-  .slot.torch,
-  .slot.lantern {
-    display: none;
   }
 }
 
