@@ -1,16 +1,17 @@
 import classes from './Header.module.css';
 
-import { Tooltip, UnstyledButton, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
+import { Tooltip, UnstyledButton, useMantineColorScheme } from '@mantine/core';
 import { IconHelp, IconMoon, IconSun } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 
 import { art } from '@/components/Scene/assets';
+import { useColorSchemeValue } from '@/components/Scene/useIsDark';
 import { showInfo } from './components';
 
 /** The title sign hangs from two chains, a coil of rope hangs beside it, and the two small controls sit apart from the sign, on the planks. */
 export function Header() {
   const { setColorScheme } = useMantineColorScheme();
-  const scheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
+  const scheme = useColorSchemeValue();
   const nextScheme = scheme === 'light' ? 'dark' : 'light';
   const themeLabel = `Switch to ${nextScheme} mode`;
 
