@@ -51,6 +51,12 @@ server {
         add_header Cache-Control "no-cache" always;
     }
 
+    # The colour scheme script has a fixed name and no hash, and the shell runs it before the first paint. A copy cached for 7 days would outlive a deploy that changes it, so it is revalidated on every load.
+    location = /color-scheme.js {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+    }
+
     # File names carry a content hash, so a cached copy never goes stale. A missing file is a plain 404, never the SPA shell.
     location /assets/ {
         try_files $uri =404;

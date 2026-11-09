@@ -8,7 +8,15 @@ export function Props() {
     <div aria-hidden="true">
       <div className={classes.torch}>
         <FlameAnchor source="torch" className={classes.torchFlame} />
-        <img src={art.torch.src} srcSet={art.torch.srcSet} width={art.torch.width} height={art.torch.height} alt="" />
+        <img
+          src={art.torch.src}
+          srcSet={art.torch.srcSet}
+          width={art.torch.width}
+          height={art.torch.height}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
       </div>
       <div className={classes.lantern}>
         <span className={classes.lanternChain} />
@@ -20,6 +28,8 @@ export function Props() {
             width={art.lantern.width}
             height={art.lantern.height}
             alt=""
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
