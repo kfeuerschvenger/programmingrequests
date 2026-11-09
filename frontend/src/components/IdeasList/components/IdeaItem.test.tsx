@@ -1,8 +1,11 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readCss } from '@/test/css';
 import { makeIdea, renderWithProviders } from '@/test/utils';
 import IdeaItem from './IdeaItem';
+
+const styles = readCss('./IdeaItem.module.css', import.meta.url);
 
 /** happy-dom does no layout, so the measurements the clamp check reads are stubbed: text taller than its box counts as cut. */
 const stubCut = (cut: boolean) => {
@@ -136,6 +139,20 @@ describe('IdeaItem vote buttons', () => {
     expect(back.querySelector('svg')).not.toBeNull();
     expect(reject.querySelector('svg')).not.toBeNull();
     expect(screen.getByTestId('score')).toHaveTextContent('Score: 7');
+  });
+
+  it('never hides the vote icons at any card width, so backing and rejecting stay apart at a glance', () => {
+    // happy-dom does not run container queries, so the rule is checked in the stylesheet: no rule on the button icons may hide them.
+    const iconRules = [...styles.matchAll(/\.button svg\s*\{([^}]*)\}/g)].map(match => match[1]);
+    expect(iconRules.length).toBeGreaterThan(0);
+    for (const rule of iconRules) expect(rule).not.toMatch(/display\s*:\s*none|visibility\s*:\s*hidden/);
+  });
+
+  it('keeps the accessible names on the vote buttons', () => {
+    renderWithProviders(<IdeaItem idea={makeIdea()} />);
+
+    expect(screen.getByRole('button', { name: 'Back this quest' })).toHaveTextContent('Back');
+    expect(screen.getByRole('button', { name: 'Reject this quest' })).toHaveTextContent('Reject');
   });
 
   it('shows the pressed state of the vote the caller already cast', () => {
