@@ -258,7 +258,9 @@ describe('useLightFlicker', () => {
       scene.append(lantern);
       torch.remove();
 
-      act(() => announceLayout());
+      act(() => {
+        announceLayout();
+      });
 
       expect(observer().observed.has(lantern)).toBe(true);
       expect(observer().observed.has(torch)).toBe(false);

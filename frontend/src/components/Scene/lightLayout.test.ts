@@ -126,10 +126,10 @@ describe('light layout', () => {
     const events: string[] = [];
     for (const top of [300, 700, 1100]) {
       const card = addCard(rect(300, top, 200, 100));
-      const measure = card.getBoundingClientRect;
+      const box = card.getBoundingClientRect();
       card.getBoundingClientRect = () => {
         events.push('read');
-        return measure.call(card);
+        return box;
       };
       const setProperty = card.style.setProperty.bind(card.style);
       card.style.setProperty = (name: string, value: string | null) => {
