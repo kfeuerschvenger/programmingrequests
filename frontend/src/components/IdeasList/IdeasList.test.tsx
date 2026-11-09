@@ -303,4 +303,65 @@ describe('IdeasList', () => {
     expect(await screen.findByText('Idea by oldest')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Load more quests' })).toBeInTheDocument();
   });
+
+  describe('with the decorative papers', () => {
+    beforeEach(() => {
+      vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => 1000);
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(() => 100);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const quest = (id: number) => makeIdea({ id, description: `Quest number ${id}` });
+    /** The column of every cell, in list order, and the quest (or the paper) it holds. */
+    const board = () =>
+      screen.getAllByRole('listitem', { hidden: true }).map(item => ({
+        what: /Quest number \d+/.exec(item.textContent ?? '')?.[0] ?? 'paper',
+        column: item.getAttribute('data-column'),
+        transform: item.style.transform,
+      }));
+
+    it('keeps every quest already placed in its column and order when the next page arrives', async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get('/api/ideas', ({ request }) =>
+          new URL(request.url).searchParams.get('page') === '0'
+            ? HttpResponse.json(makePage([1, 2, 3, 4, 5, 6].map(quest), { page: 0, totalPages: 3 }))
+            : new URL(request.url).searchParams.get('page') === '1'
+              ? HttpResponse.json(makePage([7, 8, 9, 10, 11, 12].map(quest), { page: 1, totalPages: 3 }))
+              : HttpResponse.json(makePage([13, 14].map(quest), { page: 2, totalPages: 3 })),
+        ),
+      );
+      renderWithProviders(<IdeasList />);
+
+      await screen.findByText('Quest number 6');
+      const first = board();
+      expect(first.filter(cell => cell.what === 'paper')).toHaveLength(1);
+
+      await user.click(screen.getByRole('button', { name: 'Load more quests' }));
+      await screen.findByText('Quest number 12');
+      const second = board();
+      expect(second.filter(cell => cell.what === 'paper')).toHaveLength(2);
+      expect(second.slice(0, first.length)).toEqual(first);
+
+      await user.click(screen.getByRole('button', { name: 'Load more quests' }));
+      await screen.findByText('Quest number 14');
+      expect(board().slice(0, second.length)).toEqual(second);
+    });
+
+    it('places the papers at the fourth and the eighth position of the list', async () => {
+      server.use(http.get('/api/ideas', () => HttpResponse.json(makePage([1, 2, 3, 4, 5, 6, 7, 8, 9].map(quest)))));
+      renderWithProviders(<IdeasList />);
+
+      await screen.findByText('Quest number 9');
+
+      const cells = board();
+      expect(cells.map(cell => cell.what).indexOf('paper')).toBe(4);
+      expect(cells.map(cell => cell.what).lastIndexOf('paper')).toBe(8);
+      expect(cells[4]?.column).toBe('1');
+      expect(cells[8]?.column).toBe('2');
+    });
+  });
 });

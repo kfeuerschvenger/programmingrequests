@@ -16,47 +16,53 @@ const SORT_OPTIONS: { value: IdeaSort; label: string }[] = [
   { value: 'oldest', label: 'Oldest' },
 ];
 
-/** Where the decorative papers join the list, counted from the start of the list. On three columns, 4 falls in the middle column and 8 in the right one. A paper joins only once the list has reached its place. */
+/**
+ * Where the decorative papers join the list. `before` is the number of quests that come before the paper, so the paper sits at that quest's place and the quest follows it. On three columns the papers land at positions 4 and 8 of the whole list, in the middle column and in the right one.
+ * A paper joins in the same render that brings the quest after it, never later: the quests already on the board keep their column and their order when more of them are loaded.
+ */
 const DECORATIONS = [
-  { at: 4, key: 'decoration-sword-shield', image: art.paperSwordShield, tilt: -3 },
-  { at: 8, key: 'decoration-map', image: art.paperMap, tilt: 2.5 },
+  { before: 4, key: 'decoration-sword-shield', image: art.paperSwordShield, tilt: -3 },
+  { before: 7, key: 'decoration-map', image: art.paperMap, tilt: 2.5 },
 ] as const;
 
+const decorationItem = ({ key, image, tilt }: (typeof DECORATIONS)[number]): MasonryItem => ({
+  key,
+  decoration: true,
+  // The paper and its nail turn together, so the nail stays in the same spot on the paper.
+  node: (
+    <div className={classes.decoration} style={{ transform: `rotate(${tilt}deg)` }} data-cast="">
+      <img
+        className={classes.paper}
+        src={image.src}
+        srcSet={image.srcSet}
+        width={image.width}
+        height={image.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+      <img
+        className={classes.nail}
+        src={art.nailFlush.src}
+        srcSet={art.nailFlush.srcSet}
+        width={art.nailFlush.width}
+        height={art.nailFlush.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+    </div>
+  ),
+});
+
 /** Builds the masonry items: one per quest, with the decorative papers slipped in at their fixed places. */
-const withDecorations = (quests: MasonryItem[]): MasonryItem[] => {
-  const items = [...quests];
-  for (const { at, key, image, tilt } of DECORATIONS) {
-    if (quests.length <= at) continue;
-    items.splice(at, 0, {
-      key,
-      decoration: true,
-      // The paper and its nail turn together, so the nail stays in the same spot on the paper.
-      node: (
-        <div className={classes.decoration} style={{ transform: `rotate(${tilt}deg)` }} data-cast="">
-          <img
-            className={classes.paper}
-            src={image.src}
-            srcSet={image.srcSet}
-            width={image.width}
-            height={image.height}
-            alt=""
-            draggable={false}
-          />
-          <img
-            className={classes.nail}
-            src={art.nailFlush.src}
-            srcSet={art.nailFlush.srcSet}
-            width={art.nailFlush.width}
-            height={art.nailFlush.height}
-            alt=""
-            draggable={false}
-          />
-        </div>
-      ),
-    });
-  }
-  return items;
-};
+const withDecorations = (quests: MasonryItem[]): MasonryItem[] =>
+  quests.flatMap((quest, index) => {
+    const papers = DECORATIONS.filter(({ before }) => before === index).map(decorationItem);
+    return [...papers, quest];
+  });
 
 const IdeasList = () => {
   const { sort, setSort } = useListQueryState();
