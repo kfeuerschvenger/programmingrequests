@@ -25,7 +25,7 @@ export function Lights({ scene, dark, wide }: LightsProps) {
   const targets = useMemo(() => [under, over], []);
   const sources = useMemo(() => LIGHT_SOURCES.filter(source => wide || source.id === 'candle'), [wide]);
 
-  useLightFlicker(targets, dark);
+  useLightFlicker(targets, dark, scene);
 
   useLayoutEffect(() => {
     const element = scene;
@@ -38,7 +38,7 @@ export function Lights({ scene, dark, wide }: LightsProps) {
       placePools(element, layers, ids);
       castShadows(element, dark, ids);
     };
-    // Coalesces bursts of layout events into one measurement. A timer rather than an animation frame, so the flicker stays the only frame loop on the page.
+    // Coalesces bursts of layout events into one measurement. A timer rather than an animation frame, so no callback keeps the page producing frames while nothing moves.
     const schedule = () => {
       if (!pending) pending = window.setTimeout(run, 0);
     };

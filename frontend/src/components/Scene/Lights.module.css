@@ -7,9 +7,12 @@
   display: contents;
 }
 
-/* Night, on the bare wood: a deep blue that the fire pools then lift. It covers the whole wall, so the footer plank is dark wood at night like the board. */
+/*
+ * Night, on the bare wood: a deep blue that the fire pools then lift. It is a flat colour, so the same tint at every point of the wall is what a page tall layer would give: the layer is the size of the viewport and stays put while the wall scrolls under it, instead of being a blended surface thousands of pixels tall.
+ * The footer plank is dark wood at night like the board because the tint follows the viewport over the whole wall.
+ */
 .nightWood {
-  position: absolute;
+  position: fixed;
   z-index: 1;
   inset: 0;
   pointer-events: none;
@@ -17,9 +20,9 @@
   mix-blend-mode: multiply;
 }
 
-/* Night, over the parchment: only a cool tint and a little dimming, because ink on parchment must stay far above 4.5:1. */
+/* Night, over the parchment: only a cool tint and a little dimming, because ink on parchment must stay far above 4.5:1. A flat colour like the wood tint, so it is a viewport sized layer too. */
 .nightPaper {
-  position: absolute;
+  position: fixed;
   z-index: 6;
   inset: 0;
   pointer-events: none;
@@ -51,6 +54,7 @@
   --y: var(--torch-y, 0);
   --i: var(--torch-i, 1);
   --r: var(--torch-r, 1);
+  --play: var(--torch-play, running);
   --size: 1100px;
 }
 
@@ -59,6 +63,7 @@
   --y: var(--lantern-y, 0);
   --i: var(--lantern-i, 1);
   --r: var(--lantern-r, 1);
+  --play: var(--lantern-play, running);
   --size: 980px;
 }
 
@@ -67,6 +72,7 @@
   --y: var(--candle-y, 0);
   --i: var(--candle-i, 1);
   --r: var(--candle-r, 1);
+  --play: var(--candle-play, running);
   --size: 820px;
 }
 
@@ -102,7 +108,7 @@
   );
 }
 
-/* Day. The sun enters at the top left of the board and reaches about two screens down. The layers are absolute, not fixed: a fixed layer is composited apart from the page and its blend mode does nothing. */
+/* Day. The sun enters at the top left of the board and reaches about two screens down. The layers are absolute, not fixed: the light belongs to the page and scrolls away with the top of the board, and they hold no animation, so they cost nothing per frame. */
 .sun {
   position: absolute;
   z-index: 6;

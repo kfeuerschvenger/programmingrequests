@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyLights, LIGHT_SOURCES, lightAt, smoothNoise } from './lighting';
+import { applyLights, FLICKER_HZ, flickerRate, LIGHT_SOURCES, lightAt, LOW_FLICKER_HZ, smoothNoise } from './lighting';
 
 describe('smoothNoise', () => {
   it('stays between 0 and 1 and is continuous', () => {
@@ -52,5 +52,14 @@ describe('applyLights', () => {
         expect(Number(target.style.getPropertyValue(`--${id}-r`))).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe('flickerRate', () => {
+  it('is the full rate on a wide screen and the low rate on a narrow screen or a weak device', () => {
+    expect(flickerRate(false, false)).toBe(FLICKER_HZ);
+    expect(flickerRate(true, false)).toBe(LOW_FLICKER_HZ);
+    expect(flickerRate(false, true)).toBe(LOW_FLICKER_HZ);
+    expect(LOW_FLICKER_HZ).toBeLessThan(FLICKER_HZ);
   });
 });

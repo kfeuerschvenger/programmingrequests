@@ -20,6 +20,24 @@ export const LIGHT_SOURCES: readonly LightSource[] = [
 /** Updates per second. Fast enough to read as fire, slow enough to leave the main thread idle between them. */
 export const FLICKER_HZ = 20;
 
+/** Updates per second on a narrow screen or a weak device: a phone repaints less often and the fire still reads as fire. */
+export const LOW_FLICKER_HZ = 12;
+
+/** Screens narrower than this, in pixels, run the fire at LOW_FLICKER_HZ. */
+export const NARROW_QUERY = '(max-width: 639px)';
+
+/** A device that reports two cores or fewer, or 2 GB of memory or less, is treated as low powered. Browsers that report neither are not. */
+export const isLowPower = (): boolean => {
+  const { hardwareConcurrency, deviceMemory } = navigator as Navigator & { deviceMemory?: number };
+  return (
+    (hardwareConcurrency !== undefined && hardwareConcurrency <= 2) || (deviceMemory !== undefined && deviceMemory <= 2)
+  );
+};
+
+/** How many times a second the light is rewritten. */
+export const flickerRate = (narrow: boolean, lowPower: boolean): number =>
+  narrow || lowPower ? LOW_FLICKER_HZ : FLICKER_HZ;
+
 /** The time, in seconds, a static scene is frozen at. Reduced motion shows this moment instead of a loop. */
 export const STATIC_TIME = 3.1;
 
