@@ -7,7 +7,7 @@ describe('Footer', () => {
   it('credits the author and links to GitHub, LinkedIn and the portfolio, opening safely in a new tab', () => {
     renderWithProviders(<Footer />);
 
-    expect(screen.getByText(/Built with care by/)).toHaveTextContent('Built with care by Kevin Feuerschvenger');
+    expect(screen.getByText(/Forged with care by/)).toHaveTextContent('Forged with care by Kevin Feuerschvenger');
     const expected = {
       GitHub: 'https://github.com/kfeuerschvenger',
       LinkedIn: 'https://www.linkedin.com/in/kevin-feuerschvenger/',
@@ -19,6 +19,14 @@ describe('Footer', () => {
       expect(link).toHaveAttribute('target', '_blank');
       expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
     }
+  });
+
+  it('no longer carries the voting privacy sentence', () => {
+    renderWithProviders(<Footer />);
+
+    const text = screen.getByRole('contentinfo').textContent ?? '';
+    expect(text).not.toMatch(/No accounts/);
+    expect(text).not.toMatch(/keyed hash/);
   });
 
   it('has no email link, no year and no emoji', () => {

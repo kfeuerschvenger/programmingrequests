@@ -40,13 +40,6 @@
   letter-spacing: 0.04em;
 }
 
-.note {
-  margin: 0.25rem 0 0;
-  color: var(--cq-cream-soft);
-  font-size: 0.95rem;
-  text-wrap: pretty;
-}
-
 .links {
   display: flex;
   flex-wrap: wrap;

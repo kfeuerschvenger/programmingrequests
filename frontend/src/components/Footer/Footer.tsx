@@ -14,15 +14,9 @@ export function Footer() {
       <div className={classes.inner}>
         <div className={classes.about}>
           <Logo variant="footer" decorative />
-          <div>
-            <p className={classes.credit}>
-              Built with care by <span className={classes.author}>Kevin Feuerschvenger</span>
-            </p>
-            <p className={classes.note}>
-              No accounts, no scrolls to sign. A vote is tied to a keyed hash of your network address, never to your
-              name.
-            </p>
-          </div>
+          <p className={classes.credit}>
+            Forged with care by <span className={classes.author}>Kevin Feuerschvenger</span>
+          </p>
         </div>
         <nav aria-label="Author links">
           <ul className={classes.links}>
