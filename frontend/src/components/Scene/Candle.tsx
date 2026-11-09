@@ -1,11 +1,17 @@
+import { useLayoutEffect } from 'react';
 import { art } from './assets';
 import classes from './Candle.module.css';
 import { FlameAnchor } from './Flame';
+import { announceLayout } from './lightLayout';
 import { useIsDark } from './useIsDark';
 
 /** A candle and an inkwell on a little ledge above the sort control. It is lit at night and absent by day. */
 export function Candle() {
   const dark = useIsDark();
+  // The candle's pool is placed on its flame, which exists only from this render on.
+  useLayoutEffect(() => {
+    if (dark) announceLayout();
+  }, [dark]);
   if (!dark) return null;
 
   return (

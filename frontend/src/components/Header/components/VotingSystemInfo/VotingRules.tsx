@@ -1,12 +1,19 @@
+import { useEffect } from 'react';
 import { modals } from '@mantine/modals';
 import { Button } from '@mantine/core';
 import { Parchment } from '@/components/Parchment/Parchment';
+import { announceLayout } from '@/components/Scene/lightLayout';
 import classes from './ShowInfo.module.css';
 
 export const VOTING_RULES_TITLE = 'Voting rules';
 
 /** The rules of the board, written on a sheet of parchment. */
 export function VotingRules() {
+  // The sheet is portalled outside the scene, so its shadow is cast once it exists.
+  useEffect(() => {
+    announceLayout();
+  }, []);
+
   return (
     <Parchment kind="sheet" seed={0} pinned leans={false}>
       <div className={classes.rules}>
