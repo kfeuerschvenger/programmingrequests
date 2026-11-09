@@ -154,89 +154,92 @@
     inset 0 0 90px 10px rgb(8 4 0 / 0.25);
 }
 
-/* Scratches and ink: low opacity, below the content, and placed where no text is. */
+/*
+ * Scratches and ink: solid enough to read as cut and soaked into the wood, below the content, and placed where no text is.
+ * No z-index here: the group must not be a stacking context, or the multiply of each mark would see only the other marks and not the planks.
+ */
 .marks {
   position: absolute;
   inset: 0;
-  z-index: 1;
   pointer-events: none;
 }
 
 .mark {
   position: absolute;
   height: auto;
-  opacity: 0.4;
+  opacity: 0.88;
+  mix-blend-mode: multiply;
 }
 
 .scratchA {
   top: 4.5rem;
   left: calc(var(--frame) + 0.5rem);
-  width: 3.6rem;
+  width: 5.6rem;
   transform: rotate(-12deg);
 }
 
 .scratchB {
   top: 3rem;
   right: calc(var(--frame) + 0.75rem);
-  width: 3.4rem;
+  width: 5.4rem;
   transform: rotate(18deg) scaleX(-1);
 }
 
 .scratchC {
   bottom: calc(var(--frame) + 0.4rem);
   left: 18%;
-  width: 4rem;
+  width: 6.4rem;
   transform: rotate(80deg);
 }
 
 .blotA {
   bottom: calc(var(--frame) + 0.2rem);
   right: 14%;
-  width: 3.2rem;
-  opacity: 0.55;
+  width: 3.4rem;
+  opacity: 0.92;
 }
 
 .blotB {
   display: none;
   top: 40rem;
   right: calc(var(--frame) + 0.6rem);
-  width: 4.2rem;
-  opacity: 0.55;
+  width: 4.4rem;
+  opacity: 0.92;
 }
 
 .blotC {
   display: none;
   top: 60rem;
   left: calc(var(--frame) + 0.4rem);
-  width: 4.4rem;
-  opacity: 0.55;
+  width: 4.6rem;
+  opacity: 0.92;
 }
 
 @media (min-width: 1100px) {
   .scratchA {
     top: 30rem;
-    left: calc(var(--frame) + 1rem);
-    width: 4.6rem;
+    left: calc(var(--frame) + 0.5rem);
+    width: 7rem;
   }
 
   .scratchB {
     top: 62rem;
-    right: calc(var(--frame) + 1rem);
-    width: 4.8rem;
+    right: calc(var(--frame) + 0.5rem);
+    width: 7.4rem;
   }
 
   .scratchC {
     bottom: auto;
     top: 90rem;
-    left: calc(var(--frame) + 1rem);
-    width: 4.6rem;
+    left: calc(var(--frame) + 0.5rem);
+    width: 7rem;
   }
 
   .blotA {
     top: 20rem;
     right: calc(var(--frame) + 1.2rem);
     bottom: auto;
-    width: 4rem;
+    width: 4.2rem;
   }
 
   .blotB,

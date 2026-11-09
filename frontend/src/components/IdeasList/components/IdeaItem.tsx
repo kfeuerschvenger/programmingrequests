@@ -62,7 +62,7 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
   const author = idea.author ?? ANONYMOUS;
 
   return (
-    <Parchment seed={idea.id} pinned lifts className={classes.item}>
+    <Parchment seed={idea.id} pinned stained lifts className={classes.item}>
       <p ref={body} id={bodyId} className={classes.body} data-expanded={expanded || undefined}>
         {idea.description}
       </p>

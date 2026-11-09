@@ -2,7 +2,9 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import classes from './Parchment.module.css';
 
 import { art, type SceneImage } from '@/components/Scene/assets';
-import { fastenerFor, fastenerXFor, tiltFor, type FastenerKind, type ParchmentKind } from './fasteners';
+import { fastenerFor, fastenerXFor, stainFor, tiltFor, type FastenerKind, type ParchmentKind } from './fasteners';
+
+const BLOT_ART: Record<1 | 2 | 3, SceneImage> = { 1: art.inkBlot1, 2: art.inkBlot2, 3: art.inkBlot3 };
 
 const FASTENER_ART: Record<FastenerKind, SceneImage> = {
   'nail-flush': art.nailFlush,
@@ -28,6 +30,8 @@ interface ParchmentProps extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
   pinned?: boolean;
   /** Fastens the paper with exactly these, in place of the seeded one. */
   fasteners?: readonly Fastener[];
+  /** Soaks an ink stain into the paper, on about one seed in three, over an edge or a corner and clear of the text. */
+  stained?: boolean;
   /** Straightens and lifts the sheet under the pointer. */
   lifts?: boolean;
   /** Leans the sheet by up to a degree and a half either way. Off, the sheet hangs straight. */
@@ -45,6 +49,7 @@ export function Parchment({
   seed = 0,
   pinned = false,
   fasteners,
+  stained = false,
   lifts = false,
   leans = true,
   as: Tag = 'div',
@@ -56,6 +61,8 @@ export function Parchment({
   const vars = { '--tilt': `${leans ? tiltFor(seed).toFixed(2) : 0}deg`, ...style } as CSSProperties;
   const holding: readonly Fastener[] =
     fasteners ?? (pinned ? [{ kind: fastenerFor(seed), x: fastenerXFor(seed) }] : []);
+  const stain = stained ? stainFor(seed) : null;
+  const blot = stain && BLOT_ART[stain.blot];
 
   return (
     <Tag
@@ -85,6 +92,20 @@ export function Parchment({
           />
         );
       })}
+      {stain && blot && (
+        <img
+          className={classes.stain}
+          data-stain={stain.place}
+          style={{ '--turn': `${stain.turn}deg`, '--grow': stain.scale, '--at': `${stain.at}%` } as CSSProperties}
+          src={blot.src}
+          srcSet={blot.srcSet}
+          width={blot.width}
+          height={blot.height}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+        />
+      )}
     </Tag>
   );
 }

@@ -30,18 +30,28 @@ const withDecorations = (quests: MasonryItem[]): MasonryItem[] => {
     items.splice(at, 0, {
       key,
       decoration: true,
+      // The paper and its nail turn together, so the nail stays in the same spot on the paper.
       node: (
-        <img
-          className={classes.decoration}
-          style={{ transform: `rotate(${tilt}deg)` }}
-          src={image.src}
-          srcSet={image.srcSet}
-          width={image.width}
-          height={image.height}
-          alt=""
-          data-cast=""
-          draggable={false}
-        />
+        <div className={classes.decoration} style={{ transform: `rotate(${tilt}deg)` }} data-cast="">
+          <img
+            className={classes.paper}
+            src={image.src}
+            srcSet={image.srcSet}
+            width={image.width}
+            height={image.height}
+            alt=""
+            draggable={false}
+          />
+          <img
+            className={classes.nail}
+            src={art.nailFlush.src}
+            srcSet={art.nailFlush.srcSet}
+            width={art.nailFlush.width}
+            height={art.nailFlush.height}
+            alt=""
+            draggable={false}
+          />
+        </div>
       ),
     });
   }
