@@ -52,6 +52,19 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
     };
   }, [expanded, idea.description]);
 
+  // A long quest that is collapsed from far down its text leaves the card's top above the viewport. The card is brought back only as far as needed, so a card that is still in view does not move.
+  const collapsedByUser = useRef(false);
+  useLayoutEffect(() => {
+    if (expanded || !collapsedByUser.current) return;
+    collapsedByUser.current = false;
+    body.current?.closest<HTMLElement>('[data-cast]')?.scrollIntoView({ block: 'nearest' });
+  }, [expanded]);
+
+  const toggleExpanded = () => {
+    collapsedByUser.current = expanded;
+    setExpanded(open => !open);
+  };
+
   // Pressing the button that is already active withdraws the vote; the other one switches it.
   // While a vote on this quest is in flight the buttons are aria-disabled and dimmed, and clicks are ignored.
   const handleVote = (value: VoteValue) => {
@@ -72,7 +85,7 @@ const IdeaItem = ({ idea }: IdeaItemProps) => {
           className={classes.more}
           aria-expanded={expanded}
           aria-controls={bodyId}
-          onClick={() => setExpanded(open => !open)}
+          onClick={toggleExpanded}
         >
           {expanded ? 'Show less' : 'Read more'}
           {expanded ? (

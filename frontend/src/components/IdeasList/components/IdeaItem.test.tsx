@@ -43,6 +43,23 @@ describe('IdeaItem read more', () => {
     expect(text).not.toHaveAttribute('data-expanded');
   });
 
+  it('scrolls the card into view as little as possible on Show less, and not on Read more', async () => {
+    stubCut(true);
+    const scroll = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(
+      <IdeaItem idea={makeIdea({ description: 'A long quest. '.repeat(60) })} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Read more' }));
+    expect(scroll).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Show less' }));
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
+    expect(scroll.mock.contexts[0]).toBe(container.querySelector('[data-cast]'));
+  });
+
   it('is reachable and operable with the keyboard, and keeps the focus on the same button', async () => {
     stubCut(true);
     const user = userEvent.setup();
