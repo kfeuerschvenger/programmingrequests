@@ -9,6 +9,7 @@ import com.feuerschvenger.codequests.model.dto.VoteRequest;
 import com.feuerschvenger.codequests.security.ClientIdentityResolver;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -44,6 +45,9 @@ import java.net.URI;
 public class IdeaController {
 
     private static final String PROBLEM_JSON = MediaType.APPLICATION_PROBLEM_JSON_VALUE;
+    private static final String SERVER_ERROR = "An unexpected failure. The body carries a request id in instance and no internal detail.";
+    private static final String CONFLICT = "A lock or transaction collision. The request may be retried.";
+    private static final String RETRY_AFTER = "Whole seconds to wait before the next attempt.";
 
     private final IdeaHandler handler;
     private final ClientIdentityResolver identities;
@@ -64,12 +68,15 @@ public class IdeaController {
     @ApiResponse(responseCode = "200", description = "A page of ideas, possibly empty.")
     @ApiResponse(responseCode = "400", description = "A paging or sort parameter is out of range.",
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "500", description = SERVER_ERROR,
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     public IdeaPageResponse list(
             @Parameter(description = "Zero-based page number.", example = "0")
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Page size, from 1 to 50.", example = "20")
             @RequestParam(defaultValue = "20") @Min(1) @Max(50) int size,
-            @Parameter(description = "Ordering: newest, oldest or top.", example = "top")
+            @Parameter(description = "Ordering: newest, oldest or top. The value is case-insensitive.", example = "top",
+                    schema = @Schema(type = "string", allowableValues = {"newest", "oldest", "top"}, defaultValue = "newest"))
             @RequestParam(defaultValue = "newest") IdeaSort sort,
             HttpServletRequest request) {
         return handler.list(page, size, sort, identities.resolve(request).voterHash());
@@ -81,7 +88,11 @@ public class IdeaController {
     @GetMapping("/{id}")
     @Operation(summary = "Get an idea", description = "Returns one idea with the caller's own vote.")
     @ApiResponse(responseCode = "200", description = "The idea.")
+    @ApiResponse(responseCode = "400", description = "The id is not a number.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "No idea has that id. The lost quest is not on the board.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "500", description = SERVER_ERROR,
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     public IdeaResponse get(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
                             HttpServletRequest request) {
@@ -96,7 +107,12 @@ public class IdeaController {
     @ApiResponse(responseCode = "201", description = "The idea was created. The Location header points at it.")
     @ApiResponse(responseCode = "400", description = "The body is malformed or a field is not valid.",
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = CONFLICT,
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "429", description = "Too many ideas from this address. Retry-After says how long to rest.",
+            headers = @Header(name = "Retry-After", description = RETRY_AFTER, schema = @Schema(type = "integer")),
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "500", description = SERVER_ERROR,
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<IdeaResponse> create(@Valid @RequestBody CreateIdeaRequest body) {
         var created = handler.create(body);
@@ -113,7 +129,12 @@ public class IdeaController {
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "No idea has that id.",
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = CONFLICT,
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "429", description = "Too many votes from this address. Retry-After says how long to rest.",
+            headers = @Header(name = "Retry-After", description = RETRY_AFTER, schema = @Schema(type = "integer")),
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "500", description = SERVER_ERROR,
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     public IdeaResponse vote(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
                              @Valid @RequestBody VoteRequest body,
@@ -127,9 +148,16 @@ public class IdeaController {
     @DeleteMapping("/{id}/vote")
     @Operation(summary = "Withdraw a vote", description = "Removes the caller's vote. It changes nothing when the caller has not voted.")
     @ApiResponse(responseCode = "200", description = "The idea with its updated score and myVote of 0.")
+    @ApiResponse(responseCode = "400", description = "The id is not a number.",
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "No idea has that id.",
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = CONFLICT,
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "429", description = "Too many votes from this address. Retry-After says how long to rest.",
+            headers = @Header(name = "Retry-After", description = RETRY_AFTER, schema = @Schema(type = "integer")),
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "500", description = SERVER_ERROR,
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     public IdeaResponse removeVote(@Parameter(description = "Idea identifier.", example = "42") @PathVariable long id,
                                    HttpServletRequest request) {

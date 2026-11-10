@@ -11,7 +11,7 @@ import jakarta.validation.constraints.NotNull;
  */
 @Schema(description = "A vote on an idea.")
 public record VoteRequest(
-        @Schema(description = "1 to upvote, -1 to downvote.", example = "1", allowableValues = {"-1", "1"})
+        @Schema(description = "1 to upvote, -1 to downvote.", example = "1")
         @NotNull
         @VoteValue
         Integer value) {
