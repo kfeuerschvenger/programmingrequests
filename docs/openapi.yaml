@@ -1,0 +1,342 @@
+openapi: 3.1.0
+info:
+  title: Code Quests API
+  description: API for submitting programming ideas and voting on them.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: 0.0.1-SNAPSHOT
+servers:
+- url: http://localhost:8080
+  description: Local API in the dev profile
+tags:
+- name: Ideas
+  description: Submit quests for the realm and cast votes on them.
+paths:
+  /api/ideas/{id}/vote:
+    put:
+      tags:
+      - Ideas
+      summary: Cast a vote
+      description: "Sets the caller's vote to 1 or -1. Voting the same value again\
+        \ changes nothing, and the opposite value switches the vote."
+      operationId: vote
+      parameters:
+      - name: id
+        in: path
+        description: Idea identifier.
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoteRequest"
+        required: true
+      responses:
+        "200":
+          description: The idea with its updated score and the caller's vote.
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IdeaResponse"
+        "400":
+          description: The value is missing or is not 1 or -1.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "404":
+          description: No idea has that id.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "429":
+          description: Too many votes from this address. Retry-After says how long
+            to rest.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+    delete:
+      tags:
+      - Ideas
+      summary: Withdraw a vote
+      description: Removes the caller's vote. It changes nothing when the caller has
+        not voted.
+      operationId: removeVote
+      parameters:
+      - name: id
+        in: path
+        description: Idea identifier.
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+      responses:
+        "200":
+          description: The idea with its updated score and myVote of 0.
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IdeaResponse"
+        "404":
+          description: No idea has that id.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "429":
+          description: Too many votes from this address. Retry-After says how long
+            to rest.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+  /api/ideas:
+    get:
+      tags:
+      - Ideas
+      summary: List ideas
+      description: Returns one page of ideas. Each item carries the caller's own vote
+        in myVote.
+      operationId: list
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page number.
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+        example: 0
+      - name: size
+        in: query
+        description: "Page size, from 1 to 50."
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 50
+          minimum: 1
+        example: 20
+      - name: sort
+        in: query
+        description: "Ordering: newest, oldest or top."
+        required: false
+        schema:
+          type: string
+          default: NEWEST
+          enum:
+          - NEWEST
+          - OLDEST
+          - TOP
+        example: top
+      responses:
+        "200":
+          description: "A page of ideas, possibly empty."
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IdeaPageResponse"
+        "400":
+          description: A paging or sort parameter is out of range.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+    post:
+      tags:
+      - Ideas
+      summary: Submit an idea
+      description: Adds an idea to the board with a score of zero. Any score or date
+        in the body is ignored.
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIdeaRequest"
+        required: true
+      responses:
+        "201":
+          description: The idea was created. The Location header points at it.
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IdeaResponse"
+        "400":
+          description: The body is malformed or a field is not valid.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "429":
+          description: Too many ideas from this address. Retry-After says how long
+            to rest.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+  /api/ideas/{id}:
+    get:
+      tags:
+      - Ideas
+      summary: Get an idea
+      description: Returns one idea with the caller's own vote.
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        description: Idea identifier.
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+      responses:
+        "200":
+          description: The idea.
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IdeaResponse"
+        "404":
+          description: No idea has that id. The lost quest is not on the board.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+components:
+  schemas:
+    VoteRequest:
+      type: object
+      description: A vote on an idea.
+      properties:
+        value:
+          type: integer
+          format: int32
+          description: "1 to upvote, -1 to downvote."
+          enum:
+          - "-1"
+          - "1"
+          example: 1
+      required:
+      - value
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
+    IdeaResponse:
+      type: object
+      description: An idea on the board.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Idea identifier.
+          example: 42
+        author:
+          type:
+          - string
+          - "null"
+          description: "Author name, null when the idea is anonymous."
+          example: Ada the Bold
+        description:
+          type: string
+          description: The quest itself.
+          example: Forge a CLI that slays merge conflicts before they reach the main
+            branch.
+        createdAt:
+          type: string
+          format: date-time
+          description: "Creation instant in ISO-8601, UTC."
+          example: 2026-11-04T18:30:00.123456Z
+        score:
+          type: integer
+          format: int32
+          description: Sum of all votes on the idea.
+          example: 17
+        myVote:
+          type: integer
+          format: int32
+          description: "The caller's own vote: 1, -1, or 0 when the caller has not\
+            \ voted."
+          enum:
+          - "-1"
+          - "0"
+          - "1"
+          example: 1
+    CreateIdeaRequest:
+      type: object
+      description: A new idea to put on the board.
+      properties:
+        author:
+          type:
+          - string
+          - "null"
+          description: Who is behind the idea. Leave it out to stay anonymous.
+          example: Ada the Bold
+          maxLength: 60
+          minLength: 0
+        description:
+          type: string
+          description: The quest itself.
+          example: Forge a CLI that slays merge conflicts before they reach the main
+            branch.
+          maxLength: 1000
+          minLength: 10
+      required:
+      - description
+    IdeaPageResponse:
+      type: object
+      description: One page of ideas.
+      properties:
+        items:
+          type: array
+          description: Ideas on this page.
+          items:
+            $ref: "#/components/schemas/IdeaResponse"
+        page:
+          type: integer
+          format: int32
+          description: Zero-based page number.
+          example: 0
+        size:
+          type: integer
+          format: int32
+          description: Requested page size.
+          example: 20
+        totalItems:
+          type: integer
+          format: int64
+          description: Number of ideas on all pages.
+          example: 137
+        totalPages:
+          type: integer
+          format: int32
+          description: Number of pages.
+          example: 7
