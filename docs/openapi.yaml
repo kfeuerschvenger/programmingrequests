@@ -7,8 +7,8 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.0.1-SNAPSHOT
 servers:
-- url: http://localhost:8080
-  description: Local API in the dev profile
+- url: http://localhost
+  description: Generated server url
 tags:
 - name: Ideas
   description: Submit quests for the realm and cast votes on them.
@@ -40,7 +40,7 @@ paths:
         "200":
           description: The idea with its updated score and the caller's vote.
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: "#/components/schemas/IdeaResponse"
         "400":
@@ -55,9 +55,28 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A lock or transaction collision. The request may be retried.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
         "429":
           description: Too many votes from this address. Retry-After says how long
             to rest.
+          headers:
+            Retry-After:
+              description: Whole seconds to wait before the next attempt.
+              style: simple
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: An unexpected failure. The body carries a request id in instance
+            and no internal detail.
           content:
             application/problem+json:
               schema:
@@ -82,11 +101,23 @@ paths:
         "200":
           description: The idea with its updated score and myVote of 0.
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: "#/components/schemas/IdeaResponse"
+        "400":
+          description: The id is not a number.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
         "404":
           description: No idea has that id.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A lock or transaction collision. The request may be retried.
           content:
             application/problem+json:
               schema:
@@ -94,6 +125,19 @@ paths:
         "429":
           description: Too many votes from this address. Retry-After says how long
             to rest.
+          headers:
+            Retry-After:
+              description: Whole seconds to wait before the next attempt.
+              style: simple
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: An unexpected failure. The body carries a request id in instance
+            and no internal detail.
           content:
             application/problem+json:
               schema:
@@ -130,25 +174,32 @@ paths:
         example: 20
       - name: sort
         in: query
-        description: "Ordering: newest, oldest or top."
+        description: "Ordering: newest, oldest or top. The value is case-insensitive."
         required: false
         schema:
           type: string
-          default: NEWEST
+          default: newest
           enum:
-          - NEWEST
-          - OLDEST
-          - TOP
+          - newest
+          - oldest
+          - top
         example: top
       responses:
         "200":
           description: "A page of ideas, possibly empty."
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: "#/components/schemas/IdeaPageResponse"
         "400":
           description: A paging or sort parameter is out of range.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: An unexpected failure. The body carries a request id in instance
+            and no internal detail.
           content:
             application/problem+json:
               schema:
@@ -170,7 +221,7 @@ paths:
         "201":
           description: The idea was created. The Location header points at it.
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: "#/components/schemas/IdeaResponse"
         "400":
@@ -179,9 +230,28 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
+        "409":
+          description: A lock or transaction collision. The request may be retried.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
         "429":
           description: Too many ideas from this address. Retry-After says how long
             to rest.
+          headers:
+            Retry-After:
+              description: Whole seconds to wait before the next attempt.
+              style: simple
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: An unexpected failure. The body carries a request id in instance
+            and no internal detail.
           content:
             application/problem+json:
               schema:
@@ -206,11 +276,24 @@ paths:
         "200":
           description: The idea.
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: "#/components/schemas/IdeaResponse"
+        "400":
+          description: The id is not a number.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
         "404":
           description: No idea has that id. The lost quest is not on the board.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "500":
+          description: An unexpected failure. The body carries a request id in instance
+            and no internal detail.
           content:
             application/problem+json:
               schema:
@@ -226,30 +309,73 @@ components:
           format: int32
           description: "1 to upvote, -1 to downvote."
           enum:
-          - "-1"
-          - "1"
+          - -1
+          - 1
           example: 1
       required:
       - value
     ProblemDetail:
       type: object
+      description: An RFC 9457 problem. Every error response has this shape.
       properties:
         type:
           type: string
           format: uri
+          description: "Problem type, about:blank unless a handler sets one."
         title:
           type: string
+          description: The HTTP reason phrase.
         status:
           type: integer
           format: int32
+          description: The HTTP status code.
         detail:
           type: string
+          description: Fixed text for the error code. It never carries request input.
         instance:
           type: string
           format: uri
-        properties:
-          type: object
-          additionalProperties: {}
+          description: "urn:request-id: followed by the request id, which matches\
+            \ the log line."
+        code:
+          type: string
+          description: Stable machine-readable error code.
+          enum:
+          - VALIDATION_FAILED
+          - MALFORMED_REQUEST
+          - IDEA_NOT_FOUND
+          - RESOURCE_NOT_FOUND
+          - METHOD_NOT_ALLOWED
+          - UNSUPPORTED_MEDIA_TYPE
+          - NOT_ACCEPTABLE
+          - CONFLICT
+          - RATE_LIMITED
+          - REQUEST_FAILED
+          - INTERNAL_ERROR
+        errors:
+          type: array
+          description: The failed fields. Present only on validation errors.
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Name of the parameter or body field.
+              message:
+                type: string
+                description: Fixed text that says what is wrong. It never repeats
+                  the value.
+            required:
+            - field
+            - message
+        retryAfterSeconds:
+          type: integer
+          format: int64
+          description: "Whole seconds to wait. Present only on 429, and equal to the\
+            \ Retry-After header."
+      required:
+      - code
+      - status
     IdeaResponse:
       type: object
       description: An idea on the board.
@@ -286,9 +412,9 @@ components:
           description: "The caller's own vote: 1, -1, or 0 when the caller has not\
             \ voted."
           enum:
-          - "-1"
-          - "0"
-          - "1"
+          - -1
+          - 0
+          - 1
           example: 1
     CreateIdeaRequest:
       type: object
