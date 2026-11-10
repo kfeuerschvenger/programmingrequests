@@ -1,5 +1,5 @@
 # Stage 1: build the executable jar. The dependency layer is cached until the build scripts change.
-FROM eclipse-temurin:25.0.5_8-jdk-alpine-3.24 AS build
+FROM eclipse-temurin:27_35-jdk-alpine-3.24 AS build
 
 WORKDIR /workspace
 
@@ -11,7 +11,7 @@ COPY src src
 RUN ./gradlew --no-daemon bootJar -x test
 
 # Stage 2: split the jar into layers so a code change only rewrites the small application layer.
-FROM eclipse-temurin:25.0.5_8-jdk-alpine-3.24 AS extract
+FROM eclipse-temurin:27_35-jdk-alpine-3.24 AS extract
 
 WORKDIR /workspace
 
@@ -19,7 +19,7 @@ COPY --from=build /workspace/build/libs/app.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
 # Stage 3: minimal runtime, non-root.
-FROM eclipse-temurin:25.0.5_8-jre-alpine-3.24
+FROM eclipse-temurin:27_35-jre-alpine-3.24
 
 RUN addgroup -S app && adduser -S -G app app
 

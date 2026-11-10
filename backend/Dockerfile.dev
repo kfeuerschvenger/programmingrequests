@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25.0.5_8-jdk-alpine-3.24
+FROM eclipse-temurin:27_35-jdk-alpine-3.24
 
 WORKDIR /back
 
