@@ -5,8 +5,7 @@
 
 # Architecture
 
-How a vote travels from the browser to MySQL, which layer owns which decision, and how the board is lit. Every claim here was checked against the code.
-
+How a vote travels from the browser to MySQL, which layer owns which decision, and how the board is lit.
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'fontFamily':'Segoe UI, Helvetica, Arial, sans-serif','primaryColor':'#F3E6C8','primaryBorderColor':'#3B2A1E','primaryTextColor':'#2B2622','lineColor':'#8A6414','textColor':'#2B2622','edgeLabelBackground':'#FBF5E7'}}}%%
 flowchart LR
@@ -36,7 +35,7 @@ The picture from the README, in full:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/architecture-dark.svg">
-  <img src="assets/diagrams/architecture.svg" alt="The browser reaches nginx, directly or through an optional edge proxy; nginx forwards only /api to the Spring Boot API, which stores data in MySQL over three private Docker networks" width="100%">
+  <img src="assets/diagrams/architecture.svg" alt="The browser reaches nginx, directly or through an optional edge proxy; nginx forwards only /api to the Spring Boot API, which stores data in MySQL, which is reachable only on the private db_net network" width="100%">
 </picture>
 
 ## Backend layers
@@ -63,7 +62,7 @@ The base package is `com.feuerschvenger.codequests`. There is one resource, idea
 |---|---|---|
 | before the filters | Tomcat `RemoteIpValve` | Replaces the remote address with the `X-Forwarded-For` value only when the connecting peer matches `TRUSTED_PROXIES` |
 | first | `MDCFilter` | Puts a request id in the log context and the `X-Request-Id` response header. A client-supplied id is kept only if it matches `[A-Za-z0-9._-]{1,64}`, otherwise a UUID takes its place |
-| second | `RequestTimingFilter` | Logs the route template, the status and the duration. Skips the actuator and Swagger paths |
+| second | `RequestTimingFilter` | Logs the route template, the status and the duration. Skips the actuator, the OpenAPI document (`/api-docs`) and the Swagger paths |
 | third | `SecurityHeadersConfig` | `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`. API responses also get `Content-Security-Policy: default-src 'none'` and `Cache-Control: no-store` |
 | MVC | `RateLimitInterceptor` | `POST /api/ideas` and the vote writes. Rejects before body validation |
 | MVC | `CorsConfig` | Off unless `CORS_ALLOWED_ORIGINS` is set. Then exactly those origins, no credentials |
@@ -115,11 +114,11 @@ All writes live in `IdeaServiceImpl` and run in a transaction.
 - `removeVote` takes the same lock, deletes the vote if there is one and subtracts its value. Calling it twice is harmless.
 - The invariant is that `ideas.score` equals the sum of that idea's votes. It changes only inside the transaction that changes the vote rows, and votes on one idea queue behind the row lock.
 - The database backs the service up: `uq_votes_idea_voter (idea_id, voter_hash)` and `chk_votes_value CHECK (value IN (-1, 1))`. A violation that still escapes, or a lock failure, answers 409 `CONFLICT`, and the client may retry.
-- Listing costs two queries per page: the page itself and the caller's votes on its ids. There is no N+1.
+- Listing runs a page query, a count query (skipped on a short first page) and one query for the caller's votes on the page's ids. There is no N+1.
 
 ## Rate limiting
 
-One Caffeine cache of Bucket4j buckets per scope, bounded by `max-tracked-clients` and expiring after the window. A denied call answers 429 with a `Retry-After` header and a `retryAfterSeconds` property.
+One Caffeine cache of Bucket4j buckets per scope, bounded by `max-tracked-clients`. A bucket expires after one window without use (`expireAfterAccess`). A denied call answers 429 with a `Retry-After` header and a `retryAfterSeconds` property.
 
 | Scope | Covers | Default |
 |---|---|---|

@@ -110,10 +110,10 @@ flowchart LR
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/diagrams/architecture-dark.svg">
-  <img src="docs/assets/diagrams/architecture.svg" alt="El navegador llega a nginx, directamente o a través de un proxy de borde opcional; nginx reenvía solo /api a la API de Spring Boot, que guarda los datos en MySQL sobre tres redes privadas de Docker" width="100%">
+  <img src="docs/assets/diagrams/architecture.svg" alt="El navegador llega a nginx, directamente o a través de un proxy de borde opcional; nginx reenvía solo /api a la API de Spring Boot, que guarda los datos en MySQL, que solo es accesible en la red privada db_net" width="100%">
 </picture>
 
-Una aplicación de página única en React la sirve nginx, que reenvía solo `/api` a una API de Spring Boot en capas: controlador, handler, servicio y repositorio. MySQL guarda los datos con migraciones de Flyway, tres redes privadas de Docker mantienen la base de datos fuera de alcance y la cadena de proxies de confianza decide a quién se le cree la dirección del visitante.
+Una aplicación de página única en React la sirve nginx, que reenvía solo `/api` a una API de Spring Boot en capas: controlador, handler, servicio y repositorio. MySQL guarda los datos con migraciones de Flyway, dos redes privadas de Docker más una red de borde mantienen la base de datos fuera de alcance, porque solo está conectada a `db_net`, y la cadena de proxies de confianza decide a quién se le cree la dirección del visitante.
 
 <p align="center">
   <img src="https://skillicons.dev/icons?i=java" alt="Java" title="Java" width="48">&nbsp;

@@ -110,10 +110,10 @@ flowchart LR
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/diagrams/architecture-dark.svg">
-  <img src="docs/assets/diagrams/architecture.svg" alt="The browser reaches nginx, directly or through an optional edge proxy; nginx forwards only /api to the Spring Boot API, which stores data in MySQL over three private Docker networks" width="100%">
+  <img src="docs/assets/diagrams/architecture.svg" alt="The browser reaches nginx, directly or through an optional edge proxy; nginx forwards only /api to the Spring Boot API, which stores data in MySQL, which is reachable only on the private db_net network" width="100%">
 </picture>
 
-A React single page app is served by nginx, which proxies only `/api` to a layered Spring Boot API: controller, handler, service, repository. MySQL holds the data under Flyway migrations, three private Docker networks keep the database out of reach, and the trusted proxy chain decides whose word counts about the visitor's address.
+A React single page app is served by nginx, which proxies only `/api` to a layered Spring Boot API: controller, handler, service, repository. MySQL holds the data under Flyway migrations, two private Docker networks plus an edge network keep the database out of reach, because it is attached only to `db_net`, and the trusted proxy chain decides whose word counts about the visitor's address.
 
 <p align="center">
   <img src="https://skillicons.dev/icons?i=java" alt="Java" title="Java" width="48">&nbsp;
