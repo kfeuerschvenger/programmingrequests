@@ -11,12 +11,14 @@
 // moves (capture.mjs records them beside the video). The average over the whole clip is printed too,
 // but it counts the pauses, where only a flame flickers, and mpdecimate treats that as a repeat.
 //
+// Both files are encoded into out/ and copied to the committed folder only when the size and smoothness checks pass. A failed run leaves the committed files untouched.
+//
 // ffmpeg is found through FFMPEG, then the PATH.
 //
 // Usage, from e2e/showcase: node gif.mjs
 
 import { spawnSync } from 'node:child_process';
-import { mkdir, readFile, stat } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -86,11 +88,10 @@ try {
   fail(`${cutFile} is not readable JSON. Record the hero again: node capture.mjs hero`);
 }
 
-await mkdir(OUT, { recursive: true });
-
+// The encodes land in the ignored work folder and reach the committed folder only after every check passes.
 const palette = path.join(WORK, 'hero-palette.png');
-const gif = path.join(OUT, 'hero.gif');
-const mp4 = path.join(OUT, 'hero.mp4');
+const gif = path.join(WORK, 'hero.gif');
+const mp4 = path.join(WORK, 'hero.mp4');
 const trim = ['-ss', String(cut.start), '-to', String(cut.end), '-i', video];
 // The recorder's video codec leaves noise on every frame, and a GIF stores each changed pixel again.
 // A light temporal denoise before the scale keeps the unchanged parts of the board identical from
@@ -184,3 +185,8 @@ const glide = smooth.windows.glide;
 if (!glide || glide.rate < MIN_DISTINCT_FPS) {
   fail(`the scroll glide has ${glide ? glide.rate.toFixed(1) : 'no'} distinct frames a second, under ${MIN_DISTINCT_FPS}. Record the hero again in the full Chromium build.`);
 }
+
+await mkdir(OUT, { recursive: true });
+await copyFile(gif, path.join(OUT, 'hero.gif'));
+await copyFile(mp4, path.join(OUT, 'hero.mp4'));
+console.log(`OK   published hero.gif and hero.mp4 to ${OUT}`);
