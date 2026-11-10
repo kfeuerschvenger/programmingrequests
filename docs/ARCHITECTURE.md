@@ -6,6 +6,7 @@
 # Architecture
 
 How a vote travels from the browser to MySQL, which layer owns which decision, and how the board is lit.
+
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'fontFamily':'Segoe UI, Helvetica, Arial, sans-serif','primaryColor':'#F3E6C8','primaryBorderColor':'#3B2A1E','primaryTextColor':'#2B2622','lineColor':'#8A6414','textColor':'#2B2622','edgeLabelBackground':'#FBF5E7'}}}%%
 flowchart LR
@@ -113,7 +114,7 @@ All writes live in `IdeaServiceImpl` and run in a transaction.
 - `vote` loads the idea with `SELECT ... FOR UPDATE`, then looks up the caller's vote. No vote yet: insert it and add the value to the score. A different value: update it and move the score by the difference, so a switch moves it by two. The same value: nothing changes.
 - `removeVote` takes the same lock, deletes the vote if there is one and subtracts its value. Calling it twice is harmless.
 - The invariant is that `ideas.score` equals the sum of that idea's votes. It changes only inside the transaction that changes the vote rows, and votes on one idea queue behind the row lock.
-- The database backs the service up: `uq_votes_idea_voter (idea_id, voter_hash)` and `chk_votes_value CHECK (value IN (-1, 1))`. A violation that still escapes, or a lock failure, answers 409 `CONFLICT`, and the client may retry.
+- The database backs the service up: `uq_votes_idea_voter (idea_id, voter_hash)` and `chk_votes_value CHECK (value IN (-1, 1))`. A unique-constraint race on `(idea_id, voter_hash)` or a lock failure answers 409 `CONFLICT`, and the client may retry. Any other integrity violation is a defect and answers 500 `INTERNAL_ERROR`.
 - Listing runs a page query, a count query (skipped on a short first page) and one query for the caller's votes on the page's ids. There is no N+1.
 
 ## Rate limiting

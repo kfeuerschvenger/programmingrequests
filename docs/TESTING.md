@@ -33,6 +33,8 @@ JUnit 5, Mockito, AssertJ, Spring test slices and Testcontainers. Run from `back
 | Plain unit | Mapper, sort whitelist, rate limiter, address normaliser, identity resolver, voter hasher, secure logger, filters, security headers, property validation, exception handler | No |
 | Config contract | `ComposeTrustedProxyDefaultTest` reads both compose files and checks that the `TRUSTED_PROXIES` default trusts the subnet minus the gateway and nothing else | No |
 | `@WebMvcTest` | The HTTP contract, validation errors, ProblemDetail shapes, CORS on and off | No |
+| OpenAPI contract | `OpenApiContractTest` reads the generated document and checks the numeric enums, the sort values, the problem schema, the error responses and the JSON success media type | Yes |
+| OpenAPI export drift | `OpenApiExportTest` compares `docs/openapi.yaml` with the live `/api-docs.yaml` as parsed YAML. To regenerate the file, run `./gradlew test --tests "*OpenApiExportTest" -Dopenapi.write=true` | Yes |
 | `@DataJpaTest` on MySQL | Repositories and the constraints, with the real Flyway migrations | Yes |
 | `@SpringBootTest` on MySQL | The API end to end on a random port, both trusted and untrusted proxy chains, 12 concurrent voters on one idea, the demo seeder and its profile isolation | Yes |
 | Migration upgrade | `FlywayUpgradeFromV1IntegrationTest` migrates to V1, inserts legacy rows, then upgrades to the latest version | Yes |
@@ -122,7 +124,7 @@ FFMPEG=<path to ffmpeg> npm run gif
 - **Stills never write.** Every still aborts any non-GET request to `/api` and fails the shot if one was attempted. The validation shot fills fields that fail validation, so nothing is sent.
 - **Same picture every time.** Stills use a 1600 by 1000 window at twice the pixel density (1040 high for the two top shots, so the whole form fits), phone shots use 390 by 844, each in its own browser context with the colour scheme stored before the first paint. Each shot asserts that fonts are loaded, images decoded, no skeleton or notice is on screen, no animation is mid flight, and at night that a flame is drawn and lit.
 - **The hero is smooth.** It is recorded in full Chromium, because the default headless shell rasterises in software and drops frames. `gif.mjs` builds a GIF up to 1100 pixels wide at 20 frames a second under 8 MB (it tries 1100, 1040 and 980 until the file fits) with a two pass palette, an MP4 at 25 frames a second, measures distinct frames with ffmpeg's `mpdecimate`, and fails below 20 a second in the scroll glide. Each file is replaced atomically.
-- **Hero guard.** The hero posts one quest and one vote, so it accepts a `BASE_URL` on loopback only. Restart the API to reseed afterwards, and take the stills before the hero.
+- **Hero guard.** The hero posts one quest and one vote, so it accepts a `BASE_URL` on loopback only, unless `SHOWCASE_ALLOW_REMOTE=1`. Restart the API to reseed afterwards, and take the stills before the hero.
 - **In CI** only the syntax of the scripts is checked and their dependencies are audited, because the captures need a stack and a browser. `DemoConstantsSyncTest` keeps the quest constants in `capture.mjs` equal to the seeder's.
 
 ---
