@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/kfeuerschvenger/programmingrequests/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/kfeuerschvenger/programmingrequests/ci.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white" alt="Estado de CI"></a>
+  <a href="https://github.com/kfeuerschvenger/code-quests/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/kfeuerschvenger/code-quests/ci.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white" alt="Estado de CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-MIT-9E2B25?style=flat-square" alt="Licencia MIT"></a>
   <img src="https://img.shields.io/badge/Java-25-ED8B00?style=flat-square&logo=openjdk&logoColor=white" alt="Java 25">
   <img src="https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4.1">
@@ -132,7 +132,7 @@ Una aplicación de página única en React la sirve nginx, que reenvía solo `/a
 Solo necesitas Docker en ejecución.
 
 ```bash
-git clone https://github.com/kfeuerschvenger/programmingrequests.git && cd programmingrequests
+git clone https://github.com/kfeuerschvenger/code-quests.git && cd code-quests
 cp .env.example .env
 docker compose up -d --build
 ```
