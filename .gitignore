@@ -49,3 +49,5 @@ e2e/showcase/out/
 .atl/
 docs/private/
 .claude/worktrees/
+# Local port mapping for the compose stack, described in the README.
+docker-compose.override.yml
