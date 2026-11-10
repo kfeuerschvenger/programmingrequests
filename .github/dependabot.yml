@@ -21,6 +21,13 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # typescript-eslint does not support TypeScript 7 yet.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Node majors move by hand to the next LTS, together with CI and the Docker images.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -43,6 +50,10 @@ updates:
     groups:
       docker-backend-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Stay on the Java 25 LTS; Temurin 27 is not an LTS release.
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /frontend
@@ -54,3 +65,7 @@ updates:
     groups:
       docker-frontend-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Node majors move by hand to the next LTS, together with CI and @types/node.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
