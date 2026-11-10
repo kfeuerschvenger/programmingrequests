@@ -53,7 +53,8 @@ FFMPEG=<path to ffmpeg> npm run gif
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `BASE_URL` | `http://localhost:8095` | The site to capture. Requests to `/api` go through it |
+| `BASE_URL` | `http://localhost:8095` | The site to capture. Requests to `/api` go through it. Point it only at the demo stack |
+| `SHOWCASE_ALLOW_REMOTE` | unset | Set to `1` to let the hero run against a `BASE_URL` that is not on loopback |
 | `SLUGS` | Every still | A comma separated list of slugs. A slug may also be passed as an argument |
 | `SHOWCASE_OUT` | `docs/assets/screens` | Where the framed stills and the animation are written. The raw stills always go to `out/raw` in this folder |
 | `SHOWCASE_FRAME_SCALE` | `1.25` | The pixel density of the framed shots |
@@ -80,7 +81,8 @@ FFMPEG=<path to ffmpeg> npm run gif
 - Stills use a 1600 by 1000 window at twice the pixel density. The mobile shots use 390 by 844, at twice the density, with touch emulation. The framed version of each is rendered from `frame.html`: a light or dark browser window showing the address `code-quests.local`, or a phone for the mobile shots.
 - Every shot runs in its own browser context, with the color scheme stored before the first paint, so no state leaks from one shot to the next.
 - Before any browser opens, the script asserts that the board is the demo board: 12 quests, the newest one first. Each shot then asserts that the demo quests render, that no skeleton, loader or notice is on screen, that the web fonts are loaded, that the images in view are decoded and that no animation is mid flight. Night shots also assert that a flame is drawn and lit.
-- The stills write nothing to the product. The validation shot fills a name and a quest that fail validation, so the browser never sends the request.
+- The stills write nothing to the product. The validation shot fills a name and a quest that fail validation, so the browser never sends the request. A route on `**/api/ideas**` aborts any request that is not a GET during that shot and fails the shot if one was attempted.
+- Captures must point only at the demo stack. The hero posts a quest and a vote, so it refuses a `BASE_URL` whose host is not `localhost`, `127.0.0.1` or `[::1]` unless `SHOWCASE_ALLOW_REMOTE=1` is set, and that variable is for a remote host that is itself a throwaway demo stack.
 - The hero posts one quest and one vote. After it the board is no longer the demo board, so the next run of `capture.mjs` stops at the first check. Restart the API to reseed it: `docker compose -p code-quests-showcase --env-file <your-env-file> -f docker-compose.yml -f e2e/showcase/docker-compose.demo.yml restart api`. Run the stills before the hero when both are needed.
 - The hero is recorded in the full Chromium build at 1280 by 800. The default headless shell rasterizes in software and drops frames on a scene this heavy.
 - A hero run deletes `out/hero.webm`, `out/hero.json` and any partial video before it records, and writes `out/hero.started`. `gif.mjs` refuses to convert when the recording is missing or older than that marker, so a failed run can never publish the previous animation.

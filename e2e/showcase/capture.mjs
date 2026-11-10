@@ -67,6 +67,23 @@ const HERO = {
 const SCHEME_KEY = 'mantine-color-scheme-value';
 const ADDRESS = 'code-quests.local';
 
+/** The hosts that count as this machine. */
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * Stops a flow that writes to the product unless it points at this machine. The hero posts a quest and a vote, and the demo
+ * seeder wipes the data at every start, so a BASE_URL aimed at a shared or real site would leave data there. SHOWCASE_ALLOW_REMOTE=1
+ * lifts the stop for a demo stack that is deliberately not on loopback.
+ */
+const requireLoopback = what => {
+  const host = new URL(BASE_URL).hostname.toLowerCase();
+  if (LOOPBACK_HOSTS.has(host) || process.env.SHOWCASE_ALLOW_REMOTE === '1') return;
+  throw new Error(
+    `${what} writes to the site and BASE_URL points at '${host}', which is not this machine. Capture only against the demo stack. ` +
+      'Set SHOWCASE_ALLOW_REMOTE=1 only when that remote host is a throwaway demo stack.',
+  );
+};
+
 const log = (...parts) => console.log(...parts);
 
 /** Opens a context for one scheme: the app reads its stored choice before the first paint. */
@@ -245,6 +262,14 @@ const SHOTS = [
     title: ADDRESS,
     scheme: 'light',
     run: async page => {
+      // The fields fail validation, so the form must send nothing. Any write the page attempts is aborted before it leaves the browser, and fails the shot.
+      const writes = [];
+      await page.route('**/api/ideas**', route => {
+        const request = route.request();
+        if (request.method() === 'GET') return route.continue();
+        writes.push(`${request.method()} ${request.url()}`);
+        return route.abort();
+      });
       await openBoard(page);
       await page.getByRole('textbox', { name: 'Your name' }).fill('Sir Reginald Bartholomew Wigglesworth of the Seventeen Misplaced Semicolons');
       await page.getByRole('textbox', { name: 'The quest' }).fill('Too short');
@@ -252,6 +277,7 @@ const SHOTS = [
       const errors = await page.locator('.mantine-InputWrapper-error').count();
       if (errors < 2) throw new Error(`expected validation errors on both fields, found ${errors}`);
       await settle(page);
+      if (writes.length > 0) throw new Error(`the page tried to write to the API: ${writes.join(', ')}`);
     },
   },
   {
@@ -502,6 +528,7 @@ const recordHero = async () => {
   const dir = path.join(WORK, 'video');
   // A failed run must leave nothing for gif.mjs to convert: the previous recording, its cut points and any partial video go first.
   await Promise.all([dir, HERO_VIDEO, HERO_CUT, HERO_PALETTE].map(target => rm(target, { recursive: true, force: true })));
+  requireLoopback('The hero');
   await writeFile(HERO_STARTED, new Date().toISOString());
 
   const browser = await launchHeroBrowser();
