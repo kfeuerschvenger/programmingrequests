@@ -16,7 +16,7 @@ flowchart LR
 
 ## Prerequisites
 
-- Docker with Compose v2.24 or newer. The override file uses the `!override` tag.
+- Docker with Compose v2. The override file uses the `!override` tag, which the Compose file merge reference documents but does not date, so no minimum version is claimed. The stack was tested with Docker Compose v2.40.3 (Docker Engine 29.1.2).
 - Node `^22.12.0 || >=24.0.0`.
 - Playwright and its Chromium: from this folder run `npm ci` and `npm run install:browsers`. The hero needs the full Chromium build that `install:browsers` installs, not only the headless shell.
 - ffmpeg for `gif.mjs`. Install it with `winget install Gyan.FFmpeg`, `brew install ffmpeg` or `apt install ffmpeg`, and point `FFMPEG` at the executable when it is not on the PATH. It needs libx264.
@@ -78,7 +78,7 @@ FFMPEG=<path to ffmpeg> npm run gif
 
 ## How the shots stay the same
 
-- Stills use a 1600 by 1000 window at twice the pixel density. The mobile shots use 390 by 844, at twice the density, with touch emulation. The framed version of each is rendered from `frame.html`: a light or dark browser window showing the address `code-quests.local`, or a phone for the mobile shots.
+- Stills use a 1600 by 1000 window at twice the pixel density, except `top-day` and `top-night`, which use 1600 by 1040. The post-a-quest form ends about 25 pixels below a 1000 pixel window, so those two windows are 40 pixels taller to keep the whole form, its button included, in the picture. The window is resized rather than the capture cropped, because the fixed lighting layers cover only the window. The mobile shots use 390 by 844, at twice the density, with touch emulation. The framed version of each is rendered from `frame.html`: a light or dark browser window showing the address `code-quests.local`, or a phone for the mobile shots.
 - Every shot runs in its own browser context, with the color scheme stored before the first paint, so no state leaks from one shot to the next.
 - Before any browser opens, the script asserts that the board is the demo board: 12 quests, the newest one first. Each shot then asserts that the demo quests render, that no skeleton, loader or notice is on screen, that the web fonts are loaded, that the images in view are decoded and that no animation is mid flight. Night shots also assert that a flame is drawn and lit.
 - The stills write nothing to the product. The validation shot fills a name and a quest that fail validation, so the browser never sends the request. A route on `**/api/ideas**` aborts any request that is not a GET during that shot and fails the shot if one was attempted.
