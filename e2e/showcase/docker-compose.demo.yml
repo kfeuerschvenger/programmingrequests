@@ -9,6 +9,8 @@ services:
     ports: !override []
     environment:
       SPRING_PROFILES_ACTIVE: demo
+      # The second opt-in the seeder demands before it wipes anything. It is set only here, never in the root compose files.
+      DEMO_SEED_CONFIRM: wipe
       # The demo subnet below minus its gateway, as TRUSTED_PROXIES expects.
       TRUSTED_PROXIES: 172\.29\.250\.(?!1\z)\d+
   web:

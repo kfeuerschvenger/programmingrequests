@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Resets the database to a fixed demo board at startup. Active only under the Spring profile {@code demo}.
  * <p>
- * Every run deletes all votes and ideas, then inserts {@link DemoQuests#ALL} with votes from fictitious voters, so screenshots and recordings start from the same data each time. The seeder refuses to run unless the datasource host is local, see {@link DemoSeedGuard}. The voter ids are the HMAC of documentation-range addresses under the configured secret, so they are well formed and deterministic and match no real visitor.
+ * Every run deletes all votes and ideas, then inserts {@link DemoQuests#ALL} with votes from fictitious voters, so screenshots and recordings start from the same data each time. The seeder refuses to run unless {@code demo.seed.confirm} is {@code wipe} and the datasource host is local, see {@link DemoSeedGuard}. The voter ids are the HMAC of documentation-range addresses under the configured secret, so they are well formed and deterministic and match no real visitor.
  * </p>
  */
 @Slf4j
@@ -43,6 +43,7 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final Clock clock;
     private final TransactionTemplate transaction;
     private final String datasourceUrl;
+    private final String confirmation;
 
     /**
      * Creates the seeder.
@@ -53,19 +54,23 @@ public class DemoDataSeeder implements ApplicationRunner {
      * @param clock         source of the seeding moment, so quest ages are relative to it
      * @param txManager     transaction manager, so one run is all or nothing
      * @param datasourceUrl JDBC URL, checked by the guard before anything is deleted
+     * @param confirmation  value of {@code demo.seed.confirm} (environment variable {@code DEMO_SEED_CONFIRM}), which must be {@code wipe}
      */
     public DemoDataSeeder(IdeaRepository ideas, VoteRepository votes, VoterHasher hasher, Clock clock,
-                          PlatformTransactionManager txManager, @Value("${spring.datasource.url}") String datasourceUrl) {
+                          PlatformTransactionManager txManager, @Value("${spring.datasource.url}") String datasourceUrl,
+                          @Value("${demo.seed.confirm:}") String confirmation) {
         this.ideas = ideas;
         this.votes = votes;
         this.hasher = hasher;
         this.clock = clock;
         this.transaction = new TransactionTemplate(txManager);
         this.datasourceUrl = datasourceUrl;
+        this.confirmation = confirmation;
     }
 
     @Override
     public void run(ApplicationArguments args) {
+        DemoSeedGuard.requireConfirmation(confirmation);
         DemoSeedGuard.requireLocalDatabase(datasourceUrl);
         var counts = transaction.execute(status -> reset());
         log.warn("Demo profile: the board was reset to {} demo quests with {} votes. Every idea and vote that was there is gone.", counts[0], counts[1]);

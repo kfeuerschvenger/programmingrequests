@@ -4,11 +4,17 @@ import com.feuerschvenger.codequests.support.MySqlIntegrationSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.List;
@@ -22,11 +28,26 @@ import static org.mockito.Mockito.mock;
 @DisplayName("DemoDataSeeder")
 class DemoDataSeederIntegrationTest extends MySqlIntegrationSupport {
 
+    /**
+     * The seeder's guard accepts only a local host, and Testcontainers reports the host of the Docker daemon, which is not always {@code localhost}.
+     * The datasource of this test is therefore registered with an explicit {@code localhost} URL, so the test does not depend on how the container's host is reported.
+     * It is registered after the support class's own registration, so it wins, and {@link #datasourceIsLocal()} asserts that it did.
+     * The confirmation is the second opt-in the seeder demands.
+     */
+    @DynamicPropertySource
+    static void demoProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", MySqlIntegrationSupport::localhostJdbcUrl);
+        registry.add("demo.seed.confirm", () -> "wipe");
+    }
+
     @Autowired
     private DemoDataSeeder seeder;
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Value("${spring.datasource.url}")
+    private String datasourceUrl;
 
     @BeforeEach
     void seed() {
@@ -114,11 +135,30 @@ class DemoDataSeederIntegrationTest extends MySqlIntegrationSupport {
     }
 
     @Test
+    @DisplayName("runs against the explicit localhost URL this test registers")
+    void datasourceIsLocal() {
+        assertThat(datasourceUrl).startsWith("jdbc:mysql://localhost:");
+    }
+
+    @Test
     @DisplayName("refuses to run against a database that is not local, and deletes nothing")
     void refusesRemoteDatabase() {
-        var remote = new DemoDataSeeder(null, null, null, null, mock(PlatformTransactionManager.class), "jdbc:mysql://prod-db.example.com:3306/code_quests");
+        var remote = new DemoDataSeeder(null, null, null, null, mock(PlatformTransactionManager.class), "jdbc:mysql://prod-db.example.com:3306/code_quests", "wipe");
 
         assertThatThrownBy(() -> remote.run(new DefaultApplicationArguments())).isInstanceOf(IllegalStateException.class);
+        assertThat(count("ideas")).isEqualTo(DemoQuests.ALL.size());
+    }
+
+    @ParameterizedTest(name = "refuses the confirmation \"{0}\"")
+    @NullSource
+    @ValueSource(strings = {"", "yes", "WIPE", " wipe", "wipe ", "true"})
+    @DisplayName("refuses to run without the exact confirmation, and deletes nothing")
+    void refusesWithoutConfirmation(String confirmation) {
+        var unconfirmed = new DemoDataSeeder(null, null, null, null, mock(PlatformTransactionManager.class), datasourceUrl, confirmation);
+
+        assertThatThrownBy(() -> unconfirmed.run(new DefaultApplicationArguments()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("DEMO_SEED_CONFIRM=wipe");
         assertThat(count("ideas")).isEqualTo(DemoQuests.ALL.size());
     }
 }

@@ -22,7 +22,7 @@ flowchart LR
 
 ## Start the demo stack
 
-The captures run against a stack whose API was started with the Spring profile `demo`. At every start that profile deletes all ideas and votes and loads the demo quests, which is what makes the shots reproducible. The seeder refuses to run unless the datasource host is `localhost`, `127.0.0.1`, `::1` or `db`, so it cannot wipe a remote database.
+The captures run against a stack whose API was started with the Spring profile `demo`. At every start that profile deletes all ideas and votes and loads the demo quests, which is what makes the shots reproducible. The seeder needs two opt-ins and a local database. The profile alone is not enough: it also refuses to run unless `DEMO_SEED_CONFIRM=wipe` is set (property `demo.seed.confirm`), and it refuses unless the datasource host is `localhost`, `127.0.0.1`, `::1` or `db`. Without the confirmation the API fails at startup with a message that says so and deletes nothing, so a stray `SPRING_PROFILES_ACTIVE=demo` on a normal stack, whose database host is `db`, cannot erase real data. Only `e2e/showcase/docker-compose.demo.yml` sets the confirmation. The root compose files never pass it through, and it must not go in any env file of a stack that holds real data.
 
 From the repository root, put the usual variables in an env file kept outside the repository, then start the stack under its own project name with the override in this folder:
 
@@ -31,7 +31,7 @@ docker compose -p code-quests-showcase --env-file <your-env-file> \
   -f docker-compose.yml -f e2e/showcase/docker-compose.demo.yml up -d --build
 ```
 
-The env file needs `MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD` and `VOTER_HASH_SECRET` (at least 32 bytes), and optionally `SHOWCASE_PORT`. The values only need to exist: the database is a throwaway volume of this project. The override sets `SPRING_PROFILES_ACTIVE=demo` on the API, publishes only the web container on `127.0.0.1:8095`, drops the host ports of the database and the API, and moves the stack to the subnet `172.29.250.0/24` so it can run beside the development stacks. Change the subnet and the `TRUSTED_PROXIES` line together when that range is taken.
+The env file needs `MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD` and `VOTER_HASH_SECRET` (at least 32 bytes), and optionally `SHOWCASE_PORT`. The values only need to exist: the database is a throwaway volume of this project. The override sets `SPRING_PROFILES_ACTIVE=demo` and `DEMO_SEED_CONFIRM=wipe` on the API, publishes only the web container on `127.0.0.1:8095`, drops the host ports of the database and the API, and moves the stack to the subnet `172.29.250.0/24` so it can run beside the development stacks. Change the subnet and the `TRUSTED_PROXIES` line together when that range is taken.
 
 Without the override the root `docker-compose.yml` is unchanged: `SPRING_PROFILES_ACTIVE` is passed through only when it is set in the environment, so a normal stack never runs the seeder.
 

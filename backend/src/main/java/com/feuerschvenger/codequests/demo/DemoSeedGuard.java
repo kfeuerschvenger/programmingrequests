@@ -8,7 +8,10 @@ import java.util.Set;
 /**
  * Decides whether the configured database is one the demo seeder may wipe.
  * <p>
- * The seeder deletes every idea and every vote before it inserts the demo data, so it must never run against a shared or remote database. The guard reads the host out of the JDBC URL and accepts only the hosts a local stack uses: the loopback names and the {@code db} service of the compose files. Anything it cannot parse with certainty is refused, including URLs that name several hosts or hide the host in a connection property.
+ * The seeder deletes every idea and every vote before it inserts the demo data, so it must never run against a shared or remote database, and never by accident. The guard demands an explicit confirmation, see {@link #requireConfirmation(String)}, and reads the host out of the JDBC URL, accepting only the hosts a local stack uses: the loopback names and the {@code db} service of the compose files. Anything it cannot parse with certainty is refused, including URLs that name several hosts or hide the host in a connection property.
+ * </p>
+ * <p>
+ * The host is compared exactly, in the spelling listed in {@link #LOCAL_HOSTS}. A trailing dot ({@code localhost.}) and the long IPv6 form ({@code [0:0:0:0:0:0:0:1]}) are refused rather than normalized, because a refusal costs a one-line URL fix and a wrong normalization could cost data. User information before the host ({@code user:pw@localhost}) is accepted, since the host the driver connects to is the one after the {@code @}, and the message never prints it.
  * </p>
  */
 public final class DemoSeedGuard {
@@ -18,7 +21,26 @@ public final class DemoSeedGuard {
 
     private static final String JDBC_PREFIX = "jdbc:";
 
+    /** The only value of {@code demo.seed.confirm} (environment variable {@code DEMO_SEED_CONFIRM}) that lets the seeder wipe the data. */
+    static final String CONFIRMATION = "wipe";
+
     private DemoSeedGuard() {
+    }
+
+    /**
+     * Throws unless the operator has asked for the wipe explicitly.
+     * <p>
+     * The {@code demo} profile alone is not enough: a stray {@code SPRING_PROFILES_ACTIVE=demo} on the normal local stack, whose database host is {@code db}, would otherwise erase real data at every start. The second opt-in is a property that only the demo compose file sets.
+     * </p>
+     *
+     * @param confirmation value of {@code demo.seed.confirm}, null when unset
+     * @throws IllegalStateException when the value is not exactly {@code wipe}
+     */
+    public static void requireConfirmation(String confirmation) {
+        if (!CONFIRMATION.equals(confirmation)) {
+            throw new IllegalStateException("The demo profile deletes every idea and vote at startup, so it needs a second explicit opt-in: set DEMO_SEED_CONFIRM=" + CONFIRMATION
+                    + " (property demo.seed.confirm). Nothing was deleted. Unset SPRING_PROFILES_ACTIVE=demo unless this is a throwaway demo stack.");
+        }
     }
 
     /**
