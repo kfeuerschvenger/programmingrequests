@@ -76,7 +76,12 @@ const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
  * lifts the stop for a demo stack that is deliberately not on loopback.
  */
 const requireLoopback = what => {
-  const host = new URL(BASE_URL).hostname.toLowerCase();
+  let host;
+  try {
+    host = new URL(BASE_URL).hostname.toLowerCase();
+  } catch {
+    throw new Error(`BASE_URL is not a valid URL: '${BASE_URL}'. Use a full address such as http://localhost:8095.`);
+  }
   if (LOOPBACK_HOSTS.has(host) || process.env.SHOWCASE_ALLOW_REMOTE === '1') return;
   throw new Error(
     `${what} writes to the site and BASE_URL points at '${host}', which is not this machine. Capture only against the demo stack. ` +
@@ -262,14 +267,7 @@ const SHOTS = [
     title: ADDRESS,
     scheme: 'light',
     run: async page => {
-      // The fields fail validation, so the form must send nothing. Any write the page attempts is aborted before it leaves the browser, and fails the shot.
-      const writes = [];
-      await page.route('**/api/ideas**', route => {
-        const request = route.request();
-        if (request.method() === 'GET') return route.continue();
-        writes.push(`${request.method()} ${request.url()}`);
-        return route.abort();
-      });
+      // The fields fail validation, so the form must send nothing. takeStill aborts every write and fails the shot if one was attempted.
       await openBoard(page);
       await page.getByRole('textbox', { name: 'Your name' }).fill('Sir Reginald Bartholomew Wigglesworth of the Seventeen Misplaced Semicolons');
       await page.getByRole('textbox', { name: 'The quest' }).fill('Too short');
@@ -277,7 +275,6 @@ const SHOTS = [
       const errors = await page.locator('.mantine-InputWrapper-error').count();
       if (errors < 2) throw new Error(`expected validation errors on both fields, found ${errors}`);
       await settle(page);
-      if (writes.length > 0) throw new Error(`the page tried to write to the API: ${writes.join(', ')}`);
     },
   },
   {
@@ -421,10 +418,22 @@ const takeStill = async (browser, framePage, shot) => {
   const viewport = shot.mobile ? MOBILE : shot.windowHeight ? { ...DESKTOP, height: shot.windowHeight } : DESKTOP;
   const context = await openContext(browser, { scheme: shot.scheme, viewport, mobile: shot.mobile });
   await rememberScheme(context, shot.scheme);
+  // A still never writes. Any non-GET request to the API is aborted before it leaves the browser, and the shot fails if one was attempted.
+  const writes = [];
+  await context.route('**/api/**', route => {
+    const request = route.request();
+    if (request.method() === 'GET') return route.continue();
+    writes.push(`${request.method()} ${request.url()}`);
+    return route.abort();
+  });
+  const assertNoWrites = () => {
+    if (writes.length > 0) throw new Error(`the page tried to write to the API: ${writes.join(', ')}`);
+  };
   const page = await context.newPage();
 
   try {
     await shot.run(page);
+    assertNoWrites();
     const capture = () =>
       page.screenshot({ type: 'png' });
     let raw = await capture();
@@ -438,6 +447,7 @@ const takeStill = async (browser, framePage, shot) => {
         if (attempt >= 20) throw new Error('could not capture the torch and the lantern bright');
       }
     }
+    assertNoWrites();
     const framed = await frameShot(framePage, raw, {
       title: shot.title,
       width: viewport.width,
@@ -600,7 +610,7 @@ const recordHero = async () => {
     await context.close();
     const video = await page.video().path();
     await copyFile(video, HERO_VIDEO);
-    await writeFile(HERO_CUT,JSON.stringify({ start: Number(startAt.toFixed(2)), end: Number(endAt.toFixed(2)), motion: Object.fromEntries(Object.entries(motion).map(([name, window]) => [name, window.map(second => Number(second.toFixed(2)))])) }));
+    await writeFile(HERO_CUT, JSON.stringify({ start: Number(startAt.toFixed(2)), end: Number(endAt.toFixed(2)), motion: Object.fromEntries(Object.entries(motion).map(([name, window]) => [name, window.map(second => Number(second.toFixed(2)))])) }));
   } finally {
     await context.close().catch(() => {});
     await browser.close().catch(() => {});
