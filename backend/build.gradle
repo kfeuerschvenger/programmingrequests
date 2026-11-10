@@ -76,6 +76,8 @@ tasks.named('bootJar') {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Lets OpenApiExportTest rewrite docs/openapi.yaml: ./gradlew test --tests "*OpenApiExportTest" -Dopenapi.write=true
+	systemProperty 'openapi.write', System.getProperty('openapi.write', 'false')
 	finalizedBy tasks.named('jacocoTestReport')
 }
 

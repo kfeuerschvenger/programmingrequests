@@ -47,6 +47,8 @@ public class IdeaController {
     private static final String PROBLEM_JSON = MediaType.APPLICATION_PROBLEM_JSON_VALUE;
     private static final String SERVER_ERROR = "An unexpected failure. The body carries a request id in instance and no internal detail.";
     private static final String CONFLICT = "A lock or transaction collision. The request may be retried.";
+    private static final String CREATE_CONFLICT = "A lock or transaction collision raised by the database. The request may be retried.";
+    private static final String UNSUPPORTED_MEDIA = "The Content-Type is not application/json.";
     private static final String RETRY_AFTER = "Whole seconds to wait before the next attempt.";
 
     private final IdeaHandler handler;
@@ -107,7 +109,9 @@ public class IdeaController {
     @ApiResponse(responseCode = "201", description = "The idea was created. The Location header points at it.")
     @ApiResponse(responseCode = "400", description = "The body is malformed or a field is not valid.",
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
-    @ApiResponse(responseCode = "409", description = CONFLICT,
+    @ApiResponse(responseCode = "409", description = CREATE_CONFLICT,
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "415", description = UNSUPPORTED_MEDIA,
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "429", description = "Too many ideas from this address. Retry-After says how long to rest.",
             headers = @Header(name = "Retry-After", description = RETRY_AFTER, schema = @Schema(type = "integer")),
@@ -125,11 +129,13 @@ public class IdeaController {
     @PutMapping("/{id}/vote")
     @Operation(summary = "Cast a vote", description = "Sets the caller's vote to 1 or -1. Voting the same value again changes nothing, and the opposite value switches the vote.")
     @ApiResponse(responseCode = "200", description = "The idea with its updated score and the caller's vote.")
-    @ApiResponse(responseCode = "400", description = "The value is missing or is not 1 or -1.",
+    @ApiResponse(responseCode = "400", description = "The id is not a number, the body is malformed, or the value is not 1 or -1.",
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "No idea has that id.",
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "409", description = CONFLICT,
+            content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "415", description = UNSUPPORTED_MEDIA,
             content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "429", description = "Too many votes from this address. Retry-After says how long to rest.",
             headers = @Header(name = "Retry-After", description = RETRY_AFTER, schema = @Schema(type = "integer")),

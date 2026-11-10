@@ -1,5 +1,6 @@
 package com.feuerschvenger.codequests;
 
+import com.feuerschvenger.codequests.exception.ErrorCode;
 import com.feuerschvenger.codequests.support.MySqlIntegrationSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,6 +9,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Arrays;
+
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,7 +42,7 @@ class OpenApiContractTest extends MySqlIntegrationSupport {
                 .andExpect(jsonPath(sort + ".schema.enum[1]").value("oldest"))
                 .andExpect(jsonPath(sort + ".schema.enum[2]").value("top"))
                 .andExpect(jsonPath(sort + ".schema.default").value("newest"))
-                .andExpect(jsonPath(sort + ".description").value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.containsString("case-insensitive"))));
+                .andExpect(jsonPath(sort + ".description").value(hasItem(containsString("case-insensitive"))));
     }
 
     @Test
@@ -54,9 +60,9 @@ class OpenApiContractTest extends MySqlIntegrationSupport {
     @DisplayName("models the problem body with code, errors and retryAfterSeconds")
     void problemSchema() throws Exception {
         var problem = "$.components.schemas.ProblemDetail.properties";
+        var codes = Arrays.stream(ErrorCode.values()).map(Enum::name).toArray(String[]::new);
         mvc.perform(get("/api-docs"))
-                .andExpect(jsonPath(problem + ".code.enum.length()").value(com.feuerschvenger.codequests.exception.ErrorCode.values().length))
-                .andExpect(jsonPath(problem + ".code.enum[0]").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath(problem + ".code.enum").value(contains(codes)))
                 .andExpect(jsonPath(problem + ".errors.items.properties.field.type").value("string"))
                 .andExpect(jsonPath(problem + ".errors.items.properties.message.type").value("string"))
                 .andExpect(jsonPath(problem + ".retryAfterSeconds.type").value("integer"))
@@ -72,7 +78,9 @@ class OpenApiContractTest extends MySqlIntegrationSupport {
                 .andExpect(jsonPath(VOTE + ".responses['409'].content['application/problem+json']").exists())
                 .andExpect(jsonPath(VOTE + ".responses['429'].content['application/problem+json']").exists())
                 .andExpect(jsonPath(VOTE + ".responses['429'].headers['Retry-After']").exists())
+                .andExpect(jsonPath(VOTE + ".responses['415'].content['application/problem+json']").exists())
                 .andExpect(jsonPath(VOTE + ".responses['500'].content['application/problem+json']").exists())
+                .andExpect(jsonPath("$.paths['/api/ideas'].post.responses['415'].content['application/problem+json']").exists())
                 .andExpect(jsonPath(LIST + ".responses['500'].content['application/problem+json']").exists())
                 .andExpect(jsonPath("$.paths['/api/ideas'].post.responses['409']").exists())
                 .andExpect(jsonPath("$.paths['/api/ideas'].post.responses['429'].headers['Retry-After']").exists());

@@ -7,8 +7,8 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.0.1-SNAPSHOT
 servers:
-- url: http://localhost
-  description: Generated server url
+- url: http://localhost:8080
+  description: Local development API (dev profile)
 tags:
 - name: Ideas
   description: Submit quests for the realm and cast votes on them.
@@ -44,7 +44,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/IdeaResponse"
         "400":
-          description: The value is missing or is not 1 or -1.
+          description: "The id is not a number, the body is malformed, or the value\
+            \ is not 1 or -1."
           content:
             application/problem+json:
               schema:
@@ -57,6 +58,12 @@ paths:
                 $ref: "#/components/schemas/ProblemDetail"
         "409":
           description: A lock or transaction collision. The request may be retried.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "415":
+          description: The Content-Type is not application/json.
           content:
             application/problem+json:
               schema:
@@ -231,7 +238,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetail"
         "409":
-          description: A lock or transaction collision. The request may be retried.
+          description: A lock or transaction collision raised by the database. The
+            request may be retried.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "415":
+          description: The Content-Type is not application/json.
           content:
             application/problem+json:
               schema:
@@ -321,7 +335,8 @@ components:
         type:
           type: string
           format: uri
-          description: "Problem type, about:blank unless a handler sets one."
+          description: "Problem type URI. Left out of the body while it is the default\
+            \ about:blank, which is the case for every response."
         title:
           type: string
           description: The HTTP reason phrase.

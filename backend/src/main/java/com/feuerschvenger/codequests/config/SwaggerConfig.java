@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.info.BuildProperties;
@@ -27,15 +28,18 @@ public class SwaggerConfig {
     private static final String PROBLEM_SCHEMA = "ProblemDetail";
     private static final String JSON = "application/json";
     private static final String ANY_TYPE = "*/*";
+    private static final String LOCAL_SERVER = "http://localhost:8080";
 
     @Bean
     public OpenAPI codeQuestsOpenApi(ObjectProvider<BuildProperties> buildProperties) {
         var version = buildProperties.stream().findFirst().map(BuildProperties::getVersion).orElse("dev");
-        return new OpenAPI().info(new Info()
-                .title("Code Quests API")
-                .description("API for submitting programming ideas and voting on them.")
-                .version(version)
-                .license(new License().name("MIT").url("https://opensource.org/licenses/MIT")));
+        return new OpenAPI()
+                .info(new Info()
+                        .title("Code Quests API")
+                        .description("API for submitting programming ideas and voting on them.")
+                        .version(version)
+                        .license(new License().name("MIT").url("https://opensource.org/licenses/MIT")))
+                .servers(List.of(new Server().url(LOCAL_SERVER).description("Local development API (dev profile)")));
     }
 
     /**
@@ -76,7 +80,7 @@ public class SwaggerConfig {
         code.setEnum(Arrays.stream(ErrorCode.values()).map(Enum::name).toList());
         var schema = new ObjectSchema();
         schema.description("An RFC 9457 problem. Every error response has this shape.");
-        schema.addProperty("type", new StringSchema().format("uri").description("Problem type, about:blank unless a handler sets one."));
+        schema.addProperty("type", new StringSchema().format("uri").description("Problem type URI. Left out of the body while it is the default about:blank, which is the case for every response."));
         schema.addProperty("title", new StringSchema().description("The HTTP reason phrase."));
         schema.addProperty("status", new IntegerSchema().format("int32").description("The HTTP status code."));
         schema.addProperty("detail", new StringSchema().description("Fixed text for the error code. It never carries request input."));
