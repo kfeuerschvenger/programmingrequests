@@ -24,13 +24,13 @@ class DemoConstantsSyncTest {
 
     private static final Path SCRIPT = Path.of("..", "e2e", "showcase", "capture.mjs");
 
-    private static final Pattern DEMO_BLOCK = Pattern.compile("(?s)const\\s+DEMO\\s*=\\s*\\{(.*?)\\}");
+    private static final Pattern DEMO_BLOCK = Pattern.compile("(?s)const\\s+DEMO\\s*=\\s*\\{(.*?)\\n\\};");
 
     /**
      * Returns the body of the {@code const DEMO = {...}} block, without the braces.
      *
      * @param script the text of the capture script
-     * @return the text between the braces of the first {@code DEMO} declaration
+     * @return the text between the opening brace and the closing brace that starts a line and is followed by a semicolon, so a quest text containing a brace does not end the block early
      */
     static String demoBlock(String script) {
         var matcher = DEMO_BLOCK.matcher(script);
@@ -74,6 +74,17 @@ class DemoConstantsSyncTest {
     @DisplayName("the long quest matches")
     void longQuestMatches() throws IOException {
         assertThat(constant(demoBlockOfScript(), "longQuest", "'([^']*)'")).isEqualTo(DemoQuests.LONG_QUEST_START);
+    }
+
+    @Test
+    @DisplayName("the block extraction runs to the closing brace even when a value contains one")
+    void blockExtractionSurvivesBracesInValues() {
+        var script = "const DEMO = {\n  count: 12,\n  headline: 'Handle {braces} in a quest',\n  longQuest: 'long',\n};\n";
+
+        var block = demoBlock(script);
+
+        assertThat(constant(block, "headline", "'([^']*)'")).isEqualTo("Handle {braces} in a quest");
+        assertThat(constant(block, "longQuest", "'([^']*)'")).isEqualTo("long");
     }
 
     @Test
