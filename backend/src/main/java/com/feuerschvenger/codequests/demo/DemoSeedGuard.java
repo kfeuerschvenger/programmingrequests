@@ -62,7 +62,7 @@ public final class DemoSeedGuard {
      * Extracts the lower-case host of a JDBC URL.
      *
      * @param jdbcUrl value of {@code spring.datasource.url}
-     * @return the host, or null when the URL is blank, malformed, names more than one host or carries the host in a property
+     * @return the host, or null when the URL is blank, malformed, names more than one host, carries the host in a property or percent-encodes anything in its query
      */
     static String hostOf(String jdbcUrl) {
         if (jdbcUrl == null || jdbcUrl.isBlank()) {
@@ -75,8 +75,12 @@ public final class DemoSeedGuard {
         var remainder = url.substring(JDBC_PREFIX.length());
         // Connector/J accepts a host list and host properties that the URI parser would not see.
         var query = remainder.indexOf('?');
-        if (query >= 0 && remainder.substring(query).toLowerCase(Locale.ROOT).contains("host=")) {
-            return null;
+        if (query >= 0) {
+            var properties = remainder.substring(query).toLowerCase(Locale.ROOT);
+            // A percent-encoded key such as ho%73t= decodes to host= in the driver but passes a substring check, so any encoding is refused.
+            if (properties.contains("host=") || properties.contains("%")) {
+                return null;
+            }
         }
         try {
             var parsed = new URI(remainder);

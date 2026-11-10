@@ -43,6 +43,8 @@ class DemoSeedGuardTest {
             "jdbc:mysql://evil.example.com/code_quests?host=localhost",
             "jdbc:mysql://evil.example.com/code_quests?HOST=localhost",
             "jdbc:mysql://localhost/code_quests?HOST=evil",
+            "jdbc:mysql://localhost/code_quests?ho%73t=evil",
+            "jdbc:mysql://localhost/code_quests?user=a%40b",
             "jdbc:mysql:replication://localhost,evil/db",
             "jdbc:mysql://localhost:3306,evil.com/db",
             // A trailing dot is a different spelling, refused rather than normalized.
