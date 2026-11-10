@@ -29,7 +29,7 @@ Every idea is a parchment pinned to a wooden board. Visitors back a quest or rej
 
 By day the sun climbs over the board. By night a torch, a lantern and a candle take over, and their light flickers across every parchment.
 
-It began as a portfolio that was not one. Back then its author had none, so the site doubled as a pseudo-portfolio: strangers posted the projects they wanted to see, the most backed quests won, and each one became something to build. That portfolio now lives at [feuerschvenger.com](https://feuerschvenger.com/), and the quest board stays on as proof that the realm can be trusted with a vote.
+It began as a portfolio that was not one. Back then its author had none, so the site doubled as a pseudo-portfolio while visitors suggested the projects they wanted to see built. That portfolio now lives at [feuerschvenger.com](https://feuerschvenger.com/), and the board stays on for the quests still waiting for a hero.
 
 ## Take the tour
 

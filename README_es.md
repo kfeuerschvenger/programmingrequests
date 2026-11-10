@@ -29,7 +29,7 @@ Cada idea es un pergamino clavado en un tablón de madera. Los visitantes respal
 
 De día, el sol recorre el tablón. De noche, una antorcha, un farol y una vela toman el relevo, y su luz titila sobre cada pergamino.
 
-Empezó como un portfolio que no lo era. En ese momento su autor no tenía ninguno, así que el sitio hacía las veces de seudo-portfolio: desconocidos publicaban los proyectos que querían ver, las misiones más respaldadas ganaban y cada una se convertía en algo para construir. Ese portfolio hoy vive en [feuerschvenger.com](https://feuerschvenger.com/), y el tablón de misiones sigue en pie como prueba de que al reino se le puede confiar un voto.
+Empezó como un portfolio que no lo era. En ese momento su autor no tenía ninguno, así que el sitio hacía las veces de seudo-portfolio mientras los visitantes sugerían los proyectos que querían ver construidos. Ese portfolio hoy vive en [feuerschvenger.com](https://feuerschvenger.com/), y el tablón sigue en pie para las misiones que todavía esperan a su héroe.
 
 ## Recorrido
 
