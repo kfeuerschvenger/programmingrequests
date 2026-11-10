@@ -44,6 +44,8 @@ dist/
 
 ### Local only ###
 .no-telemetry
+# Showcase pipeline: the hero recording, its cut points and the raw stills. Only the framed stills and the hero are committed.
+e2e/showcase/out/
 .atl/
 docs/private/
 .claude/worktrees/

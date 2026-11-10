@@ -7,7 +7,8 @@ flowchart LR
   Stack["Compose stack<br/>API with the demo profile"] --> Seed["DemoDataSeeder<br/>resets the data at start"]
   Seed --> Capture["capture.mjs<br/>Playwright"]
   Capture --> Frame["frame.html<br/>browser or phone frame"]
-  Frame --> Stills["docs/assets/screens<br/>raw and framed WebP"]
+  Capture --> Raw["out/raw<br/>raw WebP, not committed"]
+  Frame --> Stills["docs/assets/screens<br/>framed WebP, committed"]
   Capture -->|"hero slug"| Video["out/hero.webm"]
   Video --> Gif["gif.mjs<br/>ffmpeg"]
   Gif --> Anim["hero.gif and hero.mp4"]
@@ -54,7 +55,7 @@ FFMPEG=<path to ffmpeg> npm run gif
 |---|---|---|
 | `BASE_URL` | `http://localhost:8095` | The site to capture. Requests to `/api` go through it |
 | `SLUGS` | Every still | A comma separated list of slugs. A slug may also be passed as an argument |
-| `SHOWCASE_OUT` | `docs/assets/screens` | Where the images and the animation are written |
+| `SHOWCASE_OUT` | `docs/assets/screens` | Where the framed stills and the animation are written. The raw stills always go to `out/raw` in this folder |
 | `SHOWCASE_FRAME_SCALE` | `1.25` | The pixel density of the framed shots |
 | `SHOWCASE_WEBP_QUALITY` | `0.88` | WebP quality of the stills, from 0 to 1 |
 | `FFMPEG` | `ffmpeg` | The ffmpeg executable, read by `gif.mjs` |
@@ -63,15 +64,15 @@ FFMPEG=<path to ffmpeg> npm run gif
 
 | Slug | Shows | Output |
 |---|---|---|
-| `top-day` | The top of the page by day: the hanging title sign, the tagline, the intro plank and the post-a-quest form | `top-day.raw.webp`, `top-day.framed.webp` |
-| `top-night` | The same top by night, with the torch and the lantern lit at a bright moment of their flicker | `top-night.raw.webp`, `top-night.framed.webp` |
-| `board-day` | The quest board by day, with the first quests and their wax seals | `board-day.raw.webp`, `board-day.framed.webp` |
-| `board-night` | The same board by night, with the fire lit | `board-night.raw.webp`, `board-night.framed.webp` |
-| `quest-expanded` | A long quest opened with Read more | `quest-expanded.raw.webp`, `quest-expanded.framed.webp` |
-| `post-quest-errors` | The post-a-quest form with its validation errors | `post-quest-errors.raw.webp`, `post-quest-errors.framed.webp` |
-| `voting-rules` | The voting rules modal at night | `voting-rules.raw.webp`, `voting-rules.framed.webp` |
-| `mobile-day` | The board on a 390 by 844 phone by day | `mobile-day.raw.webp`, `mobile-day.framed.webp` |
-| `mobile-night` | The same phone by night | `mobile-night.raw.webp`, `mobile-night.framed.webp` |
+| `top-day` | The top of the page by day: the hanging title sign, the tagline, the intro plank and the post-a-quest form | `top-day.framed.webp` |
+| `top-night` | The same top by night, with the torch and the lantern lit at a bright moment of their flicker | `top-night.framed.webp` |
+| `board-day` | The quest board by day, with the first quests and their wax seals | `board-day.framed.webp` |
+| `board-night` | The same board by night, with the fire lit | `board-night.framed.webp` |
+| `quest-expanded` | A long quest opened with Read more | `quest-expanded.framed.webp` |
+| `post-quest-errors` | The post-a-quest form with its validation errors | `post-quest-errors.framed.webp` |
+| `voting-rules` | The voting rules modal at night | `voting-rules.framed.webp` |
+| `mobile-day` | The board on a 390 by 844 phone by day | `mobile-day.framed.webp` |
+| `mobile-night` | The same phone by night | `mobile-night.framed.webp` |
 | `hero` | At night: post a quest, see it pinned on the board, back it, and watch the wax seal stamp the new score | `hero.gif`, `hero.mp4` |
 
 ## How the shots stay the same
@@ -88,7 +89,7 @@ FFMPEG=<path to ffmpeg> npm run gif
 
 ## Maintenance
 
-- Rerun the commands when a change alters a screen, and commit the images with the change.
+- Rerun the commands when a change alters a screen, and commit the framed stills and the hero with the change. The raw stills in `out/raw` are not committed: the folder is ignored, and they exist only to inspect a shot before it is framed.
 - A new shot is one more entry in `SHOTS` in `capture.mjs`: a slug, an address for the frame, a color scheme and a function that brings the page to the state to photograph.
 - The demo quests live in `backend/src/main/java/com/feuerschvenger/codequests/demo/DemoQuests.java`. The constants at the top of `capture.mjs` mirror the headline quest, the long quest and the quest count, and must change with it.
 - `npm run check` runs `node --check` on both scripts.

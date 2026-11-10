@@ -2,7 +2,8 @@
 //
 // It drives a running stack whose API was started with the Spring profile `demo`, which resets the
 // database to the demo quests at every start. Each still is taken in a real browser and written twice:
-// the raw screenshot and the same screenshot inside a browser (or phone) frame rendered from frame.html.
+// the raw screenshot, kept in out/raw and not committed, and the same screenshot inside a browser (or phone)
+// frame rendered from frame.html, which goes to the committed folder.
 // The hero slug records a video instead, which gif.mjs turns into a GIF and an MP4.
 //
 // The stills write nothing to the product: the only click that could submit anything is on a form whose
@@ -33,6 +34,8 @@ const HERO_VIDEO = path.join(WORK, 'hero.webm');
 const HERO_CUT = path.join(WORK, 'hero.json');
 const HERO_PALETTE = path.join(WORK, 'hero-palette.png');
 const HERO_STARTED = path.join(WORK, 'hero.started');
+/** Raw stills are kept here, not in the committed folder: only the framed stills are committed. */
+const RAW_OUT = path.join(WORK, 'raw');
 const DESKTOP = { width: 1600, height: 1000 };
 const MOBILE = { width: 390, height: 844 };
 /**
@@ -416,7 +419,7 @@ const takeStill = async (browser, framePage, shot) => {
       device: shot.mobile ? 'phone' : 'desktop',
     });
 
-    await writeFile(path.join(OUT, `${shot.slug}.raw.webp`), await toWebp(framePage, raw));
+    await writeFile(path.join(RAW_OUT, `${shot.slug}.raw.webp`), await toWebp(framePage, raw));
     await writeFile(path.join(OUT, `${shot.slug}.framed.webp`), await toWebp(framePage, framed));
   } finally {
     await context.close();
@@ -583,6 +586,7 @@ const main = async () => {
 
   await mkdir(WORK, { recursive: true });
   await mkdir(OUT, { recursive: true });
+  await mkdir(RAW_OUT, { recursive: true });
 
   const failures = [];
   const report = (slug, ok, detail) => {
@@ -602,7 +606,7 @@ const main = async () => {
     for (const shot of stills) {
       try {
         await takeStill(browser, framePage, shot);
-        report(shot.slug, true, `${await kilobytes(path.join(OUT, `${shot.slug}.framed.webp`))} framed, ${await kilobytes(path.join(OUT, `${shot.slug}.raw.webp`))} raw`);
+        report(shot.slug, true, `${await kilobytes(path.join(OUT, `${shot.slug}.framed.webp`))} framed, ${await kilobytes(path.join(RAW_OUT, `${shot.slug}.raw.webp`))} raw (not committed)`);
       } catch (error) {
         report(shot.slug, false, error.message.split('\n')[0]);
       }
