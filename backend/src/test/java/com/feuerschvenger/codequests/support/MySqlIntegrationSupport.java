@@ -18,6 +18,21 @@ public abstract class MySqlIntegrationSupport {
         MYSQL.start();
     }
 
+    /**
+     * The JDBC URL of the container with the host spelled {@code localhost}.
+     * <p>
+     * Testcontainers reports the host of the Docker daemon, which is not {@code localhost} when the daemon is remote. Tests that depend on the host name, such as the demo seeder's guard, register this URL instead.
+     * </p>
+     * <p>
+     * The URL assumes a local Docker daemon, Docker Desktop or a CI runner, because the mapped port is published on the machine that runs the tests. Against a remote daemon the port lives on another host and {@code localhost} would not reach the container.
+     * </p>
+     *
+     * @return a URL for the same database as {@code getJdbcUrl()}, reached through {@code localhost}
+     */
+    protected static String localhostJdbcUrl() {
+        return "jdbc:mysql://localhost:" + MYSQL.getMappedPort(3306) + "/" + MYSQL.getDatabaseName();
+    }
+
     @DynamicPropertySource
     static void datasource(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);

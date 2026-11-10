@@ -366,6 +366,59 @@ describe('useLightFlicker', () => {
       expect(vi.getTimerCount()).toBe(0);
     });
 
+    describe('the fallback while no anchor can be measured', () => {
+      beforeEach(() => {
+        scene.replaceChildren();
+      });
+
+      it('runs the timer while the scene holds no anchor at all', () => {
+        renderHook(() => useLightFlicker(targets, true, scene));
+
+        expect(vi.getTimerCount()).toBe(1);
+        expect(writesIn(1000)).toBeGreaterThanOrEqual(FLICKER_HZ - 2);
+      });
+
+      it('ends once an anchor of a drawn source appears, and then follows that flame', () => {
+        renderHook(() => useLightFlicker(targets, true, scene));
+        scene.append(candle);
+
+        act(() => {
+          announceLayout();
+        });
+        expect(vi.getTimerCount()).toBe(1);
+
+        act(() => observer().report(candle, false));
+        expect(vi.getTimerCount()).toBe(0);
+      });
+
+      it('stops when the only anchors in the scene belong to sources that are not drawn', () => {
+        renderHook(() => useLightFlicker(targets, true, scene, ['candle']));
+        expect(vi.getTimerCount()).toBe(1);
+
+        scene.append(torch);
+        act(() => {
+          announceLayout();
+        });
+
+        expect(vi.getTimerCount()).toBe(0);
+        expect(writesIn(1000)).toBe(0);
+      });
+
+      it('starts again when a drawn anchor appears after the loop stopped for lack of one', () => {
+        scene.append(torch);
+        renderHook(() => useLightFlicker(targets, true, scene, ['candle']));
+        expect(vi.getTimerCount()).toBe(0);
+
+        scene.append(candle);
+        act(() => {
+          announceLayout();
+        });
+
+        expect(vi.getTimerCount()).toBe(1);
+        expect([...observer().observed]).toEqual([candle]);
+      });
+    });
+
     it('starts from a clean slate after a theme switch', () => {
       const { rerender } = renderHook(({ active }) => useLightFlicker(targets, active, scene), {
         initialProps: { active: true },

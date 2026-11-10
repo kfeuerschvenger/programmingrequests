@@ -36,6 +36,8 @@ services:
       RATE_LIMIT_VOTE_CAPACITY:
       RATE_LIMIT_VOTE_WINDOW:
       CORS_ALLOWED_ORIGINS:
+      # Optional, off by default. SPRING_PROFILES_ACTIVE=demo makes the API wipe the database and load the demo quests at every start, and only against a local database host, and only when DEMO_SEED_CONFIRM=wipe is also set, which this file never passes through. Never set it on a stack that holds real data.
+      SPRING_PROFILES_ACTIVE:
     ports:
       # Loopback only. Requests that arrive through this mapping come from the app_net gateway, which is not a trusted proxy, so their X-Forwarded-For is ignored.
       - "127.0.0.1:8080:8080"
