@@ -168,7 +168,7 @@ VOTER_HASH_SECRET=<at least 32 bytes> SPRING_PROFILES_ACTIVE=dev ./gradlew bootR
 
 On PowerShell set the same values with `$env:NAME = "value"` and run `.\gradlew.bat bootRun`. `TRUSTED_PROXIES` defaults to loopback, which is right when Vite on the host proxies from `127.0.0.1`. `./gradlew bootJar` builds `build/libs/app.jar`.
 
-Frontend, with Node `^22.12.0 || >=24.0.0`, from `frontend/`: `npm ci`, then `npm run dev` (port 3000, proxying `/api` to `http://localhost:8080` unless `API_PROXY_TARGET` says otherwise). `npm run build` type-checks and builds into `frontend/dist`, and `npm run preview` serves it.
+Frontend, with Node `^22.12.0 || ^24.0.0 || >=26.0.0` (CI and the Docker images run Node 26 LTS), from `frontend/`: `npm ci`, then `npm run dev` (port 3000, proxying `/api` to `http://localhost:8080` unless `API_PROXY_TARGET` says otherwise). `npm run build` type-checks and builds into `frontend/dist`, and `npm run preview` serves it.
 
 ### The demo stack
 
