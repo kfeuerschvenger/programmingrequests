@@ -17,12 +17,14 @@ flowchart LR
   Status["Quest status"] -.->|"needs"| Admin
   Search["Search and tags"]
   Pixel["Pixel art companion"]
+  Observability["Observability"]
+  Languages["More languages"]
   classDef guild fill:#D9E8D5,stroke:#3F6B3A,color:#2A4727
   classDef brass fill:#F6E7BE,stroke:#8A6414,color:#5A410B
   classDef wax fill:#F6DAD6,stroke:#9E2B25,color:#6B1D19
   class Shared,Scale guild
   class Moderation,Admin,Status brass
-  class Search,Pixel wax
+  class Search,Pixel,Observability,Languages wax
 ```
 
 ## Quests on the horizon

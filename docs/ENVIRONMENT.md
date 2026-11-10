@@ -40,7 +40,7 @@ flowchart LR
 | `MYSQL_PASSWORD` | yes | none | Application database password |
 | `VOTER_HASH_SECRET` | yes | none | HMAC key for voter ids. At least 32 bytes, or the API refuses to start. `openssl rand -base64 48` makes one. Changing it orphans every stored vote |
 | `TRUSTED_EDGE_PROXIES` | no | empty | Outer proxies (addresses or CIDR, `/8` or longer for IPv4, `/16` or longer for IPv6, comma or space separated) allowed to state the visitor address. An invalid entry stops `web`. Empty trusts nobody. Production file only |
-| `TRUSTED_PROXIES` | no | the `app_net` subnet minus its gateway | Regular expression matched against the address connecting to the API. A blank value stops the API. Change it together with `APP_NET_SUBNET` |
+| `TRUSTED_PROXIES` | no | the `app_net` subnet minus its gateway | Regular expression matched against the address connecting to the API. Outside compose a blank value stops the API, but the compose files use `${TRUSTED_PROXIES:-...}`, which replaces a blank value with the default. Change it together with `APP_NET_SUBNET` |
 | `APP_NET_SUBNET` | no | `172.29.240.0/24` (production), `172.29.241.0/24` (development) | Subnet of the network between `web` and `api`. Pick a free range when the default overlaps a VPN or another stack |
 | `VITE_SITE_URL` | no | blank | Public origin of the site, baked into the Open Graph and Twitter image URLs when the web image is built. Blank leaves those tags out. It is read at build time, so changing it needs `docker compose build web` |
 

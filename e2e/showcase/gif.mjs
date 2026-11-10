@@ -1,7 +1,7 @@
 // Converts the video that `node capture.mjs hero` records into the README animation:
 // a GIF built with a two pass palette, and an MP4. Then it measures how smooth the MP4 is.
 //
-// The GIF is 20 frames a second at 1100 pixels wide, trimmed to the part of the recording that shows
+// The GIF is 20 frames a second and up to 1100 pixels wide (it tries 1100, 1040 and 980), trimmed to the part of the recording that shows
 // the flow (capture.mjs writes the cut points beside the video). It must stay under 8 MB, which is what
 // a README can carry without slowing the page. The MP4 is 25 frames a second.
 //
@@ -186,8 +186,8 @@ if (!glide || glide.rate < MIN_DISTINCT_FPS) {
   fail(`the scroll glide has ${glide ? glide.rate.toFixed(1) : 'no'} distinct frames a second, under ${MIN_DISTINCT_FPS}. Record the hero again in the full Chromium build.`);
 }
 
-// Publish both files or neither: each is copied to a temporary name beside its destination, then both are renamed. A failed copy
-// leaves the committed pair untouched, and a rename within one folder does not leave a half-written file behind.
+// Each file is replaced atomically: it is copied to a temporary name beside its destination, then renamed over it. A failed copy
+// leaves the committed files untouched, and a rename within one folder does not leave a half-written file behind.
 await mkdir(OUT, { recursive: true });
 const published = [
   [gif, path.join(OUT, 'hero.gif')],

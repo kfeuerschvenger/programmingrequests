@@ -101,7 +101,7 @@ flowchart TD
 
 - nginx is configured with `real_ip_header X-Forwarded-For` and one `set_real_ip_from` per entry of `TRUSTED_EDGE_PROXIES`. With the list empty nobody is trusted: the client address is the TCP peer and a client-sent `X-Forwarded-For` is ignored.
 - nginx then sets `X-Forwarded-For` to `$remote_addr` toward the API. The header is overwritten, never extended, so a forged value cannot reach the API.
-- Tomcat trusts that header only from a peer matching `TRUSTED_PROXIES`. The compose files narrow it to the `app_net` subnet minus its gateway, so only the web container qualifies, and the API refuses to start on a blank value because a blank one makes Tomcat trust every private range.
+- Tomcat trusts that header only from a peer matching `TRUSTED_PROXIES`. The compose files narrow it to the `app_net` subnet minus its gateway, so only the web container qualifies, and the API refuses to start on a blank value outside compose because a blank one makes Tomcat trust every private range (compose replaces a blank value with the default).
 - `ClientIdentityResolver` reads `request.getRemoteAddr()`, never the header. `ClientAddressNormalizer` maps IPv4-mapped IPv6 to IPv4 and reduces any other IPv6 address to its /64 prefix, since one subscriber can pick any address inside it.
 - `VoterHasher` computes HMAC-SHA256 of the normalised address, keyed by `VOTER_HASH_SECRET`. The secret has no default, must be at least 32 bytes, and the API refuses to start otherwise. Changing it orphans every stored vote.
 - The hash is stored as `votes.voter_hash BINARY(32)` and its hex form is the rate limiter's bucket key. One identity is computed per request and shared by the interceptors and the service.

@@ -148,15 +148,15 @@ El README es el aviso en el tablón. Los documentos técnicos son los archivos d
 
 | Documento | Qué encontrarás |
 |---|---|
-| [Architecture](docs/ARCHITECTURE.md) | Las capas del backend, la cadena de identidad del votante, el bloqueo de votos, el esquema, el frontend y la escena |
-| [Environment](docs/ENVIRONMENT.md) | Todas las variables, los servicios y redes de compose, la cadena de proxies y los flujos de desarrollo y demostración |
-| [Testing](docs/TESTING.md) | Niveles de prueba, Testcontainers, los umbrales de cobertura y el pipeline que toma estas capturas |
+| [Arquitectura](docs/ARCHITECTURE.md) | Las capas del backend, la cadena de identidad del votante, el bloqueo de votos, el esquema, el frontend y la escena |
+| [Entorno](docs/ENVIRONMENT.md) | Todas las variables, los servicios y redes de compose, la cadena de proxies y los flujos de desarrollo y demostración |
+| [Pruebas](docs/TESTING.md) | Niveles de prueba, Testcontainers, los umbrales de cobertura y el pipeline que toma estas capturas |
 | [CI](docs/CI.md) | Los tres trabajos, Dependabot y el flujo de ramas |
 | [API](docs/API.md) | Cada endpoint, códigos de error, límites de frecuencia e identidad del votante |
-| [Roadmap](docs/ROADMAP.md) | Las próximas misiones y lo que necesita cada una para comenzar |
+| [Hoja de ruta](docs/ROADMAP.md) | Las próximas misiones y lo que necesita cada una para comenzar |
 | [openapi.yaml](docs/openapi.yaml) | El contrato HTTP completo, exportado de la API en ejecución |
-| [Asset licences](docs/ASSETS-LICENSES.md) | De dónde sale cada tipografía, textura e imagen generada |
-| [Showcase guide](e2e/showcase/README.md) | Cómo repetir las capturas y la animación principal |
+| [Licencias de assets](docs/ASSETS-LICENSES.md) | De dónde sale cada tipografía, textura e imagen generada |
+| [Guía del showcase](e2e/showcase/README.md) | Cómo repetir las capturas y la animación principal |
 
 ---
 

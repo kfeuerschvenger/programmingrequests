@@ -7,13 +7,20 @@
 
 Five endpoints under `/api/ideas`, JSON in and out, errors as RFC 9457 problems. The full contract is [openapi.yaml](openapi.yaml), exported from the running API.
 
+`openapi.yaml` is generated from the running API by springdoc.
+
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'fontFamily':'Segoe UI, Helvetica, Arial, sans-serif','primaryColor':'#F3E6C8','primaryBorderColor':'#3B2A1E','primaryTextColor':'#2B2622','lineColor':'#8A6414','textColor':'#2B2622','edgeLabelBackground':'#FBF5E7'}}}%%
 flowchart LR
-  L["GET /api/ideas"] --> P["POST /api/ideas"]
-  P --> G["GET /api/ideas/{id}"]
-  G --> V["PUT /api/ideas/{id}/vote"]
-  V --> R["DELETE /api/ideas/{id}/vote"]
+  subgraph Ideas["/api/ideas"]
+    L["GET /api/ideas"]
+    P["POST /api/ideas"]
+    G["GET /api/ideas/{id}"]
+  end
+  subgraph Votes["/api/ideas/{id}/vote"]
+    V["PUT"]
+    R["DELETE"]
+  end
   classDef guild fill:#D9E8D5,stroke:#3F6B3A,color:#2A4727
   classDef brass fill:#F6E7BE,stroke:#8A6414,color:#5A410B
   classDef wax fill:#F6DAD6,stroke:#9E2B25,color:#6B1D19
