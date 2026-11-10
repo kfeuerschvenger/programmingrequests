@@ -17,7 +17,7 @@ flowchart LR
 ## Prerequisites
 
 - Docker with Compose v2. The override file uses the `!override` tag, which the Compose file merge reference documents but does not date, so no minimum version is claimed. The stack was tested with Docker Compose v2.40.3 (Docker Engine 29.1.2).
-- Node `^22.12.0 || >=24.0.0`.
+- Node `^22.12.0 || ^24.0.0 || >=26.0.0` (CI and the Docker images run Node 26 LTS).
 - Playwright and its Chromium: from this folder run `npm ci` and `npm run install:browsers`. The hero needs the full Chromium build that `install:browsers` installs, not only the headless shell.
 - ffmpeg for `gif.mjs`. Install it with `winget install Gyan.FFmpeg`, `brew install ffmpeg` or `apt install ffmpeg`, and point `FFMPEG` at the executable when it is not on the PATH. It needs libx264.
 

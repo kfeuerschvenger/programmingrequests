@@ -43,8 +43,8 @@ One file, `.github/workflows/ci.yml`, named `CI`.
 | Job | Directory | Steps |
 |---|---|---|
 | `backend` | `backend` | Temurin 25 with the Gradle cache, then `./gradlew build --no-daemon`: compile, every test including the Testcontainers ones on the runner's Docker, and the 85 percent JaCoCo gate |
-| `frontend` | `frontend` | Node 22 with the npm cache, `npm ci`, `lint`, `format:check`, `typecheck`, `test` (Vitest with the 70 percent gate), `build`, and `npm audit --audit-level=low` |
-| `showcase scripts` | `e2e/showcase` | Node 22, `npm ci`, `npm run check` (syntax of the capture scripts) and `npm audit --audit-level=low` |
+| `frontend` | `frontend` | Node 26 with the npm cache, `npm ci`, `lint`, `format:check`, `typecheck`, `test` (Vitest with the 70 percent gate), `build`, and `npm audit --audit-level=low` |
+| `showcase scripts` | `e2e/showcase` | Node 26, `npm ci`, `npm run check` (syntax of the capture scripts) and `npm audit --audit-level=low` |
 
 The captures never run in CI, because they need a stack and a browser. The third job installs the pinned dependencies, checks that the scripts parse and audits them.
 
