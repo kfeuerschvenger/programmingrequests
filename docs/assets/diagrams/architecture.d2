@@ -1,0 +1,66 @@
+# Code Quests architecture, light variant.
+# Render from this folder:
+#   d2 --theme 0 --pad 40 architecture.d2 architecture.svg
+#   d2 --theme 200 --pad 40 architecture-dark.d2 architecture-dark.svg
+# The colours are the six brand hues: wood #3B2A1E, parchment #F3E6C8, ink #2B2622, wax #9E2B25, brass #C8962E, guild green #3F6B3A.
+# architecture-dark.d2 imports this file and swaps the classes for night tones.
+
+grid-columns: 4
+horizontal-gap: 140
+
+classes: {
+  parchment: {style: {fill: "#F3E6C8"; stroke: "#3B2A1E"; font-color: "#2B2622"; border-radius: 12; stroke-width: 2}}
+  wood: {style: {fill: "#3B2A1E"; stroke: "#2B2622"; font-color: "#F3E6C8"; border-radius: 12; stroke-width: 2}}
+  brass: {style: {fill: "#F6E7BE"; stroke: "#8A6414"; font-color: "#5A410B"; border-radius: 12; stroke-width: 2}}
+  guild: {style: {fill: "#D9E8D5"; stroke: "#3F6B3A"; font-color: "#2A4727"; stroke-width: 2}}
+  wax: {style: {fill: "#F6DAD6"; stroke: "#9E2B25"; font-color: "#6B1D19"; border-radius: 12; stroke-width: 2}}
+  group-wood: {style: {fill: "#FBF5E7"; stroke: "#3B2A1E"; font-color: "#3B2A1E"; border-radius: 16; stroke-dash: 4; bold: true}}
+  group-brass: {style: {fill: "#FDF8EA"; stroke: "#C8962E"; font-color: "#5A410B"; border-radius: 16; stroke-dash: 4; bold: true}}
+  group-guild: {style: {fill: "#F1F7EF"; stroke: "#3F6B3A"; font-color: "#2A4727"; border-radius: 16; stroke-dash: 4; bold: true}}
+  group-wax: {style: {fill: "#FBEFED"; stroke: "#9E2B25"; font-color: "#6B1D19"; border-radius: 16; stroke-dash: 4; bold: true}}
+  flow: {style: {stroke: "#8A6414"; font-color: "#5A410B"; stroke-width: 2}}
+  private: {style: {stroke: "#3F6B3A"; font-color: "#2A4727"; stroke-width: 2; stroke-dash: 5}}
+}
+
+outside: "Outside" {
+  class: group-wood
+  grid-rows: 2
+  vertical-gap: 90
+  browser: "Visitor's browser\nReact 19 single page app" {class: parchment}
+  edge: "Edge proxy (optional)\nstates the visitor address\nin X-Forwarded-For" {class: wood}
+}
+
+web: "web container · nginx 1.31" {
+  class: group-brass
+  grid-rows: 3
+  vertical-gap: 40
+  realip: "realip\nset_real_ip_from\nTRUSTED_EDGE_PROXIES" {class: brass}
+  csp: "CSP and security headers\nstatic bundle, SPA fallback" {class: brass}
+  proxy: "/api/ only\nX-Forwarded-For overwritten\nwith the peer address" {class: brass}
+}
+
+api: "api container · Spring Boot 4.1, Java 25" {
+  class: group-guild
+  grid-rows: 5
+  vertical-gap: 30
+  valve: "Tomcat RemoteIpValve\nTRUSTED_PROXIES" {class: guild}
+  filters: "Filters and interceptors\nrequest id, timing, headers,\nrate limits, voter hash" {class: guild}
+  controller: "IdeaController\nand the ProblemDetail handler" {class: guild}
+  service: "Handler and service\ntransactions, row lock,\nvote upsert" {class: guild}
+  repo: "Repositories\nSpring Data JPA" {class: guild}
+}
+
+data: "Data" {
+  class: group-wax
+  grid-rows: 1
+  mysql: "MySQL 8.4\nideas and votes\nFlyway migrations" {shape: cylinder; class: wax}
+}
+
+outside.browser -> outside.edge: "HTTPS" {class: flow}
+outside.edge -> web.realip: "prnetwork" {class: flow}
+outside.browser -> web.realip: "direct, local run" {class: private}
+web.realip -> web.csp {class: flow}
+web.csp -> web.proxy {class: flow}
+web.proxy -> api.valve: "app_net" {class: flow}
+api.valve -> api.filters -> api.controller -> api.service -> api.repo {class: flow}
+api.repo -> data.mysql: "db_net" {class: flow}
