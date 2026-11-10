@@ -57,13 +57,33 @@ const run = (label, args) => {
 };
 
 const video = path.join(WORK, 'hero.webm');
+const cutFile = path.join(WORK, 'hero.json');
+const startedFile = path.join(WORK, 'hero.started');
 let cut;
 
+// capture.mjs deletes the previous recording and writes the marker when a hero run starts. A recording that is missing, or older than
+// the marker, belongs to a run that did not finish, and converting it would publish a stale animation.
+const modified = async file => {
+  try {
+    return (await stat(file)).mtimeMs;
+  } catch {
+    return null;
+  }
+};
+const [videoTime, cutTime, startedTime] = await Promise.all([modified(video), modified(cutFile), modified(startedFile)]);
+if (videoTime === null || cutTime === null) {
+  fail(`No complete recording in ${WORK} (needs hero.webm and hero.json). Record it first: node capture.mjs hero`);
+}
+if (startedTime === null) {
+  fail(`No ${startedFile}, so the recording cannot be tied to a finished run. Record it again: node capture.mjs hero`);
+}
+if (videoTime < startedTime || cutTime < startedTime) {
+  fail('The recording is older than the latest hero run, which did not finish. Record it again: node capture.mjs hero');
+}
 try {
-  await stat(video);
-  cut = JSON.parse(await readFile(path.join(WORK, 'hero.json'), 'utf8'));
+  cut = JSON.parse(await readFile(cutFile, 'utf8'));
 } catch {
-  fail(`No recording at ${video}. Record it first: node capture.mjs hero`);
+  fail(`${cutFile} is not readable JSON. Record the hero again: node capture.mjs hero`);
 }
 
 await mkdir(OUT, { recursive: true });

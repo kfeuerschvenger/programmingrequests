@@ -28,7 +28,11 @@ const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:8095').replace(/\/$/
 const OUT = process.env.SHOWCASE_OUT ? path.resolve(process.env.SHOWCASE_OUT) : path.join(REPO, 'docs', 'assets', 'screens');
 /** Intermediate files that are not committed: the hero video and its cut points. */
 const WORK = path.join(here, 'out');
-
+/** The hero recording, its cut points and the marker that tells gif.mjs when the run that produced them started. */
+const HERO_VIDEO = path.join(WORK, 'hero.webm');
+const HERO_CUT = path.join(WORK, 'hero.json');
+const HERO_PALETTE = path.join(WORK, 'hero-palette.png');
+const HERO_STARTED = path.join(WORK, 'hero.started');
 const DESKTOP = { width: 1600, height: 1000 };
 const MOBILE = { width: 390, height: 844 };
 /**
@@ -493,7 +497,9 @@ const launchHeroBrowser = () => chromium.launch({ channel: 'chromium' });
 
 const recordHero = async () => {
   const dir = path.join(WORK, 'video');
-  await rm(dir, { recursive: true, force: true });
+  // A failed run must leave nothing for gif.mjs to convert: the previous recording, its cut points and any partial video go first.
+  await Promise.all([dir, HERO_VIDEO, HERO_CUT, HERO_PALETTE].map(target => rm(target, { recursive: true, force: true })));
+  await writeFile(HERO_STARTED, new Date().toISOString());
 
   const browser = await launchHeroBrowser();
   const context = await openContext(browser, {
@@ -563,8 +569,8 @@ const recordHero = async () => {
 
     await context.close();
     const video = await page.video().path();
-    await copyFile(video, path.join(WORK, 'hero.webm'));
-    await writeFile(path.join(WORK, 'hero.json'), JSON.stringify({ start: Number(startAt.toFixed(2)), end: Number(endAt.toFixed(2)), motion: Object.fromEntries(Object.entries(motion).map(([name, window]) => [name, window.map(second => Number(second.toFixed(2)))])) }));
+    await copyFile(video, HERO_VIDEO);
+    await writeFile(HERO_CUT,JSON.stringify({ start: Number(startAt.toFixed(2)), end: Number(endAt.toFixed(2)), motion: Object.fromEntries(Object.entries(motion).map(([name, window]) => [name, window.map(second => Number(second.toFixed(2)))])) }));
   } finally {
     await context.close().catch(() => {});
     await browser.close().catch(() => {});
