@@ -23,7 +23,28 @@ import { chromium } from 'playwright';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(here, '..', '..');
 
-const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:8095').replace(/\/$/, '');
+/** The site to capture and its host. Both are set once by parseBaseUrl at the start of main, before any request is made. */
+let BASE_URL = '';
+let BASE_HOST = '';
+
+/**
+ * Reads BASE_URL once. It must be an http or https address with a hostname, so a typo such as 'localhost:8095' (which parses as the
+ * scheme 'localhost:') fails here with the variable and its value instead of as an unrelated error later.
+ */
+const parseBaseUrl = () => {
+  const value = process.env.BASE_URL ?? 'http://localhost:8095';
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`BASE_URL is not a valid URL: '${value}'. Use a full address such as http://localhost:8095.`);
+  }
+  if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || !parsed.hostname) {
+    throw new Error(`BASE_URL must be an http or https address with a host name, got '${value}'. Use a full address such as http://localhost:8095.`);
+  }
+  BASE_URL = value.replace(/\/$/, '');
+  BASE_HOST = parsed.hostname.toLowerCase();
+};
 
 /** Committed images. */
 const OUT = process.env.SHOWCASE_OUT ? path.resolve(process.env.SHOWCASE_OUT) : path.join(REPO, 'docs', 'assets', 'screens');
@@ -76,15 +97,9 @@ const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
  * lifts the stop for a demo stack that is deliberately not on loopback.
  */
 const requireLoopback = what => {
-  let host;
-  try {
-    host = new URL(BASE_URL).hostname.toLowerCase();
-  } catch {
-    throw new Error(`BASE_URL is not a valid URL: '${BASE_URL}'. Use a full address such as http://localhost:8095.`);
-  }
-  if (LOOPBACK_HOSTS.has(host) || process.env.SHOWCASE_ALLOW_REMOTE === '1') return;
+  if (LOOPBACK_HOSTS.has(BASE_HOST) || process.env.SHOWCASE_ALLOW_REMOTE === '1') return;
   throw new Error(
-    `${what} writes to the site and BASE_URL points at '${host}', which is not this machine. Capture only against the demo stack. ` +
+    `${what} writes to the site and BASE_URL points at '${BASE_HOST}', which is not this machine. Capture only against the demo stack. ` +
       'Set SHOWCASE_ALLOW_REMOTE=1 only when that remote host is a throwaway demo stack.',
   );
 };
@@ -457,6 +472,10 @@ const takeStill = async (browser, framePage, shot) => {
 
     await writeFile(path.join(RAW_OUT, `${shot.slug}.raw.webp`), await toWebp(framePage, raw));
     await writeFile(path.join(OUT, `${shot.slug}.framed.webp`), await toWebp(framePage, framed));
+  } catch (error) {
+    // An aborted write makes the page fail further down (a timeout, a missing element). The attempted write is the cause, so it is what gets reported.
+    assertNoWrites();
+    throw error;
   } finally {
     await context.close();
   }
@@ -618,6 +637,7 @@ const recordHero = async () => {
 };
 
 const main = async () => {
+  parseBaseUrl();
   const slugs = selectSlugs();
   const stills = SHOTS.filter(shot => slugs.includes(shot.slug));
 

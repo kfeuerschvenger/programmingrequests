@@ -18,7 +18,7 @@
 // Usage, from e2e/showcase: node gif.mjs
 
 import { spawnSync } from 'node:child_process';
-import { copyFile, mkdir, readFile, stat } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -167,8 +167,8 @@ const measureSmoothness = () => {
 };
 
 const gifBytes = await size(gif);
-console.log(`OK   hero.gif  ${megabytes(gifBytes)}`);
-console.log(`OK   hero.mp4  ${megabytes(await size(mp4))}`);
+console.log(`encoded hero.gif  ${megabytes(gifBytes)}`);
+console.log(`encoded hero.mp4  ${megabytes(await size(mp4))}`);
 
 const smooth = measureSmoothness();
 console.log(`     ${smooth.distinct} distinct frames in ${smooth.duration.toFixed(1)} s: ${smooth.average.toFixed(1)} a second on average`);
@@ -186,7 +186,19 @@ if (!glide || glide.rate < MIN_DISTINCT_FPS) {
   fail(`the scroll glide has ${glide ? glide.rate.toFixed(1) : 'no'} distinct frames a second, under ${MIN_DISTINCT_FPS}. Record the hero again in the full Chromium build.`);
 }
 
+// Publish both files or neither: each is copied to a temporary name beside its destination, then both are renamed. A failed copy
+// leaves the committed pair untouched, and a rename within one folder does not leave a half-written file behind.
 await mkdir(OUT, { recursive: true });
-await copyFile(gif, path.join(OUT, 'hero.gif'));
-await copyFile(mp4, path.join(OUT, 'hero.mp4'));
+const published = [
+  [gif, path.join(OUT, 'hero.gif')],
+  [mp4, path.join(OUT, 'hero.mp4')],
+];
+const temporary = published.map(([, target]) => `${target}.${process.pid}.tmp`);
+try {
+  for (const [index, [source]] of published.entries()) await copyFile(source, temporary[index]);
+  for (const [index, [, target]] of published.entries()) await rename(temporary[index], target);
+} catch (error) {
+  await Promise.all(temporary.map(file => rm(file, { force: true })));
+  fail(`could not publish hero.gif and hero.mp4 to ${OUT}: ${error.message}`);
+}
 console.log(`OK   published hero.gif and hero.mp4 to ${OUT}`);
