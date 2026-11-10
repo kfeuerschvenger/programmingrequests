@@ -1,0 +1,155 @@
+.header {
+  position: relative;
+  padding-bottom: 1.6rem;
+}
+
+/*
+ * The sign and what holds it up. The two chains and the rope are placed against this box, which is exactly as wide as the sign, and it is a size container so that the title and the chains scale with the sign (cqw).
+ * The sign picture is 4118 x 1006, so its height is 100cqw / 4.0935.
+ */
+.hang {
+  --sign-ratio: 4.0935;
+
+  position: relative;
+  width: min(40rem, 100%);
+  margin-inline: auto;
+  padding-top: 3.6rem;
+  container-type: inline-size;
+}
+
+/* Each chain runs from the very top of the page, over the wall and the top beam, down to the top opening of a ring, which is 11.13% down the sign. The picture holds the first cut link, so the repeat is anchored at the bottom to meet it. */
+.chain {
+  position: absolute;
+  top: calc((var(--frame) + var(--wall-pad)) * -1);
+  width: 3.4cqw;
+  height: calc(3.6rem + var(--frame) + var(--wall-pad) + 11.13cqw / var(--sign-ratio));
+  background-image: var(--img-chain);
+  background-size: 100% auto;
+  background-repeat: repeat-y;
+  background-position: center bottom;
+  filter: drop-shadow(3px 4px 3px rgb(0 0 0 / 0.55));
+  pointer-events: none;
+}
+
+/* The centres of the ring holes, as a share of the sign width. */
+.chainLeft {
+  left: calc(25.1% - 1.7cqw);
+}
+
+.chainRight {
+  left: calc(73.83% - 1.7cqw);
+}
+
+.rope {
+  position: absolute;
+  top: 1.1rem;
+  left: calc(100% + 0.9rem);
+  display: none;
+  width: 3.1rem;
+  height: auto;
+  filter: drop-shadow(4px 5px 3px rgb(0 0 0 / 0.5));
+  pointer-events: none;
+
+  @media (min-width: 760px) {
+    display: block;
+  }
+}
+
+/* The plank is a picture, the title on it is real text. */
+.sign {
+  position: relative;
+  aspect-ratio: 4118 / 1006;
+  background-image: var(--img-sign);
+  background-size: 100% 100%;
+  filter: drop-shadow(6px 9px 6px rgb(0 0 0 / 0.6));
+}
+
+/* The title fills the text-safe rectangle of the plank (x 9.5% to 90.5%, y 25% to 86%) and is centred in it. */
+.title {
+  position: absolute;
+  inset: 25% 9.5% 14%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-size: 10.5cqw;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.brand {
+  color: #fbe3a0;
+  text-decoration: none;
+  text-shadow:
+    0 2px 0 rgb(40 20 4 / 0.9),
+    0 4px 10px rgb(0 0 0 / 0.65);
+}
+
+/* Two lines, one sentence each, at every width. */
+.tagline {
+  margin: 1.5rem 0 0;
+  color: var(--cq-cream);
+  font-family: var(--cq-heading-font);
+  font-size: clamp(1.2rem, 4vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-align: center;
+  text-shadow:
+    0 2px 0 rgb(0 0 0 / 0.7),
+    0 3px 12px rgb(0 0 0 / 0.7);
+}
+
+.line {
+  display: block;
+}
+
+/* The small controls: two iron-bound planks apart from the sign. On wide screens they sit in the top right corner of the board. */
+.tools {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.3rem;
+
+  @media (min-width: 960px) {
+    position: absolute;
+    top: 0.2rem;
+    right: 0;
+    margin: 0;
+  }
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.15rem;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 11px 17px;
+  border-image-source: var(--img-button-wood);
+  border-image-slice: 36 56 36 56 fill;
+  border-image-width: 11px 17px;
+  color: var(--cq-cream);
+  font-family: var(--cq-heading-font);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  filter: drop-shadow(2px 3px 2px rgb(0 0 0 / 0.55));
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 140ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  @mixin hover {
+    filter: drop-shadow(2px 3px 2px rgb(0 0 0 / 0.55)) brightness(1.18);
+  }
+
+  &:active {
+    transform: translateY(2px);
+  }
+}

@@ -1,6 +1,6 @@
 .gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -35,5 +35,19 @@ out/
 ### VS Code ###
 .vscode/
 
+### Node ###
+node_modules/
+dist/
+
 .env*
 !.env.example
+
+### Local only ###
+.no-telemetry
+# Showcase pipeline: the hero recording, its cut points and the raw stills. Only the framed stills and the hero are committed.
+e2e/showcase/out/
+.atl/
+docs/private/
+.claude/worktrees/
+# Local port mapping for the compose stack, described in the README.
+docker-compose.override.yml

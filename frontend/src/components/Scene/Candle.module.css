@@ -1,0 +1,52 @@
+/* The stand sits on the top edge of the sort control, to the left, so it never covers a label. */
+.stand {
+  position: absolute;
+  right: 0.4rem;
+  bottom: calc(100% - 4px);
+  z-index: 3;
+  width: 8.6rem;
+  height: 4.6rem;
+  pointer-events: none;
+}
+
+.ledge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 14px;
+  border-radius: 3px;
+  background-image: var(--img-beam);
+  background-size: auto 14px;
+  box-shadow: 2px 4px 5px rgb(0 0 0 / 0.65);
+}
+
+.inkwell {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 11px;
+  width: 30px;
+  height: auto;
+  filter: drop-shadow(2px 3px 2px rgb(0 0 0 / 0.6));
+}
+
+.candle {
+  position: absolute;
+  bottom: 11px;
+  left: 0.5rem;
+  width: 64px;
+}
+
+.candle img {
+  display: block;
+  width: 64px;
+  height: auto;
+  filter: drop-shadow(2px 3px 2px rgb(0 0 0 / 0.6));
+}
+
+/* The wick is about two fifths of the way across the top of the candle. */
+.flame {
+  left: 40%;
+  bottom: 100%;
+  margin: 0 0 -10px -13px;
+}

@@ -1,0 +1,12 @@
+.tooltip {
+  border: 1px solid rgb(0 0 0 / 0.6);
+  background-color: #1f150e;
+  color: var(--cq-cream);
+  font-size: 0.95rem;
+  box-shadow: 0 6px 12px rgb(0 0 0 / 0.45);
+}
+
+.arrow {
+  background-color: #1f150e;
+  border: 1px solid rgb(0 0 0 / 0.6);
+}

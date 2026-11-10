@@ -1,0 +1,94 @@
+/*
+ * The strips are 8 frames side by side. `steps(8, jump-none)` shows eight distinct positions, 0% through 100%, which are exactly the eight frames. The candle strip's last frame is shorter and pops, so only its first seven are played.
+ */
+.anchor {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+/*
+ * The sprite is a window one frame wide. The strip is its pseudo element, eight windows wide, and the animation slides it with a transform, which the compositor plays without the main thread: animating `background-position` would make the page produce a frame at every refresh for as long as a flame is on screen.
+ */
+.sprite {
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.sprite::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 800%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: play 0.72s steps(8, jump-none) infinite;
+  /* The lights set --play on the slot that holds the sprite: paused while the tab is hidden or the flame is out of view, so an unseen fire costs no frames. */
+  animation-play-state: var(--play, running);
+  will-change: transform;
+}
+
+.torch {
+  width: 74px;
+  height: 102px;
+}
+
+.lantern {
+  width: 34px;
+  height: 47px;
+}
+
+.candle {
+  width: 26px;
+  height: 48px;
+}
+
+.sprite.torch::before,
+.sprite.lantern::before {
+  background-image: var(--img-flame);
+}
+
+.sprite.lantern::before {
+  animation-duration: 0.84s;
+}
+
+.sprite.candle::before {
+  background-image: var(--img-candle-flame);
+  animation-name: play-candle;
+  animation-duration: 0.9s;
+  animation-timing-function: steps(7, jump-none);
+}
+
+/* The last frame is 7 windows along the strip of 8: -7/8 of the strip's own width. */
+@keyframes play {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-87.5%);
+  }
+}
+
+/* Only the first seven frames of the candle strip are played: 6 windows along, -6/8 of the strip. */
+@keyframes play-candle {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-75%);
+  }
+}
+
+/* Reduced motion freezes the fire on its first frame. */
+@media (prefers-reduced-motion: reduce) {
+  .sprite::before {
+    animation: none !important;
+    transform: none;
+  }
+}

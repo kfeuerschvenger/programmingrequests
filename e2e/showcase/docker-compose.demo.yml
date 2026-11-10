@@ -1,0 +1,26 @@
+# Layered over the root docker-compose.yml to run a throwaway demo stack for the captures. See README.md in this folder.
+# It starts the API with the demo profile, publishes only the web container on loopback, and moves the stack to its own subnet,
+# so it can run beside the development stacks without sharing their host ports, network range or edge network.
+services:
+  db:
+    # No host port: only the API reaches the database.
+    ports: !override []
+  api:
+    ports: !override []
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      # The second opt-in the seeder demands before it wipes anything. It is set only here, never in the root compose files.
+      DEMO_SEED_CONFIRM: wipe
+      # The demo subnet below minus its gateway, as TRUSTED_PROXIES expects.
+      TRUSTED_PROXIES: 172\.29\.250\.(?!1\z)\d+
+  web:
+    ports:
+      - "127.0.0.1:${SHOWCASE_PORT:-8095}:80"
+    networks: !override
+      - app_net
+
+networks:
+  app_net:
+    ipam:
+      config: !override
+        - subnet: 172.29.250.0/24

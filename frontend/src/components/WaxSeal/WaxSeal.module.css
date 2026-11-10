@@ -1,0 +1,67 @@
+.root {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.6rem;
+  flex: none;
+}
+
+.seal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.4rem;
+  filter: drop-shadow(1px 2px 2px rgb(40 8 4 / 0.5));
+}
+
+.seal[data-stamped] {
+  animation: stamp 420ms cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+
+/* The seal is a picture of pressed wax; the score is real text on top of it. */
+.disc {
+  position: absolute;
+  inset: 0;
+  background-image: var(--img-wax-seal);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.digits {
+  position: relative;
+  color: var(--cq-glyph);
+  font-family: var(--cq-heading-font);
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 1px rgb(60 6 4 / 0.7);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.seal[data-size='md'] .digits {
+  font-size: 1.3rem;
+}
+
+.seal[data-size='sm'] .digits {
+  font-size: 1.05rem;
+}
+
+.seal[data-size='xs'] .digits {
+  font-size: 0.85rem;
+}
+
+@keyframes stamp {
+  0% {
+    transform: translateY(-14px) scale(1.5) rotate(-12deg);
+    opacity: 0;
+  }
+
+  55% {
+    transform: translateY(1px) scale(0.92) rotate(2deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}

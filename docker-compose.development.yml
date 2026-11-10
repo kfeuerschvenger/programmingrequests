@@ -1,65 +1,99 @@
 services:
   db:
-    image: mysql:8.0
-    container_name: mysql_db
+    image: mysql:8.4.13
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3307:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - code_quests_db:/var/lib/mysql
     networks:
-      - prnetwork
+      - db_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  backend:
+  api:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: springboot_server
     restart: always
     volumes:
-      - ./src:/back/src
+      - ./backend/src:/back/src
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE}
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      # Required: the API refuses to start without a secret of at least 32 bytes.
+      VOTER_HASH_SECRET: ${VOTER_HASH_SECRET}
+      # Tomcat trusts X-Forwarded-For only from this regular expression: the app_net subnet minus its gateway, so only the web container qualifies. Override it with a regex that still matches nothing but the proxy in front of the API.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172\.29\.241\.(?!1\z)\d+}
+      # Optional: a key without a value is passed through only when it is set in the environment or the env file.
+      RATE_LIMIT_CREATE_CAPACITY:
+      RATE_LIMIT_CREATE_WINDOW:
+      RATE_LIMIT_VOTE_CAPACITY:
+      RATE_LIMIT_VOTE_WINDOW:
+      CORS_ALLOWED_ORIGINS:
     ports:
-      - "8080:8080"
+      # Loopback only. Requests that arrive through this mapping come from the app_net gateway, which is not a trusted proxy, so their X-Forwarded-For is ignored.
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - prnetwork
+      app_net:
+        # Unique name for the web proxy: another service called api on a shared network cannot answer for it.
+        aliases:
+          - code-quests-api
+      db_net:
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/manage/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
 
-  frontend:
+  web:
     build:
-      context: ./src/main/react/programmingrequests
+      context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: react_vite
+      args:
+        # Optional: the public origin of the site, used for the Open Graph and Twitter image URLs. Blank leaves those tags out.
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
     restart: always
     ports:
+      # Published by Docker, so every browser reaches the Vite dev server from the same address, Docker's gateway. The API therefore sees one identity for all browsers on this port, and the rate limits are shared between them.
       - "3000:3000"
     volumes:
-      - .:/frontend
+      - ./frontend:/frontend
       - /frontend/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      # The Vite dev server forwards /api to the api service on the compose network.
+      - API_PROXY_TARGET=http://code-quests-api:8080
     depends_on:
-      - backend
+      api:
+        condition: service_healthy
     networks:
-      - prnetwork
+      - app_net
 
 volumes:
-  mysql_data:
+  code_quests_db:
 
 networks:
-  prnetwork:
-    name: prnetwork
+  # Carries the traffic between web and api. The subnet is fixed so TRUSTED_PROXIES can name it, and it sits high in 172.16.0.0/12, which Docker's default allocator reaches only after many networks and which common LAN ranges rarely use. This stack and the production stack use different default subnets so their networks never overlap, but they still cannot run on one host at the same time: both publish the same host ports (3307 and 8080). Compose fails with an overlap error when the host already routes the range, for example through a VPN or another stack: set APP_NET_SUBNET to a free range and TRUSTED_PROXIES to a regex for the same range, both together. The gateway (the first address) is the host side of published ports, so the TRUSTED_PROXIES default excludes it.
+  app_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${APP_NET_SUBNET:-172.29.241.0/24}
+  # Only db and api attach to this network.
+  db_net:
     driver: bridge
