@@ -1,7 +1,7 @@
 // Converts the video that `node capture.mjs hero` records into the README animation:
 // a GIF built with a two pass palette, and an MP4. Then it measures how smooth the MP4 is.
 //
-// The GIF is 20 frames a second at 1100 pixels wide, trimmed to the part of the recording that shows
+// The GIF is 20 frames a second and up to 1100 pixels wide (it tries 1100, 1040 and 980), trimmed to the part of the recording that shows
 // the flow (capture.mjs writes the cut points beside the video). It must stay under 8 MB, which is what
 // a README can carry without slowing the page. The MP4 is 25 frames a second.
 //
@@ -18,7 +18,7 @@
 // Usage, from e2e/showcase: node gif.mjs
 
 import { spawnSync } from 'node:child_process';
-import { copyFile, mkdir, readFile, stat } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -167,8 +167,8 @@ const measureSmoothness = () => {
 };
 
 const gifBytes = await size(gif);
-console.log(`OK   hero.gif  ${megabytes(gifBytes)}`);
-console.log(`OK   hero.mp4  ${megabytes(await size(mp4))}`);
+console.log(`encoded hero.gif  ${megabytes(gifBytes)}`);
+console.log(`encoded hero.mp4  ${megabytes(await size(mp4))}`);
 
 const smooth = measureSmoothness();
 console.log(`     ${smooth.distinct} distinct frames in ${smooth.duration.toFixed(1)} s: ${smooth.average.toFixed(1)} a second on average`);
@@ -186,7 +186,19 @@ if (!glide || glide.rate < MIN_DISTINCT_FPS) {
   fail(`the scroll glide has ${glide ? glide.rate.toFixed(1) : 'no'} distinct frames a second, under ${MIN_DISTINCT_FPS}. Record the hero again in the full Chromium build.`);
 }
 
+// Each file is replaced atomically: it is copied to a temporary name beside its destination, then renamed over it. A failed copy
+// leaves the committed files untouched, and a rename within one folder does not leave a half-written file behind.
 await mkdir(OUT, { recursive: true });
-await copyFile(gif, path.join(OUT, 'hero.gif'));
-await copyFile(mp4, path.join(OUT, 'hero.mp4'));
+const published = [
+  [gif, path.join(OUT, 'hero.gif')],
+  [mp4, path.join(OUT, 'hero.mp4')],
+];
+const temporary = published.map(([, target]) => `${target}.${process.pid}.tmp`);
+try {
+  for (const [index, [source]] of published.entries()) await copyFile(source, temporary[index]);
+  for (const [index, [, target]] of published.entries()) await rename(temporary[index], target);
+} catch (error) {
+  await Promise.all(temporary.map(file => rm(file, { force: true })));
+  fail(`could not publish hero.gif and hero.mp4 to ${OUT}: ${error.message}`);
+}
 console.log(`OK   published hero.gif and hero.mp4 to ${OUT}`);

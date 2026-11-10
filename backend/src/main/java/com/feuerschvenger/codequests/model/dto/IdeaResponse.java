@@ -31,6 +31,6 @@ public record IdeaResponse(
         @Schema(description = "Sum of all votes on the idea.", example = "17")
         int score,
 
-        @Schema(description = "The caller's own vote: 1, -1, or 0 when the caller has not voted.", example = "1", allowableValues = {"-1", "0", "1"})
+        @Schema(description = "The caller's own vote: 1, -1, or 0 when the caller has not voted.", example = "1")
         int myVote) {
 }

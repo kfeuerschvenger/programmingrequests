@@ -76,6 +76,16 @@ tasks.named('bootJar') {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Lets OpenApiExportTest rewrite docs/openapi.yaml: ./gradlew test --tests "*OpenApiExportTest" -Dopenapi.write=true
+	def openapiWrite = System.getProperty('openapi.write', 'false')
+	systemProperty 'openapi.write', openapiWrite
+	// The export lives outside this module (same path as EXPORT in OpenApiExportTest); declaring it keeps an edit
+	// to it from leaving the test task up to date. inputs.files tolerates a missing file, so the test decides.
+	inputs.files(file('../docs/openapi.yaml'))
+		.withPathSensitivity(PathSensitivity.RELATIVE)
+		.withPropertyName('openapiExport')
+	// Write mode always runs, so regenerating twice in a row still writes the file.
+	outputs.upToDateWhen { !openapiWrite.toBoolean() }
 	finalizedBy tasks.named('jacocoTestReport')
 }
 
