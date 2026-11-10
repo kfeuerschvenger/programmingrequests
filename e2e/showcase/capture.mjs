@@ -31,6 +31,11 @@ const WORK = path.join(here, 'out');
 
 const DESKTOP = { width: 1600, height: 1000 };
 const MOBILE = { width: 390, height: 844 };
+/**
+ * The window height of the top shots. They use the 1600 pixel width of the other stills, but the post-a-quest form ends about 25 pixels below a 1000 pixel window,
+ * so these two windows are 40 pixels taller to keep the whole form, its button included, in the picture. The window is resized, not the capture, because the fixed lighting layers cover only the window.
+ */
+const TOP_HEIGHT = 1040;
 /** The hero is recorded in a smaller window than the stills: the scene is expensive to paint, and a lighter frame keeps the recorder at its full frame rate. The GIF is scaled to about this width anyway. */
 const HERO_VIEWPORT = { width: 1280, height: 800 };
 /** Raw stills are taken at twice the pixel density, for crisp text. */
@@ -168,6 +173,31 @@ const questCard = (page, text) => page.locator('[data-cast]').filter({ hasText: 
 /** The inventory. Every shot runs in its own context, so no state leaks from one to the next. */
 const SHOTS = [
   {
+    slug: 'top-day',
+    title: ADDRESS,
+    scheme: 'light',
+    windowHeight: TOP_HEIGHT,
+    run: async page => {
+      await openBoard(page);
+      await settle(page);
+      await assertTop(page);
+    },
+  },
+  {
+    slug: 'top-night',
+    title: ADDRESS,
+    scheme: 'dark',
+    // The fire flickers: the shot is retaken until both flames are bright at the moment of the capture.
+    brightFlames: true,
+    windowHeight: TOP_HEIGHT,
+    run: async page => {
+      await openBoard(page);
+      await settle(page);
+      await assertTop(page);
+      await assertFlamesLit(page);
+    },
+  },
+  {
     slug: 'board-day',
     title: ADDRESS,
     scheme: 'light',
@@ -266,6 +296,64 @@ const assertFlamesLit = async page => {
   if (!lit) throw new Error('the night scene is not lit: the color scheme is not dark or no light has been applied');
 };
 
+/** The two side lights of the top of the board, whose intensity is the flicker. */
+const SIDE_LIGHTS = ['torch', 'lantern'];
+
+/** The lowest intensity, from 0 to 1, at which a side light counts as bright. */
+const BRIGHT_FLAME = 0.9;
+
+/** Reads the current intensity of each side light from the custom properties the flicker writes. */
+const readSideLights = page =>
+  page.evaluate(
+    lights =>
+      Object.fromEntries(
+        lights.map(light => {
+          const holder = document.querySelector(`[style*="--${light}-i"]`);
+          return [light, holder ? Number(holder.style.getPropertyValue(`--${light}-i`)) : 0];
+        }),
+      ),
+    SIDE_LIGHTS,
+  );
+
+/** Resolves when the intensities of both side lights are at least BRIGHT_FLAME, polling faster than the flicker updates. */
+const waitForBrightFlames = async (page, timeout = 20_000) => {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const lights = await readSideLights(page);
+    if (SIDE_LIGHTS.every(light => lights[light] >= BRIGHT_FLAME)) return lights;
+    await page.waitForTimeout(15);
+  }
+  throw new Error('the torch and the lantern were never bright together');
+};
+
+/** Fails unless the page is at the very top with the sign, the tagline, the intro plank and the post-a-quest form in view, and nothing focused. */
+const assertTop = async (page, height = TOP_HEIGHT) => {
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+  const state = await page.evaluate(height => {
+    const inView = element => {
+      if (!element) return false;
+      const box = element.getBoundingClientRect();
+      return box.width > 0 && box.top >= 0 && box.bottom <= height;
+    };
+    const form = document.querySelector('form');
+    const submit = [...document.querySelectorAll('button')].find(button => /post the quest/i.test(button.textContent ?? ''));
+    return {
+      scrollY: window.scrollY,
+      heading: inView(document.querySelector('h1')),
+      form: inView(form) && inView(submit),
+      focused: document.activeElement && document.activeElement !== document.body ? document.activeElement.tagName : null,
+      focusRings: document.querySelectorAll(':focus-visible').length,
+    };
+  }, height);
+  if (state.scrollY !== 0) throw new Error(`the page is not at the very top (${state.scrollY})`);
+  if (!state.heading) throw new Error('the title sign is not fully in view');
+  if (!state.form) throw new Error('the post-a-quest form is not fully in view');
+  if (state.focused || state.focusRings > 0) throw new Error('something has focus on screen');
+};
+
 /** The slugs this run takes. The hero is only recorded when it is named. */
 const selectSlugs = () => {
   const requested = [process.env.SLUGS ?? '', ...process.argv.slice(2)]
@@ -297,14 +385,26 @@ const toWebp = async (framePage, png) => stripDataUrl(await framePage.evaluate((
 const kilobytes = async file => `${Math.round((await stat(file)).size / 1024)} KB`;
 
 const takeStill = async (browser, framePage, shot) => {
-  const viewport = shot.mobile ? MOBILE : DESKTOP;
+  const viewport = shot.mobile ? MOBILE : shot.windowHeight ? { ...DESKTOP, height: shot.windowHeight } : DESKTOP;
   const context = await openContext(browser, { scheme: shot.scheme, viewport, mobile: shot.mobile });
   await rememberScheme(context, shot.scheme);
   const page = await context.newPage();
 
   try {
     await shot.run(page);
-    const raw = await page.screenshot({ type: 'png' });
+    const capture = () =>
+      page.screenshot({ type: 'png' });
+    let raw = await capture();
+    if (shot.brightFlames) {
+      // The light moves between the wait and the capture, so the intensity is read again right after it, and the capture is repeated when it dimmed.
+      for (let attempt = 1; ; attempt += 1) {
+        await waitForBrightFlames(page);
+        raw = await capture();
+        const after = await readSideLights(page);
+        if (SIDE_LIGHTS.every(light => after[light] >= BRIGHT_FLAME)) break;
+        if (attempt >= 20) throw new Error('could not capture the torch and the lantern bright');
+      }
+    }
     const framed = await frameShot(framePage, raw, {
       title: shot.title,
       width: viewport.width,

@@ -63,6 +63,8 @@ FFMPEG=<path to ffmpeg> npm run gif
 
 | Slug | Shows | Output |
 |---|---|---|
+| `top-day` | The top of the page by day: the hanging title sign, the tagline, the intro plank and the post-a-quest form | `top-day.raw.webp`, `top-day.framed.webp` |
+| `top-night` | The same top by night, with the torch and the lantern lit at a bright moment of their flicker | `top-night.raw.webp`, `top-night.framed.webp` |
 | `board-day` | The quest board by day, with the first quests and their wax seals | `board-day.raw.webp`, `board-day.framed.webp` |
 | `board-night` | The same board by night, with the fire lit | `board-night.raw.webp`, `board-night.framed.webp` |
 | `quest-expanded` | A long quest opened with Read more | `quest-expanded.raw.webp`, `quest-expanded.framed.webp` |
